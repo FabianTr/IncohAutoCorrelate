@@ -52,6 +52,7 @@ public:
 	void LoadIntensityData(Settings::HitEvent* Event);
 	void LoadIntensityData();
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold);
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, int LowerBound, int UpperBound);
 
 	void CreateSparseHitList(float Threshold);
 

@@ -98,6 +98,17 @@ int main()
 
 	std::cout << "Mean intensity: " << Options.HitEvents[0].MeanIntensity << "\n";
 
+	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.0, 0, 100);
+	std::cout << "\n";
+	for (int iy = 0; iy <20; iy++)
+	{
+		for (int ix = 0; ix <20; ix++)
+		{
+			std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "   ";
+		}
+		std::cout << "\n";
+	}
+
 
 	int x;
 	std::cout << "Program ended\n";

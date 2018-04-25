@@ -262,8 +262,7 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 	
 }
 
-
-void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold) //Load Intensity of all Events and average them
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, int LowerBound, int UpperBound)
 {
 	if (Events.size() == 0)
 	{
@@ -275,15 +274,19 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, f
 	{
 		float* tmpIntensity = new float[DetectorSize[1] * DetectorSize[0]];
 		Intensity = new float[DetectorSize[1] * DetectorSize[0]];
-		for (int i = 0; i < Events.size(); i++)
+		for (int i = LowerBound; i < UpperBound; i++)
 		{
-			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset,Events[i].Event);
+			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
 			ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0]);
 
 		}
 		delete[] tmpIntensity;
 	}
 	ArrayOperators::ParMultiplyScalar(Intensity, 1.0 / (Events.size()), DetectorSize[1] * DetectorSize[0]);
+}
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold) //Load Intensity of all Events and average them
+{
+	LoadAndAverageIntensity(Events, Threshold, 0, Events.size());
 }
 void Detector::LoadIntensityData(Settings::HitEvent * Event)//Load Intensity for one event
 {
@@ -299,6 +302,8 @@ void Detector::LoadIntensityData()
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]];
 	GetSliceOutOfHDFCuboid(Intensity, Path, DataSet, DetectorEvent->Event);
 }
+
+ 
 
 void Detector::CreateSparseHitList(float Threshold)
 {
