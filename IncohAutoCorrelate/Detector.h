@@ -1,0 +1,95 @@
+#pragma once
+
+#include "Forward.h"
+#include <vector>
+#include <array>
+#include "H5Cpp.h"
+#include "Settings.h"
+#include "ACMesh.h"
+
+//NOTATION:
+//
+//Arrays: [n_y][n_x][dim(0,3)]
+//logic (def):
+//dimension of pixel: fastest
+//x run is faster than y run (here x and y as detector intern coordinates)
+
+class Detector
+{
+private:
+	//Pixelmap Stuff
+	struct XMapExtremeV { float max_x, min_x, max_y, min_y, max_z, min_z; };
+	XMapExtremeV PixelMapExtend;
+	inline float GetPixelPos(int dimension, int i_x, int i_y);
+	inline float GetkVal(int dimension, int i_x, int i_y);
+	void Calc_PixelMapExtremeValues();
+
+
+	void GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_string DataSet, int SlicePosition);
+
+	//k-Map Stuff
+
+	
+
+	//Autocorrelation
+	enum KernelMode	{	CQ_creator = 0, FullAutoCorr = 1, SparseAutoCorr = 2, AngularAveragedAutoCorr = 3	};
+
+	
+
+	enum DataType { NONE = -1, INT = 1, LONG = 2, FLOAT = 3, DOUBLE = 4 };
+
+public:
+	struct AutoCorrFlags { bool LinearInterpolation; };
+
+	Detector();
+	~Detector();
+
+//Functions
+	void Calc_kMap();
+
+	void LoadPixelMap(H5std_string Path, H5std_string DataSet);
+	
+	void LoadIntensityData(Settings::HitEvent* Event);
+	void LoadIntensityData();
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold);
+
+	void CreateSparseHitList(float Threshold);
+
+	float CalculateMeanIntensity(bool FromSparse);
+
+	//Function "wraps":
+	
+
+	void InitializeDetector(H5std_string PixelMap_Path, H5std_string PixelMap_DataSet, float Pixel_Threshold);
+	
+
+	//Correlation Kernels:
+	void AutoCorrelateSparseList(ACMesh& SmallMesh, AutoCorrFlags Flags);
+
+
+
+//Vars
+	int DetectorSize[2]; // Number of Pixels in n_y (0) and n_x (1) dimension: [n_y][n_x] => DetectorSize[0] ^= slow-scan; DetectorSize[1] ^= fast-scan
+
+	float* Intensity = NULL;
+
+	//Pixelmap Stuff
+	float* PixelMap = NULL;    // Pixelmap with vitually three dimensions [n_y][n_x][3]
+	//k-map
+	float* kMap = NULL;
+	float Max_k[3];
+	float Min_k[3];// to estimate required Q Volume
+	float Max_q[3];
+
+	std::vector <std::array< float, 4>> SparseHitList;
+
+//Structs
+	struct DetectorChecklist{
+		bool Pixlemap=false;
+		bool kMap = false;
+	}; //cheklist for functions to find out if the requirements are met
+
+//Event for Detecctor
+	Settings::HitEvent* DetectorEvent=NULL;
+
+};
