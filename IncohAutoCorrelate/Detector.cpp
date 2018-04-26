@@ -295,11 +295,17 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, f
 void Detector::LoadIntensityData(Settings::HitEvent * Event)//Load Intensity for one event
 {
 	DetectorEvent = Event;
+	Checklist.Event = true;
 	LoadIntensityData();
-
 } 
 void Detector::LoadIntensityData()
 {
+	if (!Checklist.Event)
+	{
+		std::cerr << "ERROR: no Event set.\n ";
+		std::cerr << "   ->: Detector::LoadIntensityData()\n ";
+		throw;
+	}
 	H5std_string Path = DetectorEvent->Filename;
 	H5std_string DataSet = DetectorEvent->Dataset;
 
@@ -322,7 +328,6 @@ void Detector::CreateSparseHitList(float Threshold)
 
 	for (int i_y = 0; i_y < DetectorSize[1]; i_y++)
 	{
-	//	#pragma omp parallel for
 		for (int i_x = 0; i_x < DetectorSize[0]; i_x++)
 		{
 			if (Intensity[i_x + DetectorSize[0]* i_y] >= Threshold)
@@ -333,7 +338,6 @@ void Detector::CreateSparseHitList(float Threshold)
 				TmpEntry[1] = GetkVal(1, i_x, i_y);
 				TmpEntry[2] = GetkVal(2, i_x, i_y);
 				TmpEntry[3] = Intensity[i_x + DetectorSize[0] * i_y];
-
 				TmpSparseVec[i_y].Vec.push_back(TmpEntry);
 			}
 		}
@@ -343,7 +347,7 @@ void Detector::CreateSparseHitList(float Threshold)
 	{
 		SparseHitList.insert(SparseHitList.end(), TmpSparseVec[i_y].Vec.begin(), TmpSparseVec[i_y].Vec.end());
 	}
-
+	Checklist.SparseHitList = true;
 }
 float Detector::CalculateMeanIntensity(bool FromSparse)
 {
@@ -375,10 +379,41 @@ void Detector::InitializeDetector(H5std_string PixelMap_Path, H5std_string Pixel
 	CreateSparseHitList(Pixel_Threshold);
 }
 
-void Detector::AutoCorrelateSparseList(ACMesh & BigMesh,ACMesh &C_of_q, AutoCorrFlags Flags)
+void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 {
+	if (!Checklist.SparseHitList)
+	{
+		std::cerr << "ERROR: no sparse hit list available. Use Detector::CreateSparseHitList() first.\n ";
+		std::cerr << "   ->: Detector::AutoCorrelateSparseList()\n ";
+		throw;
+	}
+	if (!Checklist.Event)
+	{
+		std::cerr << "ERROR: no Event set.\n ";
+		std::cerr << "   ->: Detector::AutoCorrelateSparseList()\n ";
+		throw;
+	}
 	//Implementation for CPU
-	
+	#pragma omp parallel for
+	for (int i = 0; i < SparseHitList.size(); i++)
+	{
+		for (int j = i; j < SparseHitList.size(); j++)
+		{
+			if (j == i)
+				continue;
+			float q[3];
+			float RM[9] = { 1,0,0,0,1,0,0,0,1 };//TODO IMPLEMENT ROTATION MATRIX -> THIS IS A DUMMY
+
+			q[0] = SparseHitList[i][0] - SparseHitList[j][0];
+			q[1] = SparseHitList[i][1] - SparseHitList[j][1];
+			q[2] = SparseHitList[i][2] - SparseHitList[j][2];
+			BigMesh.Atomic_Add_q_Entry(q, RM, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
+			q[0] = SparseHitList[j][0] - SparseHitList[i][0];
+			q[1] = SparseHitList[j][1] - SparseHitList[i][1];
+			q[2] = SparseHitList[j][2] - SparseHitList[i][2];
+			BigMesh.Atomic_Add_q_Entry(q,RM, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
+		}
+	}
 
 
 }

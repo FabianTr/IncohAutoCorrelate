@@ -1,6 +1,7 @@
 *****
 
-
+TODO:
+	*obtain the right rotation matrix from the streamfile and implement. Ath the moment->Dummy in sparse acc kernel
 
 
 

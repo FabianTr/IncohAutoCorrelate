@@ -1,5 +1,6 @@
 #include "Settings.h"
 #include <string>
+#include <math.h>
 
 
 
@@ -62,7 +63,7 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 				if (line.find("Cell parameters") == 0) break;
 			}
 			for (size_t i = 0; getline(File, line) && i<3; ++i) {
-				double x, y, z;
+				float x, y, z;
 				stringstream ss(line);
 				ss.seekg(7);
 				ss >> x >> y >> z;
@@ -75,6 +76,13 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 			tmpHitEvents.push_back(currEvent);
 
 		}
+	}
+
+	if (tmpHitEvents.size() == 0)
+	{
+		std::cerr << "ERROR: empty stream file.\n";
+		std::cerr << "   ->: in Settings::LoadStreamFile()\n";
+		throw;
 	}
 
 	if (!InclMultiHits)//check for double or multiple crystals in one hit and ignore them
@@ -113,3 +121,5 @@ void Settings::Echo(std::string output)
 		std::cout << output << "\n";
 
 }
+
+

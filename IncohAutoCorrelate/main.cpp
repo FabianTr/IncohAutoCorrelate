@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 #include <omp.h>
+#include <cmath>
 
 #include "Settings.h"
 
@@ -13,6 +14,7 @@
 #include "Detector.h"
 
 #include "ArrayOperators.h"
+#include "ProfileTime.h"
 
 //Variables
 
@@ -24,21 +26,13 @@
 
 int main()
 {
+	ProfileTime profiler;
 	Settings Options;
 	Options.echo = true;
 
-	Options.Echo("hello from IncohAutoCorrelate!");
-
-
+	Options.F_I_Conversion.Step = 0.01;
 	
-	ArrayOperators::FunWithThreads();
 
-
-	int y;
-	std::cout << "Program ended\n";
-	std::cin >> y;
-	return 0;
-	
 
 	//TestDetectorSparseList();
 
@@ -46,7 +40,10 @@ int main()
 
 	TestDet.LoadPixelMap("/home/trostfab/LR17Stuff/PixelMap_X123.h5", "PixelMap_X123");
 
-	Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/hemSh_all2_local.stream","entry_1/instrument_1/detector_2/detector_corrected/data",false);
+	
+
+	Options.Echo("Load Streamfile");
+	Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/3fs_JF.stream","entry_1/instrument_1/detector_2/detector_corrected/data",false);
 	//Options.AlternateDetectorSourcePath("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/cheetah/hdf5");
 
 	//for (int i = 0; i <10; i++)
@@ -70,15 +67,33 @@ int main()
 
 	Options.Echo("Create k-map");
 	TestDet.Calc_kMap();
+
+	Options.Echo("Create BigMesh");
+	ACMesh BigMesh;
+	BigMesh.Options = &Options;
+	BigMesh.CreateBigMeshForDetector(TestDet, TestDet.DetectorSize[0] + 1);
+
 	Options.Echo("Create sparese detector");
 	TestDet.CreateSparseHitList(3.0);
 
-	std::cout << "Number of entrys above threshold: " <<TestDet.SparseHitList.size() << "\n";
 
-	Options.Echo("Calc mean Intensity");
-	TestDet.CalculateMeanIntensity(true);
 
-	std::cout << "Mean intensity: " << Options.HitEvents[0].MeanIntensity << "\n";
+	Options.Echo("AutoCorrelate");
+
+	profiler.Tic();
+
+	for (int i = 0; i < 1000; i++)
+	{
+		//TestDet.LoadIntensityData(&Options.HitEvents[i]);
+		TestDet.CreateSparseHitList(3.0);
+
+		//Detector::AutoCorrFlags flags;
+		//flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+		//TestDet.AutoCorrelateSparseList(BigMesh, flags);
+
+	}
+	
+	profiler.Toc(true);
 
 	//TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.0, 0, 5000);
 	//std::cout << "\n";

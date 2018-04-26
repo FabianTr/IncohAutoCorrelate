@@ -38,8 +38,11 @@ private:
 
 	enum DataType { NONE = -1, INT = 1, LONG = 2, FLOAT = 3, DOUBLE = 4 };
 
+	struct DetChecklist { bool SparseHitList = false; bool Event = false; };
+	DetChecklist Checklist;
+
 public:
-	struct AutoCorrFlags { bool LinearInterpolation; };
+	struct AutoCorrFlags { Settings::Interpolation InterpolationMode; };
 
 	Detector();
 	~Detector();
@@ -65,7 +68,7 @@ public:
 	
 
 	//Correlation Kernels:
-	void AutoCorrelateSparseList(ACMesh & BigMesh, ACMesh &C_of_q, AutoCorrFlags Flags);
+	void AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags);
 
 
 
@@ -84,11 +87,7 @@ public:
 
 	std::vector <std::array< float, 4>> SparseHitList;
 
-//Structs
-	struct DetectorChecklist{
-		bool Pixlemap=false;
-		bool kMap = false;
-	}; //cheklist for functions to find out if the requirements are met
+
 
 //Event for Detecctor
 	Settings::HitEvent* DetectorEvent=NULL;

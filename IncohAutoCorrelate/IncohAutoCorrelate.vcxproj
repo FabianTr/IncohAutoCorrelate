@@ -67,6 +67,7 @@
     <ClCompile Include="ACMesh.cpp" />
     <ClCompile Include="Detector.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ProfileTime.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="ArrayOperators.cpp" />
   </ItemGroup>
@@ -75,6 +76,7 @@
     <ClInclude Include="ArrayOperators.h" />
     <ClInclude Include="Detector.h" />
     <ClInclude Include="Forward.h" />
+    <ClInclude Include="ProfileTime.h" />
     <ClInclude Include="Settings.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
