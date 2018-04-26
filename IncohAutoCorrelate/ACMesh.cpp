@@ -45,7 +45,8 @@ void ACMesh::CreateSmallMeshForDetector(Detector Det, int PerpSize)
 	Shape.Center[1] = (Shape.Size_AB - 1) / 2;
 	Shape.Center[2] = (Shape.Size_C - 1) / 2;
 
+	Shape.dq_per_Voxel = Det.Max_q[Shape.k_A] / (((Shape.Size_AB - 1) / 2) - 1); //Calculate Voxel Size (the last -1 takes care of zero padding)
 	
 	delete Mesh;
-	Mesh = new float(Shape.Size_AB*Shape.Size_AB*Shape.Size_C);
+	Mesh = new float[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 }

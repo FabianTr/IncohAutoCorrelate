@@ -12,39 +12,13 @@
 //my Classes
 #include "Detector.h"
 
+#include "ArrayOperators.h"
+
 //Variables
 
 
 
 
-void TestDetectorSparseList()
-{
-
-	Detector TestDet;
-
-
-	TestDet.DetectorSize[0] = 10;
-	TestDet.DetectorSize[1] = 12;
-
-
-	TestDet.PixelMap = new float[3 * TestDet.DetectorSize[0] * TestDet.DetectorSize[1]];
-
-
-	for (int i_y = 0; i_y < TestDet.DetectorSize[1]; i_y++)
-	{
-		for (int i_x = 0; i_x < TestDet.DetectorSize[0]; i_x++)
-		{
-			TestDet.PixelMap[0 + 3 * i_x + 3 * TestDet.DetectorSize[0] * i_y] = i_x -(float) 0.45*TestDet.DetectorSize[0];
-			TestDet.PixelMap[1 + 3 * i_x + 3 * TestDet.DetectorSize[0] * i_y] = i_y - (float) 0.65*TestDet.DetectorSize[1];
-			TestDet.PixelMap[2 + 3 * i_x + 3 * TestDet.DetectorSize[0] * i_y] = 75;
-		}
-	}
-
-
-	TestDet.Calc_kMap();
-
-
-}
 
 
 
@@ -56,6 +30,14 @@ int main()
 	Options.Echo("hello from IncohAutoCorrelate!");
 
 
+	
+	ArrayOperators::FunWithThreads();
+
+
+	int y;
+	std::cout << "Program ended\n";
+	std::cin >> y;
+	return 0;
 	
 
 	//TestDetectorSparseList();
@@ -98,16 +80,16 @@ int main()
 
 	std::cout << "Mean intensity: " << Options.HitEvents[0].MeanIntensity << "\n";
 
-	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.0, 0, 100);
-	std::cout << "\n";
-	for (int iy = 0; iy <20; iy++)
-	{
-		for (int ix = 0; ix <20; ix++)
-		{
-			std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "   ";
-		}
-		std::cout << "\n";
-	}
+	//TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.0, 0, 5000);
+	//std::cout << "\n";
+	//for (int iy = 0; iy <20; iy++)
+	//{
+	//	for (int ix = 0; ix <20; ix++)
+	//	{
+	//		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "   ";
+	//	}
+	//	std::cout << "\n";
+	//}
 
 
 	int x;

@@ -65,7 +65,7 @@ public:
 	
 
 	//Correlation Kernels:
-	void AutoCorrelateSparseList(ACMesh& SmallMesh, AutoCorrFlags Flags);
+	void AutoCorrelateSparseList(ACMesh & BigMesh, ACMesh &C_of_q, AutoCorrFlags Flags);
 
 
 

@@ -79,7 +79,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 		throw;
 	}
 	H5::DataSpace DS = dataset.getSpace();
-	std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
+	//std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
 
 	if (DS.getSimpleExtentNdims() != 3) //check if shape is [3][nx][ny] or [ny][nx][3]
 	{
@@ -88,7 +88,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	}
 	hsize_t dims[3];
 	DS.getSimpleExtentDims(dims, NULL);
-	std::cout << "Intensity data shape: " << dims[0] << " x " << dims[1] << " x " << dims[2] << "\n";
+//	std::cout << "Intensity data shape: " << dims[0] << " x " << dims[1] << " x " << dims[2] << "\n";
 
 	if (dims[2] != DetectorSize[1] || dims[1] != DetectorSize[0])
 	{
@@ -273,16 +273,20 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, f
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]];
 	{
 		float* tmpIntensity = new float[DetectorSize[1] * DetectorSize[0]];
-		Intensity = new float[DetectorSize[1] * DetectorSize[0]];
-		for (int i = LowerBound; i < UpperBound; i++)
+		//get first slide
+		GetSliceOutOfHDFCuboid(tmpIntensity, Events[LowerBound].Filename, Events[LowerBound].Dataset, Events[LowerBound].Event);
+		ArrayOperators::ThresholdValues(tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //treshold first slide
+
+		Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
+		for (int i = LowerBound +1; i < UpperBound; i++)//get other slides
 		{
 			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
-			ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0]);
+			ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //add with threshold
 
 		}
 		delete[] tmpIntensity;
 	}
-	ArrayOperators::ParMultiplyScalar(Intensity, 1.0 / (Events.size()), DetectorSize[1] * DetectorSize[0]);
+	ArrayOperators::ParMultiplyScalar(Intensity, 1.0 / (UpperBound - LowerBound ), DetectorSize[1] * DetectorSize[0]);
 }
 void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold) //Load Intensity of all Events and average them
 {
@@ -371,7 +375,7 @@ void Detector::InitializeDetector(H5std_string PixelMap_Path, H5std_string Pixel
 	CreateSparseHitList(Pixel_Threshold);
 }
 
-void Detector::AutoCorrelateSparseList(ACMesh & SmallMesh, AutoCorrFlags Flags)
+void Detector::AutoCorrelateSparseList(ACMesh & BigMesh,ACMesh &C_of_q, AutoCorrFlags Flags)
 {
 	//Implementation for CPU
 	
