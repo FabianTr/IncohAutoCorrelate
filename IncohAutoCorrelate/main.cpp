@@ -30,7 +30,7 @@ int main()
 	Settings Options;
 	Options.echo = true;
 
-	Options.F_I_Conversion.Step = 0.01;
+	Options.F_I_Conversion.Step = 0.01f;
 	
 
 
@@ -74,26 +74,28 @@ int main()
 	BigMesh.CreateBigMeshForDetector(TestDet, TestDet.DetectorSize[0] + 1);
 
 	Options.Echo("Create sparese detector");
-	TestDet.CreateSparseHitList(3.0);
-
+	TestDet.CreateSparseHitList(3.2f, 6.4f);//
+	Detector::AutoCorrFlags flags;
+	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+	TestDet.AutoCorrelateSparseList(BigMesh, flags);
 
 
 	Options.Echo("AutoCorrelate");
 
-	profiler.Tic();
+	//profiler.Tic();
 
-	for (int i = 0; i < 1000; i++)
-	{
-		//TestDet.LoadIntensityData(&Options.HitEvents[i]);
-		TestDet.CreateSparseHitList(3.0);
+	//for (int i = 0; i < 1000; i++)
+	//{
+	//	TestDet.LoadIntensityData(&Options.HitEvents[i]);
+	//	TestDet.CreateSparseHitList(3.0);
 
-		//Detector::AutoCorrFlags flags;
-		//flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-		//TestDet.AutoCorrelateSparseList(BigMesh, flags);
+	//	Detector::AutoCorrFlags flags;
+	//	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+	//	TestDet.AutoCorrelateSparseList(BigMesh, flags);
 
-	}
-	
-	profiler.Toc(true);
+	//}
+	//
+	//profiler.Toc(true);
 
 	//TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.0, 0, 5000);
 	//std::cout << "\n";

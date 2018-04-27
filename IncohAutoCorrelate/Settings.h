@@ -51,11 +51,11 @@ public:
 	FloatIntConversion F_I_Conversion;
 	inline int FloatToInt(float f)
 	{
-		return (int)floorf(((f + F_I_Conversion.Offset ) / F_I_Conversion.Step) + 0.5);
+		return (int)floorf(((f + F_I_Conversion.Offset ) / F_I_Conversion.Step) + 0.5f);
 	}
 	inline float IntToFloat( int i)
 	{
-		return (float)(i* F_I_Conversion.Step) - (float)(F_I_Conversion.Offset );
+		return (float)(i * F_I_Conversion.Step) - (float)(F_I_Conversion.Offset );
 	}
 
 

@@ -30,6 +30,11 @@ Detector::~Detector()
 
 //Helpfunctions
 
+inline float Detector::DiscretizeToPhotones(float Value, float Threshold, float PhotonSamplingStep) //create single Photon counts by simple thresholding
+{
+	return ceilf((Value - Threshold) / PhotonSamplingStep);
+}
+
 //PixelMap
 inline float Detector::GetPixelPos(int dimension, int i_x, int i_y)
 {
@@ -349,6 +354,21 @@ void Detector::CreateSparseHitList(float Threshold)
 	}
 	Checklist.SparseHitList = true;
 }
+
+void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
+{
+	CreateSparseHitList(Threshold);
+	#pragma omp parallel for
+	for (int i = 0; i < SparseHitList.size(); i++)
+	{
+		SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
+	}
+}
+
+
+
+
+
 float Detector::CalculateMeanIntensity(bool FromSparse)
 {
 	double IntInt = 0;
@@ -408,6 +428,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 			q[1] = SparseHitList[i][1] - SparseHitList[j][1];
 			q[2] = SparseHitList[i][2] - SparseHitList[j][2];
 			BigMesh.Atomic_Add_q_Entry(q, RM, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
+			std::cout << SparseHitList[i][3] * SparseHitList[j][3] << ", ";
 			q[0] = SparseHitList[j][0] - SparseHitList[i][0];
 			q[1] = SparseHitList[j][1] - SparseHitList[i][1];
 			q[2] = SparseHitList[j][2] - SparseHitList[i][2];

@@ -17,6 +17,9 @@
 class Detector
 {
 private:
+	//HelpFunctions
+	inline float DiscretizeToPhotones(float Value, float Threshold, float PhotonSamplingStep);
+
 	//Pixelmap Stuff
 	struct XMapExtremeV { float max_x, min_x, max_y, min_y, max_z, min_z; };
 	XMapExtremeV PixelMapExtend;
@@ -58,6 +61,7 @@ public:
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, int LowerBound, int UpperBound);
 
 	void CreateSparseHitList(float Threshold);
+	void CreateSparseHitList(float Threshold, float PhotonSamplingStep);
 
 	float CalculateMeanIntensity(bool FromSparse);
 
