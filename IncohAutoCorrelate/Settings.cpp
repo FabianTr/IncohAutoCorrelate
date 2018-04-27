@@ -121,5 +121,3 @@ void Settings::Echo(std::string output)
 		std::cout << output << "\n";
 
 }
-
-

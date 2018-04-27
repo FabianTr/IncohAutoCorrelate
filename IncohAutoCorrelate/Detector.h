@@ -17,8 +17,7 @@
 class Detector
 {
 private:
-	//HelpFunctions
-	inline float DiscretizeToPhotones(float Value, float Threshold, float PhotonSamplingStep);
+
 
 	//Pixelmap Stuff
 	struct XMapExtremeV { float max_x, min_x, max_y, min_y, max_z, min_z; };
@@ -32,6 +31,8 @@ private:
 
 	//k-Map Stuff
 
+	//HelpFunctions
+	inline float DiscretizeToPhotones(float Value, float Threshold, float PhotonSamplingStep);
 	
 
 	//Autocorrelation
@@ -59,6 +60,8 @@ public:
 	void LoadIntensityData();
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, int LowerBound, int UpperBound);
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, float PhotonSamplingStep);
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound);
 
 	void CreateSparseHitList(float Threshold);
 	void CreateSparseHitList(float Threshold, float PhotonSamplingStep);
@@ -73,6 +76,7 @@ public:
 
 	//Correlation Kernels:
 	void AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags);
+
 
 
 

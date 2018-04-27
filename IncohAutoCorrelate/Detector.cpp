@@ -8,8 +8,6 @@
 #include <array>
 #include <string>
 #include "H5Cpp.h"
-
-
 #include "ArrayOperators.h"
 
 
@@ -30,9 +28,9 @@ Detector::~Detector()
 
 //Helpfunctions
 
-inline float Detector::DiscretizeToPhotones(float Value, float Threshold, float PhotonSamplingStep) //create single Photon counts by simple thresholding
+inline float Detector::DiscretizeToPhotones(float Value, float Threshold, float PhotonSamplingStep) //create single Photon counting by simple thresholding
 {
-	return ceilf((Value - Threshold) / PhotonSamplingStep);
+	return ceilf((Value - Threshold) / PhotonSamplingStep)*(Value >= Threshold);
 }
 
 //PixelMap
@@ -269,6 +267,11 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 
 void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, int LowerBound, int UpperBound)
 {
+	LoadAndAverageIntensity(Events, Threshold, -1.0f, LowerBound, UpperBound);
+}
+
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound)
+{
 	if (Events.size() == 0)
 	{
 		std::cerr << "WARNING: Event list is empty, no intensity integration/averaging can be performed.\n";
@@ -277,26 +280,39 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, f
 
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]];
 	{
-		float* tmpIntensity = new float[DetectorSize[1] * DetectorSize[0]];
-		//get first slide
-		GetSliceOutOfHDFCuboid(tmpIntensity, Events[LowerBound].Filename, Events[LowerBound].Dataset, Events[LowerBound].Event);
-		ArrayOperators::ThresholdValues(tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //treshold first slide
-
+		float* tmpIntensity = new float[DetectorSize[1] * DetectorSize[0]]();
 		Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
-		for (int i = LowerBound +1; i < UpperBound; i++)//get other slides
+
+		for (int i = LowerBound; i < UpperBound; i++)//get  slides
 		{
 			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
-			ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //add with threshold
-
+			if (PhotonSamplingStep <= 0)// No Photon discretising
+			{
+				ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //add with threshold
+			}
+			else// Photon discretising
+			{
+				#pragma omp parallel for
+				for (int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
+				{
+					if (tmpIntensity[i] >= Threshold)
+						Intensity[i] += DiscretizeToPhotones( tmpIntensity[i],Threshold, PhotonSamplingStep);
+				}
+			}
 		}
 		delete[] tmpIntensity;
 	}
-	ArrayOperators::ParMultiplyScalar(Intensity, 1.0 / (UpperBound - LowerBound ), DetectorSize[1] * DetectorSize[0]);
+	ArrayOperators::ParMultiplyScalar(Intensity, 1.0 / (UpperBound - LowerBound), DetectorSize[1] * DetectorSize[0]);
 }
 void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold) //Load Intensity of all Events and average them
 {
 	LoadAndAverageIntensity(Events, Threshold, 0, Events.size());
 }
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, float PhotonSamplingStep)
+{
+	LoadAndAverageIntensity(Events, Threshold, PhotonSamplingStep, 0, Events.size());
+}
+
 void Detector::LoadIntensityData(Settings::HitEvent * Event)//Load Intensity for one event
 {
 	DetectorEvent = Event;
@@ -428,7 +444,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 			q[1] = SparseHitList[i][1] - SparseHitList[j][1];
 			q[2] = SparseHitList[i][2] - SparseHitList[j][2];
 			BigMesh.Atomic_Add_q_Entry(q, RM, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
-			std::cout << SparseHitList[i][3] * SparseHitList[j][3] << ", ";
+			//std::cout << SparseHitList[i][3] * SparseHitList[j][3] << ", ";
 			q[0] = SparseHitList[j][0] - SparseHitList[i][0];
 			q[1] = SparseHitList[j][1] - SparseHitList[i][1];
 			q[2] = SparseHitList[j][2] - SparseHitList[i][2];
