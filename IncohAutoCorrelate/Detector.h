@@ -58,10 +58,10 @@ public:
 	
 	void LoadIntensityData(Settings::HitEvent* Event);
 	void LoadIntensityData();
-	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold);
-	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, int LowerBound, int UpperBound);
-	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, float PhotonSamplingStep);
-	void LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound);
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold);
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, int LowerBound, int UpperBound);
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep);
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound);
 
 	void CreateSparseHitList(float Threshold);
 	void CreateSparseHitList(float Threshold, float PhotonSamplingStep);
@@ -76,7 +76,7 @@ public:
 
 	//Correlation Kernels:
 	void AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags);
-
+	void AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, bool PhotonDiscretized);
 
 
 
@@ -84,6 +84,7 @@ public:
 	int DetectorSize[2]; // Number of Pixels in n_y (0) and n_x (1) dimension: [n_y][n_x] => DetectorSize[0] ^= slow-scan; DetectorSize[1] ^= fast-scan
 
 	float* Intensity = NULL;
+	int* IntensityPhotonDiscr = NULL;
 
 	//Pixelmap Stuff
 	float* PixelMap = NULL;    // Pixelmap with vitually three dimensions [n_y][n_x][3]

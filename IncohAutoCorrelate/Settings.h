@@ -32,7 +32,8 @@ public:
 		int Event;
 		int SerialNumber;
 
-		float MeanIntensity = 0;
+		float MeanIntensity = -1;
+		int PhotonCount = -1;
 	};
 
 	std::vector<HitEvent> HitEvents;

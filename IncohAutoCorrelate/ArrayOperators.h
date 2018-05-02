@@ -42,6 +42,8 @@ namespace ArrayOperators
 		}
 	}
 
+
+
 	//serialfunctions
 	inline void MultiplyScalar(float* Array, float Factor, int Size)
 	{
@@ -61,5 +63,22 @@ namespace ArrayOperators
 		Vector[1] = r[1];
 		Vector[2] = r[2];
 	}
-
+	inline int Sum(int* Array, int Size)
+	{//Annotation: parallelisation dosn't bring any measurable effect
+		int sum = 0;
+		for (int i = 0; i <Size; i++)
+		{
+			sum += Array[i];
+		}
+		return sum;
+	}
+	inline float Sum(float* Array, int Size)
+	{
+		float sum = 0;
+		for (int i = 0; i <Size; i++)
+		{
+			sum += Array[i];
+		}
+		return sum;
+	}
 }

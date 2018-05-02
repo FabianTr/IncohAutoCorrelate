@@ -80,7 +80,7 @@ int main()
 	TestDet.AutoCorrelateSparseList(BigMesh, flags);
 
 
-	Options.Echo("AutoCorrelate");
+	//Options.Echo("AutoCorrelate");
 
 	//profiler.Tic();
 
@@ -97,16 +97,32 @@ int main()
 	//
 	//profiler.Toc(true);
 
-	//TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.0, 0, 5000);
-	//std::cout << "\n";
-	//for (int iy = 0; iy <20; iy++)
-	//{
-	//	for (int ix = 0; ix <20; ix++)
-	//	{
-	//		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "   ";
-	//	}
-	//	std::cout << "\n";
-	//}
+	Options.Echo("Load and average intensities");
+	profiler.Tic();
+	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2,6.4, 0, 5000);
+	profiler.Toc(true);
+	std::cout << "\n";
+
+	int ind = 0;
+	for (int i = 0; i < 100; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			std::cout << Options.HitEvents[ind].PhotonCount << "\t";
+			ind++;
+		}
+		std::cout << "\n";
+	}
+	
+
+	/*for (int iy = 0; iy <20; iy++)
+	{
+		for (int ix = 0; ix <20; ix++)
+		{
+			std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "   ";
+		}
+		std::cout << "\n";
+	}*/
 
 
 	int x;

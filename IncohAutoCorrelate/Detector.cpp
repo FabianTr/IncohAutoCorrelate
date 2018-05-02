@@ -265,12 +265,19 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 	
 }
 
-void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, int LowerBound, int UpperBound)
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, int LowerBound, int UpperBound)
 {
 	LoadAndAverageIntensity(Events, Threshold, -1.0f, LowerBound, UpperBound);
 }
-
-void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound)
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold) //Load Intensity of all Events and average them
+{
+	LoadAndAverageIntensity(Events, Threshold, 0, Events.size());
+}
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep)
+{
+	LoadAndAverageIntensity(Events, Threshold, PhotonSamplingStep, 0, Events.size());
+}
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound)
 {
 	if (Events.size() == 0)
 	{
@@ -281,7 +288,14 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, f
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]];
 	{
 		float* tmpIntensity = new float[DetectorSize[1] * DetectorSize[0]]();
-		Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
+		if (PhotonSamplingStep <= 0)
+		{
+			Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
+		}
+		else
+		{
+			IntensityPhotonDiscr = new int[DetectorSize[1] * DetectorSize[0]]();
+		}
 
 		for (int i = LowerBound; i < UpperBound; i++)//get  slides
 		{
@@ -289,6 +303,10 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, f
 			if (PhotonSamplingStep <= 0)// No Photon discretising
 			{
 				ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //add with threshold
+				
+				//update Event
+				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / (DetectorSize[1] * DetectorSize[0]);
+
 			}
 			else// Photon discretising
 			{
@@ -296,22 +314,27 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, f
 				for (int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
 				{
 					if (tmpIntensity[i] >= Threshold)
-						Intensity[i] += DiscretizeToPhotones( tmpIntensity[i],Threshold, PhotonSamplingStep);
+					{
+						tmpIntensity[i] = DiscretizeToPhotones(tmpIntensity[i], Threshold, PhotonSamplingStep);
+						IntensityPhotonDiscr[i] += (int)tmpIntensity[i];
+					}
+					else
+					{ 
+						tmpIntensity[i] = 0;
+					}
 				}
+
+				//update Event
+				Events[i].PhotonCount = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]);
+				Events[i].MeanIntensity = (float)Events[i].PhotonCount / ((float) (DetectorSize[1] * DetectorSize[0]));
+
 			}
 		}
 		delete[] tmpIntensity;
 	}
 	ArrayOperators::ParMultiplyScalar(Intensity, 1.0 / (UpperBound - LowerBound), DetectorSize[1] * DetectorSize[0]);
 }
-void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold) //Load Intensity of all Events and average them
-{
-	LoadAndAverageIntensity(Events, Threshold, 0, Events.size());
-}
-void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent> Events, float Threshold, float PhotonSamplingStep)
-{
-	LoadAndAverageIntensity(Events, Threshold, PhotonSamplingStep, 0, Events.size());
-}
+
 
 void Detector::LoadIntensityData(Settings::HitEvent * Event)//Load Intensity for one event
 {
@@ -454,3 +477,8 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 
 
 }
+
+void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, bool PhotonDiscretized)
+{
+}
+
