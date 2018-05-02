@@ -32,6 +32,7 @@ namespace ArrayOperators
 			Array[i] *= Factor;
 		}
 	}
+
 	inline void ThresholdValues(float* Array, float Threshold, int Size)
 	{
 		#pragma omp parallel for

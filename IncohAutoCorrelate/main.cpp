@@ -115,14 +115,14 @@ int main()
 	}
 	
 
-	/*for (int iy = 0; iy <20; iy++)
+	for (int iy = 0; iy <20; iy++)
 	{
 		for (int ix = 0; ix <20; ix++)
 		{
 			std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "   ";
 		}
 		std::cout << "\n";
-	}*/
+	}
 
 
 	int x;

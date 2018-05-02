@@ -284,19 +284,13 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		std::cerr << "WARNING: Event list is empty, no intensity integration/averaging can be performed.\n";
 		return;
 	}
-
+	int* IntensityPhotonDiscr = NULL;
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]];
-	{
+	{	
 		float* tmpIntensity = new float[DetectorSize[1] * DetectorSize[0]]();
-		if (PhotonSamplingStep <= 0)
-		{
-			Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
-		}
-		else
-		{
+		if (PhotonSamplingStep > 0)
 			IntensityPhotonDiscr = new int[DetectorSize[1] * DetectorSize[0]]();
-		}
-
+		Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
 		for (int i = LowerBound; i < UpperBound; i++)//get  slides
 		{
 			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
@@ -332,7 +326,16 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		}
 		delete[] tmpIntensity;
 	}
+	if (PhotonSamplingStep > 0)
+	{
+		#pragma omp parallel for
+		for (int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
+		{
+			Intensity[i] = (float)IntensityPhotonDiscr[i];
+		}
+	}
 	ArrayOperators::ParMultiplyScalar(Intensity, 1.0 / (UpperBound - LowerBound), DetectorSize[1] * DetectorSize[0]);
+
 }
 
 
@@ -478,7 +481,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 
 }
 
-void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, bool PhotonDiscretized)
+void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound)
 {
 }
 
