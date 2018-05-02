@@ -108,6 +108,40 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 
 		break;
 	case  Settings::Interpolation::Linear:
+		int fsf, msf, ssf; //fast-scan-, medium-scan-, slow-scan- floor
+		fsf = (int)floorf(q[0]) + Shape.Center[0];
+		msf = (int)floorf(q[1]) + Shape.Center[1];
+		ssf = (int)floorf(q[2]) + Shape.Center[2];
+		float SepF, SepM, SepS; //according Seperators
+		SepF = q[0] - floorf(q[0]);
+		SepM = q[1] - floorf(q[1]);
+		SepS = q[2] - floorf(q[2]);
+
+
+		int val;
+		val = Options->FloatToInt(Value);
+
+
+		#pragma omp atomic
+			Mesh[fs + ms * fs + ss * ms*fs] += val*(1- SepF)*(1- SepM)*(1- SepS);
+
+		#pragma omp atomic
+			Mesh[(fs+1) + (ms+0) * fs + (ss+0) * ms*fs] += val * (SepF)*(1 - SepM)*(1 - SepS);
+		#pragma omp atomic
+			Mesh[(fs+0) + (ms+1) * fs + (ss+0) * ms*fs] += val * (1 - SepF)*(SepM)*(1 - SepS);
+		#pragma omp atomic
+			Mesh[(fs+0) + (ms+0) * fs + (ss+1) * ms*fs] += val * (1 - SepF)*(1 - SepM)*(SepS);
+
+		#pragma omp atomic
+			Mesh[(fs + 1) + (ms + 1) * fs + (ss + 0) * ms*fs] += val * (SepF)*(SepM)*(1 - SepS);
+		#pragma omp atomic
+			Mesh[(fs + 0) + (ms + 1) * fs + (ss + 1) * ms*fs] += val * (1 - SepF)*(SepM)*(SepS);
+		#pragma omp atomic
+			Mesh[(fs + 1) + (ms + 0) * fs + (ss + 1) * ms*fs] += val * (SepF)*(1 - SepM)*(SepS);
+
+		#pragma omp atomic
+			Mesh[(fs + 1) + (ms + 1) * fs + (ss + 1) * ms*fs] += val * (SepF)*(SepM)*(SepS);
+
 
 		break;
 	default:
