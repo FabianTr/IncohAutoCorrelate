@@ -13,7 +13,7 @@ public:
 	ACMesh();
 	~ACMesh();
 
-	
+	double* CQMesh;
 
 	unsigned int* Mesh; // "virt" 3DArray [a,b,z] dimensions are not the same as Detector Geometry dimensions 
 	struct MeshShape { 
@@ -32,8 +32,17 @@ public:
 	void CreateSmallMeshForDetector(Detector Det, int PerpSize);
 	void CreateBigMeshForDetector(Detector Det, int EdgeSize);
 
+	void CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize);
+
 	void Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode);
 	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode);
 
+
+	struct ACMesh_Checklist {
+		bool SmallMesh = false;
+		bool BigMesh = false;
+		bool CofQMesh = false;
+	};
+	ACMesh_Checklist Checklist;
 };
 

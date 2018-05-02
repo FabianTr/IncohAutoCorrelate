@@ -1,3 +1,5 @@
+#define CL_ENABLE_EXCEPTIONS
+
 #include <cstdio>
 #include <iostream>
 #include <fstream>
@@ -8,6 +10,8 @@
 #include <omp.h>
 #include <cmath>
 
+#include <CL/cl.hpp>
+
 #include "Settings.h"
 
 //my Classes
@@ -16,7 +20,8 @@
 #include "ArrayOperators.h"
 #include "ProfileTime.h"
 
-//Variables
+
+
 
 
 
@@ -32,6 +37,17 @@ int main()
 
 	Options.F_I_Conversion.Step = 0.01f;
 	
+
+
+	//Options.Echo("Load Open CL stuff:\n");
+
+	//Options.SetUp_OpenCL();
+
+	//int x;
+	//std::cout << "Program ended\n";
+	//std::cin >> x;
+	//return 0;
+
 
 
 	//TestDetectorSparseList();
@@ -104,25 +120,50 @@ int main()
 	std::cout << "\n";
 
 	int ind = 0;
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		for (int j = 0; j < 10; j++)
 		{
-			std::cout << Options.HitEvents[ind].PhotonCount << "\t";
+			std::cout << Options.HitEvents[ind].PhotonCount << " : " << Options.HitEvents[ind].MeanIntensity << "\t";
 			ind++;
 		}
 		std::cout << "\n";
 	}
-	
+	std::cout << "\n\n\n";
 
-	for (int iy = 0; iy <20; iy++)
+	for (int iy = 0; iy <10; iy++)
 	{
-		for (int ix = 0; ix <20; ix++)
+		for (int ix = 0; ix <10; ix++)
 		{
-			std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "   ";
+			std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "\t";
 		}
 		std::cout << "\n";
 	}
+	std::cout << "\n\n\n";
+
+	double MPI = 0;
+	double MinPi = 99999;
+	double MaxPi = 0;
+	for (int i = 0; i < 5000; i++)
+	{
+		MPI += Options.HitEvents[i].PhotonCount;
+		if (Options.HitEvents[i].PhotonCount > MaxPi)
+			MaxPi = Options.HitEvents[i].PhotonCount;
+		if (Options.HitEvents[i].PhotonCount < MinPi)
+			MinPi = Options.HitEvents[i].PhotonCount;
+	}
+	MPI = MPI / 10000;
+
+	for (int iy = 0; iy <10; iy++)
+	{
+		for (int ix = 0; ix <10; ix++)
+		{
+			std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] * (MPI) << "\t";
+		}
+		std::cout << "\n";
+	}
+
+	std::cout << "Max PI: " << MaxPi << "\t Min PI: " << MinPi << "\t M PI: " << MPI << "\n";
 
 
 	int x;

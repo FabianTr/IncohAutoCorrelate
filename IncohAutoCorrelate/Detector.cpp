@@ -483,5 +483,15 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 
 void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound)
 {
+	if (!BigMesh.Checklist.CofQMesh) //check if it is the right Mesh
+	{
+		std::cerr << "ERROR: BigMesh argument is not a CofQ-Mesh\n";
+		std::cerr << "   ->  in Detector::AutoCorrelate_CofQ()\n";
+		throw;
+	}
+
+
+
+	//ToImplement
 }
 

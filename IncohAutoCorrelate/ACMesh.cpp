@@ -51,6 +51,7 @@ void ACMesh::CreateSmallMeshForDetector(Detector Det, int PerpSize)
 	
 	delete Mesh;
 	Mesh = new unsigned int[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
+	Checklist.SmallMesh = true;
 }
 
 void ACMesh::CreateBigMeshForDetector(Detector Det, int EdgeSize)
@@ -81,6 +82,38 @@ void ACMesh::CreateBigMeshForDetector(Detector Det, int EdgeSize)
 
 	delete Mesh;
 	Mesh = new unsigned int[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
+	Checklist.BigMesh = true;
+}
+
+void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize)
+{
+	if (EdgeSize % 2 == 0)//check if PerpSize is even or odd 
+	{
+		std::cerr << "ERROR: Meshsize must be odd for each dimension.\n";
+		std::cerr << "   ->: ACMesh::CreateBigMeshForDetector()\n";
+		throw std::invalid_argument("PerpSize must be odd");
+	}
+
+	//Shape is trivial (k-map native):
+	Shape.k_A = 0;
+	Shape.k_B = 1;
+	Shape.k_C = 2;
+
+	//Set Size (cubic)
+	Shape.Size_AB = EdgeSize + 2;//+2 padding
+	Shape.Size_C = Shape.Size_AB;
+
+	Shape.Center[0] = (Shape.Size_AB - 1) / 2;
+	Shape.Center[1] = (Shape.Size_AB - 1) / 2;
+	Shape.Center[2] = (Shape.Size_C - 1) / 2;
+
+	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2]);
+
+	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1) / 2) - 2); //Calculate Voxel Size (the last -2 takes care of zero padding)
+
+	delete CQMesh;
+	CQMesh = new double[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
+	Checklist.CofQMesh = true;
 }
 
 void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode)
@@ -92,6 +125,7 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 	switch (InterpolationMode)
 	{
 	case  Settings::Interpolation::NearestNeighbour:
+	{
 		int fs, ms, ss;
 		fs = (int)floorf(q[0] + 0.5) + Shape.Center[0];
 		ms = (int)floorf(q[1] + 0.5) + Shape.Center[1];
@@ -101,13 +135,14 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 		val = Options->FloatToInt(Value);
 
 		#pragma omp atomic
-		Mesh[fs + ms*fs + ss*ms*fs] += val;
-	
+		Mesh[fs + ms * fs + ss * ms*fs] += val;
+
 		//if (std::max(std::max(fabs(q[0]), fabs(q[1])),fabs(q[2])) > 300)
 		//	std::cout << "q: " << q[0] << ", " << q[1] << ", " << q[2] << ";\t V = " << Value << " -> " << val << ";\t fs,ms,ss: " << fs << " " << ms << " " << ss << "\n";
-
+	}
 		break;
 	case  Settings::Interpolation::Linear:
+	{
 		int fsf, msf, ssf; //fast-scan-, medium-scan-, slow-scan- floor
 		fsf = (int)floorf(q[0]) + Shape.Center[0];
 		msf = (int)floorf(q[1]) + Shape.Center[1];
@@ -123,26 +158,26 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 
 
 		#pragma omp atomic
-			Mesh[fs + ms * fs + ss * ms*fs] += val*(1- SepF)*(1- SepM)*(1- SepS);
+		Mesh[fsf + msf * fsf + ssf * msf*fsf] += val * (1 - SepF)*(1 - SepM)*(1 - SepS); // A + 0
 
 		#pragma omp atomic
-			Mesh[(fs+1) + (ms+0) * fs + (ss+0) * ms*fs] += val * (SepF)*(1 - SepM)*(1 - SepS);
+		Mesh[(fsf + 1) + (msf + 0) * (fsf+1) + (ssf + 0) * msf*(fsf+1)] += val * (SepF)*(1 - SepM)*(1 - SepS); //ssf + 1
 		#pragma omp atomic
-			Mesh[(fs+0) + (ms+1) * fs + (ss+0) * ms*fs] += val * (1 - SepF)*(SepM)*(1 - SepS);
+		Mesh[(fsf + 0) + (msf + 1) * fsf + (ssf + 0) * (msf+1)*fsf] += val * (1 - SepF)*(SepM)*(1 - SepS); //msf + 1
 		#pragma omp atomic
-			Mesh[(fs+0) + (ms+0) * fs + (ss+1) * ms*fs] += val * (1 - SepF)*(1 - SepM)*(SepS);
+		Mesh[(fsf + 0) + (msf + 0) * fsf + (ssf + 1) * msf*fsf] += val * (1 - SepF)*(1 - SepM)*(SepS); //ssf + 1
 
 		#pragma omp atomic
-			Mesh[(fs + 1) + (ms + 1) * fs + (ss + 0) * ms*fs] += val * (SepF)*(SepM)*(1 - SepS);
+		Mesh[(fsf + 1) + (msf  + 1) * (fsf+1) + (ssf + 0) * (msf+1)*(fsf+1)] += val * (SepF)*(SepM)*(1 - SepS); //ffs + 1 ; msf + 1
 		#pragma omp atomic
-			Mesh[(fs + 0) + (ms + 1) * fs + (ss + 1) * ms*fs] += val * (1 - SepF)*(SepM)*(SepS);
+		Mesh[(fsf + 0) + (msf + 1) * fsf + (ssf + 1) * (msf+1)*fsf] += val * (1 - SepF)*(SepM)*(SepS); //msf + 1 ; ssf + 1
 		#pragma omp atomic
-			Mesh[(fs + 1) + (ms + 0) * fs + (ss + 1) * ms*fs] += val * (SepF)*(1 - SepM)*(SepS);
+		Mesh[(fsf + 1) + (msf + 0) * (fsf+1) + (ssf + 1) * msf*(fsf+1)] += val * (SepF)*(1 - SepM)*(SepS); //ffs + 1 ; ssf + 1
 
 		#pragma omp atomic
-			Mesh[(fs + 1) + (ms + 1) * fs + (ss + 1) * ms*fs] += val * (SepF)*(SepM)*(SepS);
+		Mesh[(fsf + 1) + (msf + 1) * (fsf+1) + (ssf + 1) * (msf+1)*(fsf+1)] += val * (SepF)*(SepM)*(SepS); // A + 1
 
-
+	}
 		break;
 	default:
 		std::cerr << "ERROR: No valid interpolation mode choosen\n";

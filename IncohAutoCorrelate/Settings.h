@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <CL/cl.hpp>
 
 class Settings
 {
@@ -20,6 +21,16 @@ public:
 
 	void LoadStreamFile(char * Filename, char* DatasetFIntensity, bool InclMultiHits); //Filename for StreamFile, DatasetFIntensity for the Intensity in CXIFile, include Hits with multiple segmented crystals
 	void Echo(std::string output);
+
+	//OpenCL Stuff
+	void checkErr(cl_int err, const char * name);
+	std::vector<cl::Platform> platforms;
+	std::vector<cl::Device> devices;
+
+
+	void SetUp_OpenCL();
+
+	//
 
 
 	bool echo = false;

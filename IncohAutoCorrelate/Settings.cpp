@@ -1,6 +1,9 @@
+#define CL_ENABLE_EXCEPTIONS
+
 #include "Settings.h"
 #include <string>
 #include <math.h>
+
 
 
 
@@ -120,4 +123,43 @@ void Settings::Echo(std::string output)
 	if (echo)
 		std::cout << output << "\n";
 
+}
+
+
+
+//CL Stuff
+
+void Settings::checkErr(cl_int err, const char * name)
+{
+	if (err != CL_SUCCESS) {
+		std::cerr << "ERROR: " << name
+			<< " (" << err << ")" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+void Settings::SetUp_OpenCL()
+{
+	cl_int err;
+	cl::Platform::get(&platforms);
+
+	//Find NVIDIA Plattform
+	int pl_NVIDIA_Num = -1;
+	for (int i = 0; i<(int)platforms.size(); i++)
+	{
+		if (platforms[i].getInfo<CL_PLATFORM_NAME>()[0] == 'N')
+			pl_NVIDIA_Num = i;
+	}
+	if (pl_NVIDIA_Num == -1)
+	{
+		std::cout << "No NVIDIA grafic cards found\n";
+		return;
+	}
+
+	//create Context
+	cl_context_properties cprops[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[pl_NVIDIA_Num])(),0 };
+	cl::Context context(CL_DEVICE_TYPE_GPU, cprops, NULL, NULL, NULL);
+
+
+	
 }
