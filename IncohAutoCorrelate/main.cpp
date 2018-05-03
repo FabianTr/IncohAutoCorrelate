@@ -92,9 +92,15 @@ int main()
 
 	Options.Echo("Create sparese detector");
 	TestDet.CreateSparseHitList(3.2f, 6.4f);//
-	Detector::AutoCorrFlags flags;
-	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-	TestDet.AutoCorrelateSparseList(BigMesh, flags);
+	Detector::AutoCorrFlags ACflags;
+	ACflags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+	TestDet.AutoCorrelateSparseList(BigMesh, ACflags);
+
+
+
+
+
+
 
 
 	//Options.Echo("AutoCorrelate");
@@ -114,57 +120,73 @@ int main()
 	//
 	//profiler.Toc(true);
 
-	Options.Echo("Load and average intensities");
+	Options.Echo("Load and average intensities (1000x)");
 	profiler.Tic();
-	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f,6.4f, 0, 5000);
+	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f,6.4f, 0, 1000);
 	profiler.Toc(true);
-	std::cout << "\n";
+	std::cout << "done.\n";
 
-	int ind = 0;
-	for (int i = 0; i < 10; i++)
-	{
-		for (int j = 0; j < 10; j++)
-		{
-			std::cout << Options.HitEvents[ind].PhotonCount << " : " << Options.HitEvents[ind].MeanIntensity << "\t";
-			ind++;
-		}
-		std::cout << "\n";
-	}
-	std::cout << "\n\n\n";
 
-	for (int iy = 0; iy <10; iy++)
-	{
-		for (int ix = 0; ix <10; ix++)
-		{
-			std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "\t";
-		}
-		std::cout << "\n";
-	}
-	std::cout << "\n\n\n";
+	Options.Echo("Create C(q) - Mesh");
 
-	double MPI = 0;
-	double MinPi = 99999;
-	double MaxPi = 0;
-	for (int i = 0; i < 5000; i++)
-	{
-		MPI += Options.HitEvents[i].PhotonCount;
-		if (Options.HitEvents[i].PhotonCount > MaxPi)
-			MaxPi = Options.HitEvents[i].PhotonCount;
-		if (Options.HitEvents[i].PhotonCount < MinPi)
-			MinPi = Options.HitEvents[i].PhotonCount;
-	}
-	MPI = MPI / 10000;
+	ACMesh CQMesh;
+	CQMesh.CreateBigMesh_CofQ_ForDetector(TestDet, 1025);
 
-	for (int iy = 0; iy <10; iy++)
+
+	std::vector<Settings::HitEvent> SmallEventList;
+	for (unsigned int i = 0; i < 1000; i++)
 	{
-		for (int ix = 0; ix <10; ix++)
-		{
-			std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] * (MPI) << "\t";
-		}
-		std::cout << "\n";
+		SmallEventList.push_back(Options.HitEvents[i]);
 	}
 
-	std::cout << "Max PI: " << MaxPi << "\t Min PI: " << MinPi << "\t M PI: " << MPI << "\n";
+	Detector::AutoCorrFlags flags;
+	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 1000, Options);
+
+	//int ind = 0;
+	//for (int i = 0; i < 10; i++)
+	//{
+	//	for (int j = 0; j < 10; j++)
+	//	{
+	//		std::cout << Options.HitEvents[ind].PhotonCount << " : " << Options.HitEvents[ind].MeanIntensity << "\t";
+	//		ind++;
+	//	}
+	//	std::cout << "\n";
+	//}
+	//std::cout << "\n\n\n";
+
+	//for (int iy = 0; iy <10; iy++)
+	//{
+	//	for (int ix = 0; ix <10; ix++)
+	//	{
+	//		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "\t";
+	//	}
+	//	std::cout << "\n";
+	//}
+	//std::cout << "\n\n\n";
+
+	//double MPI = 0;
+	//double MinPi = 99999;
+	//double MaxPi = 0;
+	//for (int i = 0; i < 5000; i++)
+	//{
+	//	MPI += Options.HitEvents[i].PhotonCount;
+	//	if (Options.HitEvents[i].PhotonCount > MaxPi)
+	//		MaxPi = Options.HitEvents[i].PhotonCount;
+	//	if (Options.HitEvents[i].PhotonCount < MinPi)
+	//		MinPi = Options.HitEvents[i].PhotonCount;
+	//}
+	//MPI = MPI / 10000;
+
+	//for (int iy = 0; iy <10; iy++)
+	//{
+	//	for (int ix = 0; ix <10; ix++)
+	//	{
+	//		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] * (MPI) << "\t";
+	//	}
+	//	std::cout << "\n";
+	//}
+
+	//std::cout << "Max PI: " << MaxPi << "\t Min PI: " << MinPi << "\t M PI: " << MPI << "\n";
 
 
 	

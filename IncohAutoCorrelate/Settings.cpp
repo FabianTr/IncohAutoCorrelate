@@ -141,16 +141,16 @@ void Settings::checkErr(cl_int err, const char * name)
 void Settings::SetUp_OpenCL()
 {
 	cl_int err;
-	cl::Platform::get(&platforms);
+	cl::Platform::get(&CL_platforms);
 
 	//Find NVIDIA Plattform
 	int pl_NVIDIA_Num = -1;
-	for (int i = 0; i<(int)platforms.size(); i++)
+	for (int i = 0; i<(int)CL_platforms.size(); i++)
 	{
-		if (platforms[i].getInfo<CL_PLATFORM_NAME>()[0] == 'N')
+		if (CL_platforms[i].getInfo<CL_PLATFORM_NAME>()[0] == 'N')
 		{
 			if (echo)
-				std::cout << "OpenCL GPU Plattform found: '" << platforms[i].getInfo<CL_PLATFORM_NAME>() << "'\n";
+				std::cout << "OpenCL GPU Plattform found: '" << CL_platforms[i].getInfo<CL_PLATFORM_NAME>() << "'\n";
 			pl_NVIDIA_Num = i;
 		}
 	}
@@ -162,14 +162,14 @@ void Settings::SetUp_OpenCL()
 	}
 
 	//create Context
-	cl_context_properties cprops[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[pl_NVIDIA_Num])(),0 };
-	cl::Context context(CL_DEVICE_TYPE_GPU, cprops, NULL, NULL, NULL);
+	cl_context_properties cprops[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)(CL_platforms[pl_NVIDIA_Num])(),0 };
+	CL_context = cl::Context(CL_DEVICE_TYPE_GPU, cprops, NULL, NULL, NULL);
 
 	//Devices
-	devices = context.getInfo<CL_CONTEXT_DEVICES>();
+	CL_devices = CL_context.getInfo<CL_CONTEXT_DEVICES>();
 	if(echo)
-		std::cout << "Number of OpenCL devices: " << devices.size() << "\n";
-	int NumberOfDevices = (int) devices.size();
+		std::cout << "Number of OpenCL devices: " << CL_devices.size() << "\n";
+	int NumberOfDevices = (int) CL_devices.size();
 	if (NumberOfDevices == 0)
 	{
 		std::cerr << "ERROR: No OpenCL Devices found\n";
@@ -177,9 +177,51 @@ void Settings::SetUp_OpenCL()
 		throw;
 	}
 
+
+	
+
+	//load Kernel FIle
+	std::ifstream file("kernel.cl");
+	std::string prog(std::istreambuf_iterator<char>(file), (std::istreambuf_iterator<char>()));
+	file.close();
+
+	if (prog == "")
+	{
+		std::cerr << "ERROR: kernel.cl not found\n";
+		std::cerr << "   ->  in Settings::SetUp_OpenCL()\n";
+		throw;
+	}
+
+	//compile Kernel
+	Echo("Compile OpenCL kernels");
+
+	cl::Program::Sources source(1, std::make_pair(prog.c_str(), prog.length() + 1));
+	CL_Program = cl::Program(CL_context, source);
+	err = CL_Program.build(CL_devices);
+	if (err == -11)
+	{
+		for (cl::Device dev : CL_devices)
+		{
+			// Check the build status
+			cl_build_status status = CL_Program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(dev);
+			if (status != CL_BUILD_ERROR)
+				continue;
+
+			// Get the build log
+			std::string name = dev.getInfo<CL_DEVICE_NAME>();
+			std::string buildlog = CL_Program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev);
+			std::cerr << "Build log for " << name << ":" << std::endl
+				<< buildlog << std::endl;
+		}
+	}
+	checkErr(err, "Kernel compile error. Check kernel.cl!");
+
+
+
+
 	//Create OCL Device Pool
 	OCL_Available.clear();
-	for (unsigned int i = 0; i < devices.size(); i++)
+	for (unsigned int i = 0; i < CL_devices.size(); i++)
 	{
 		OCL_Available.push_back(true);
 	}

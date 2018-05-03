@@ -17,7 +17,7 @@
 class Detector
 {
 private:
-
+	
 
 	//Pixelmap Stuff
 	struct XMapExtremeV { float max_x, min_x, max_y, min_y, max_z, min_z; };
@@ -76,8 +76,7 @@ public:
 
 	//Correlation Kernels:
 	void AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags);
-	void AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, Settings Options);
-
+	void AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, Settings& Options);
 
 
 //Vars

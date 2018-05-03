@@ -62,6 +62,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\Linux Include;$(IncludePath)</IncludePath>
+    <AdditionalSourcesToCopyMapping>kernel.cl;$(AdditionalSourcesToCopyMapping)</AdditionalSourcesToCopyMapping>
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="ACMesh.cpp" />
@@ -100,6 +101,12 @@
       <AdditionalDependencies>/opt/opencl/intel/lib64/libOpenCL.so;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>-lgomp -lz -lm -lsz -ldl -lhdf5 -lhdf5_cpp -lpthread %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)\kernel.cl" "$(TargetDir)\kernel.cl" </Command>
+    </PostBuildEvent>
+    <RemotePostBuildEvent>
+      <Command>cp $(RemoteProjectDir)/IncohAutoCorrelate/kernel.cl $(RemoteOutDir)/kernel.cl</Command>
+    </RemotePostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

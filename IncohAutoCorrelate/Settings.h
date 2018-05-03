@@ -10,8 +10,12 @@
 #include <string>
 #include <vector>
 #include <array>
+
+
 #include <CL/cl.hpp>
+
 #include <omp.h>
+
 
 class Settings
 {
@@ -25,16 +29,17 @@ public:
 
 	//OpenCL Stuff
 	void checkErr(cl_int err, const char * name);
-	std::vector<cl::Platform> platforms;
-	std::vector<cl::Device> devices;
-
+	std::vector<cl::Platform> CL_platforms;
+	std::vector<cl::Device> CL_devices;
+	cl::Context CL_context;
+	cl::Program CL_Program;
 
 	void SetUp_OpenCL();
 	//GPU DEVICE POOL
 	std::vector<bool> OCL_Available;
 	int OCL_ReserveDevice();
 	void OCL_FreeDevice(int DeviceIndex);
-	unsigned int ThreadSleepForOCLDev = 60000; // in microseconds
+	unsigned int ThreadSleepForOCLDev = 60000; // Time to wait (per loop) for free device if all devices are occupied in microseconds
 	//END DEVICE POOL
 
 

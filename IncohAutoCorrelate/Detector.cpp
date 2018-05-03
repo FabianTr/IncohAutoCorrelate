@@ -9,7 +9,8 @@
 #include <string>
 #include "H5Cpp.h"
 #include "ArrayOperators.h"
-
+#include <thread>         
+#include <chrono> 
 
 
 
@@ -480,7 +481,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 
 }
 
-void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, Settings Options)
+void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, Settings& Options)
 {
 	if (!BigMesh.Checklist.CofQMesh) //check if it is the right Mesh
 	{
@@ -494,11 +495,16 @@ void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::ve
 
 	while ((OpenCLDeviceNumber = Options.OCL_ReserveDevice()) == -1)
 	{
-		
+		std::this_thread::sleep_for(std::chrono::microseconds(Options.ThreadSleepForOCLDev));
 	}
 
+	std::cout << "AC C(q) - function:\n************************\n\n";
+	std::cout << "reserved OpenCl device number: " << OpenCLDeviceNumber << "\n";
 
 
 	//ToImplement
+
+	//Free Device
+	Options.OCL_FreeDevice(OpenCLDeviceNumber);
 }
 
