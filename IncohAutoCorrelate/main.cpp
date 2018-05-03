@@ -31,6 +31,7 @@
 
 int main()
 {
+	int end;
 	ProfileTime profiler;
 	Settings Options;
 	Options.echo = true;
@@ -39,13 +40,13 @@ int main()
 	
 
 
-	//Options.Echo("Load Open CL stuff:\n");
+	Options.Echo("Load Open CL stuff:\n");
 
-	//Options.SetUp_OpenCL();
+	Options.SetUp_OpenCL();
 
-	//int x;
+	
 	//std::cout << "Program ended\n";
-	//std::cin >> x;
+	//std::cin >> end;
 	//return 0;
 
 
@@ -166,8 +167,8 @@ int main()
 	std::cout << "Max PI: " << MaxPi << "\t Min PI: " << MinPi << "\t M PI: " << MPI << "\n";
 
 
-	int x;
+	
 	std::cout << "Program ended\n";
-	std::cin >> x;
+	std::cin >> end;
     return 0;
 }

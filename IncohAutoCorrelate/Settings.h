@@ -11,6 +11,7 @@
 #include <vector>
 #include <array>
 #include <CL/cl.hpp>
+#include <omp.h>
 
 class Settings
 {
@@ -29,7 +30,11 @@ public:
 
 
 	void SetUp_OpenCL();
-
+	//GPU DEVICE POOL
+	std::vector<bool> OCL_Available;
+	int OCL_ReserveDevice();
+	void OCL_FreeDevice(int DeviceIndex);
+	//END DEVICE POOL
 	//
 
 
@@ -71,5 +76,10 @@ public:
 	}
 
 
+	struct SettingsChecklist {
+		bool OpenCL = false;
+	};
+	
+	SettingsChecklist  Checklist;
 };
 

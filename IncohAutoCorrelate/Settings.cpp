@@ -127,7 +127,7 @@ void Settings::Echo(std::string output)
 
 
 
-//CL Stuff
+//OpenCL Stuff
 
 void Settings::checkErr(cl_int err, const char * name)
 {
@@ -148,18 +148,81 @@ void Settings::SetUp_OpenCL()
 	for (int i = 0; i<(int)platforms.size(); i++)
 	{
 		if (platforms[i].getInfo<CL_PLATFORM_NAME>()[0] == 'N')
+		{
+			if (echo)
+				std::cout << "OpenCL GPU Plattform found: '" << platforms[i].getInfo<CL_PLATFORM_NAME>() << "'\n";
 			pl_NVIDIA_Num = i;
+		}
 	}
 	if (pl_NVIDIA_Num == -1)
 	{
-		std::cout << "No NVIDIA grafic cards found\n";
-		return;
+		std::cerr << "ERROR: No NVIDIA GPUs found\n";
+		std::cerr << "    -> in Settings::SetUp_OpenCL()\n";
+		throw;
 	}
 
 	//create Context
 	cl_context_properties cprops[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[pl_NVIDIA_Num])(),0 };
 	cl::Context context(CL_DEVICE_TYPE_GPU, cprops, NULL, NULL, NULL);
 
+	//Devices
+	devices = context.getInfo<CL_CONTEXT_DEVICES>();
+	if(echo)
+		std::cout << "Number of OpenCL devices: " << devices.size() << "\n";
+	int NumberOfDevices = devices.size();
+	if (NumberOfDevices == 0)
+	{
+		std::cerr << "ERROR: No OpenCL Devices found\n";
+		std::cerr << "    -> in Settings::SetUp_OpenCL()\n";
+		throw;
+	}
 
-	
+	//Create OCL Device Pool
+	OCL_Available.clear();
+	for (int i = 0; i < devices.size(); i++)
+	{
+		OCL_Available.push_back(true);
+	}
+
+	Checklist.OpenCL = true;
+}
+
+int Settings::OCL_ReserveDevice()
+{
+	if (!Checklist.OpenCL)
+	{
+		std::cerr << "ERROR: OpenCL Setup required. Launch 'SetUp_OpenCL()' first. \n";
+		std::cerr << "    -> Settings::OCL_ReserveDevice()\n";
+		throw;
+	}
+
+	int index = -1;
+	#pragma omp critical(OCLPoolManagement) //needs to be serial (avoid raceconditions!)
+	{
+		for (int i = 0; i < OCL_Available.size(); i++)
+		{
+			if (OCL_Available[i] && index == -1)
+			{
+				index = i;
+				OCL_Available[index] = false;
+			}
+		}
+	}
+
+	return index; // if index = -1 => no device available
+}
+
+void Settings::OCL_FreeDevice(int DeviceIndex)
+{
+	if (!Checklist.OpenCL)
+	{
+		std::cerr << "ERROR: OpenCL Setup required. Launch 'SetUp_OpenCL()' first. \n";
+		std::cerr << "    -> Settings::OCL_ReserveDevice()\n";
+		throw;
+	}
+
+	#pragma omp critical(OCLPoolManagement) //needs to be serial (avoid raceconditions!)
+	{
+		OCL_Available[DeviceIndex] = true;
+	}
 }

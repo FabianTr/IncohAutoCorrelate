@@ -80,7 +80,9 @@ void ACMesh::CreateBigMeshForDetector(Detector Det, int EdgeSize)
 
 	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1)/2)  - 2); //Calculate Voxel Size (the last -2 takes care of zero padding)
 
-	delete Mesh;
+
+	delete[] Mesh;
+
 	Mesh = new unsigned int[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 	Checklist.BigMesh = true;
 }

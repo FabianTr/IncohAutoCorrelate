@@ -13,9 +13,10 @@ public:
 	ACMesh();
 	~ACMesh();
 
-	double* CQMesh;
+	double* CQMesh = NULL;
+	unsigned int* Mesh = NULL; // "virt" 3DArray [a,b,z] dimensions are not the same as Detector Geometry dimensions 
 
-	unsigned int* Mesh; // "virt" 3DArray [a,b,z] dimensions are not the same as Detector Geometry dimensions 
+
 	struct MeshShape { 
 		int k_A, k_B, k_C; //the Dimension alignement k_A is, by definition, the biggest, and K_C the smallest |:| K_A is fast scan and K_C is slow scan
 		int Size_AB, Size_C; //Mesh size with padding (+1 in each direction)
