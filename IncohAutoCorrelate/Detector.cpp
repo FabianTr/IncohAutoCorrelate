@@ -23,10 +23,9 @@ Detector::~Detector()
 {
 }
 
- 
-
 
 //Helpfunctions
+
 
 inline float Detector::DiscretizeToPhotones(float Value, float Threshold, float PhotonSamplingStep) //create single Photon counting by simple thresholding
 {
@@ -51,9 +50,9 @@ void Detector::Calc_PixelMapExtremeValues()
 	PixelMapExtend.min_x = 9999999;
 	PixelMapExtend.min_y = 9999999;
 	PixelMapExtend.min_z = 9999999;
-	for (int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
+	for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
 	{
-		int ind = i * 3;
+		unsigned int ind = i * 3;
 		if (PixelMap[ind + 0] > PixelMapExtend.max_x)
 			PixelMapExtend.max_x = PixelMap[ind + 0];
 		if (PixelMap[ind + 0] < PixelMapExtend.min_x)
@@ -151,9 +150,9 @@ void Detector::Calc_kMap()
 	Min_k[1] = std::numeric_limits<float>::max();
 	Min_k[2] = std::numeric_limits<float>::max();
 
-	for (int i_x = 0; i_x < DetectorSize[0]; i_x++)
+	for (unsigned int i_x = 0; i_x < DetectorSize[0]; i_x++)
 	{
-		for (int i_y = 0; i_y < DetectorSize[1]; i_y++)
+		for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
 		{
 			float x, y, z, r;
 			x = GetPixelPos(0, i_x, i_y);
@@ -243,11 +242,11 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 		H5::DataSpace mspace(3, dims);
 		dataset.read(TmpPixleMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
 
-		for (int i_y = 0; i_y < dims[2]; i_y++)
+		for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
 		{
-			for (int i_x = 0; i_x < dims[1]; i_x++)
+			for (unsigned int i_x = 0; i_x < dims[1]; i_x++)
 			{
-				for (int i_d = 0; i_d < 3; i_d++)
+				for (unsigned int i_d = 0; i_d < 3; i_d++)
 				{
 					PixelMap[i_d + 3*i_x + 3*dims[1]*i_y] = TmpPixleMap[i_y + dims[2]*i_x + dims[2]*dims[1]*i_d];
 				}
@@ -305,7 +304,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 			else// Photon discretising
 			{
 				#pragma omp parallel for
-				for (int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
+				for (unsigned int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
 				{
 					if (tmpIntensity[i] >= Threshold)
 					{
@@ -329,7 +328,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 	if (PhotonSamplingStep > 0)
 	{
 		#pragma omp parallel for
-		for (int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
+		for (unsigned int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
 		{
 			Intensity[i] = (float)IntensityPhotonDiscr[i];
 		}
@@ -373,9 +372,9 @@ void Detector::CreateSparseHitList(float Threshold)
 
 	TmpSparseVecStr* TmpSparseVec = new TmpSparseVecStr[DetectorSize[1]];
 
-	for (int i_y = 0; i_y < DetectorSize[1]; i_y++)
+	for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
 	{
-		for (int i_x = 0; i_x < DetectorSize[0]; i_x++)
+		for (unsigned int i_x = 0; i_x < DetectorSize[0]; i_x++)
 		{
 			if (Intensity[i_x + DetectorSize[0]* i_y] >= Threshold)
 			{
@@ -390,7 +389,7 @@ void Detector::CreateSparseHitList(float Threshold)
 		}
 	}
 
-	for (int i_y = 0; i_y < DetectorSize[1]; i_y++)
+	for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
 	{
 		SparseHitList.insert(SparseHitList.end(), TmpSparseVec[i_y].Vec.begin(), TmpSparseVec[i_y].Vec.end());
 	}
@@ -401,7 +400,7 @@ void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
 {
 	CreateSparseHitList(Threshold);
 	#pragma omp parallel for
-	for (int i = 0; i < SparseHitList.size(); i++)
+	for (unsigned int i = 0; i < SparseHitList.size(); i++)
 	{
 		SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
 	}
@@ -416,7 +415,7 @@ float Detector::CalculateMeanIntensity(bool FromSparse)
 	double IntInt = 0;
 	if (FromSparse)
 	{
-		for (int i = 0; i < SparseHitList.size(); i++)
+		for (unsigned int i = 0; i < SparseHitList.size(); i++)
 		{
 			IntInt += SparseHitList[i][3];
 		}
@@ -424,7 +423,7 @@ float Detector::CalculateMeanIntensity(bool FromSparse)
 	}
 	else
 	{
-		for (int i = 0; i < DetectorSize[0]* DetectorSize[1]; i++)
+		for (unsigned int i = 0; i < DetectorSize[0]* DetectorSize[1]; i++)
 		{
 			IntInt += Intensity[i];
 		}
@@ -457,9 +456,9 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 	}
 	//Implementation for CPU
 	#pragma omp parallel for
-	for (int i = 0; i < SparseHitList.size(); i++)
+	for (unsigned int i = 0; i < SparseHitList.size(); i++)
 	{
-		for (int j = i; j < SparseHitList.size(); j++)
+		for (unsigned int j = i; j < SparseHitList.size(); j++)
 		{
 			if (j == i)
 				continue;
@@ -481,13 +480,21 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 
 }
 
-void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound)
+void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, Settings Options)
 {
 	if (!BigMesh.Checklist.CofQMesh) //check if it is the right Mesh
 	{
 		std::cerr << "ERROR: BigMesh argument is not a CofQ-Mesh\n";
 		std::cerr << "   ->  in Detector::AutoCorrelate_CofQ()\n";
 		throw;
+	}
+
+	//reserve OpenCL Device
+	int OpenCLDeviceNumber = -1;
+
+	while ((OpenCLDeviceNumber = Options.OCL_ReserveDevice()) == -1)
+	{
+		
 	}
 
 

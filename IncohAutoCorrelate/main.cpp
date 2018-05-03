@@ -116,7 +116,7 @@ int main()
 
 	Options.Echo("Load and average intensities");
 	profiler.Tic();
-	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2,6.4, 0, 5000);
+	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f,6.4f, 0, 5000);
 	profiler.Toc(true);
 	std::cout << "\n";
 

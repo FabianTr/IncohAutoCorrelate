@@ -95,7 +95,7 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 		if (!(tmpHitEvents[0].Event == tmpHitEvents[1].Event &&  tmpHitEvents[0].Filename == tmpHitEvents[1].Filename))
 			HitEvents.push_back(tmpHitEvents[0]);
 		//check events [1:end-1]
-		for (int i = 1; i < tmpHitEvents.size() - 1; i++)
+		for (unsigned int i = 1; i < tmpHitEvents.size() - 1; i++)
 		{
 			if ((tmpHitEvents[i].Event == tmpHitEvents[i - 1].Event &&  tmpHitEvents[i].Filename == tmpHitEvents[i - 1].Filename) || (tmpHitEvents[i].Event == tmpHitEvents[i + 1].Event && tmpHitEvents[i].Filename == tmpHitEvents[i + 1].Filename))
 				continue;
@@ -169,7 +169,7 @@ void Settings::SetUp_OpenCL()
 	devices = context.getInfo<CL_CONTEXT_DEVICES>();
 	if(echo)
 		std::cout << "Number of OpenCL devices: " << devices.size() << "\n";
-	int NumberOfDevices = devices.size();
+	int NumberOfDevices = (int) devices.size();
 	if (NumberOfDevices == 0)
 	{
 		std::cerr << "ERROR: No OpenCL Devices found\n";
@@ -179,7 +179,7 @@ void Settings::SetUp_OpenCL()
 
 	//Create OCL Device Pool
 	OCL_Available.clear();
-	for (int i = 0; i < devices.size(); i++)
+	for (unsigned int i = 0; i < devices.size(); i++)
 	{
 		OCL_Available.push_back(true);
 	}
@@ -199,7 +199,7 @@ int Settings::OCL_ReserveDevice()
 	int index = -1;
 	#pragma omp critical(OCLPoolManagement) //needs to be serial (avoid raceconditions!)
 	{
-		for (int i = 0; i < OCL_Available.size(); i++)
+		for (unsigned int i = 0; i < OCL_Available.size(); i++)
 		{
 			if (OCL_Available[i] && index == -1)
 			{
@@ -226,3 +226,4 @@ void Settings::OCL_FreeDevice(int DeviceIndex)
 		OCL_Available[DeviceIndex] = true;
 	}
 }
+

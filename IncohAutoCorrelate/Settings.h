@@ -34,8 +34,9 @@ public:
 	std::vector<bool> OCL_Available;
 	int OCL_ReserveDevice();
 	void OCL_FreeDevice(int DeviceIndex);
+	unsigned int ThreadSleepForOCLDev = 60000; // in microseconds
 	//END DEVICE POOL
-	//
+
 
 
 	bool echo = false;
@@ -72,7 +73,7 @@ public:
 	}
 	inline float IntToFloat( int i)
 	{
-		return (float)(i * F_I_Conversion.Step) - (float)(F_I_Conversion.Offset );
+		return ((float)i * F_I_Conversion.Step)- (float)(F_I_Conversion.Offset );
 	}
 
 
