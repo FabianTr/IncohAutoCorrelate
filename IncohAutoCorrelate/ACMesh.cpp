@@ -76,7 +76,7 @@ void ACMesh::CreateBigMeshForDetector(Detector Det, int EdgeSize)
 	Shape.Center[1] = (Shape.Size_AB - 1) / 2;
 	Shape.Center[2] = (Shape.Size_C - 1) / 2;
 
-	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2]);
+	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2])* sqrt(2.00001);//sqrt(2.00001) is factor to ensure every rotation fits in mesh
 
 	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1)/2)  - 2); //Calculate Voxel Size (the last -2 takes care of zero padding)
 
@@ -109,7 +109,7 @@ void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize)
 	Shape.Center[1] = (Shape.Size_AB - 1) / 2;
 	Shape.Center[2] = (Shape.Size_C - 1) / 2;
 
-	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2]);
+	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2]) * sqrt(2.00001);//sqrt(2.00001) is factor to ensure every rotation fits in mesh
 
 	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1) / 2) - 2); //Calculate Voxel Size (the last -2 takes care of zero padding)
 

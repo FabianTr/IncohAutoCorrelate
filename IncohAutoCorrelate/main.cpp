@@ -109,6 +109,8 @@ int main()
 	TestDet.CreateSparseHitList(3.2f, 6.4f);//
 	Detector::AutoCorrFlags ACflags;
 	ACflags.InterpolationMode = Settings::Interpolation::Linear;
+
+	Options.Echo("check");
 	TestDet.AutoCorrelateSparseList(BigMesh, ACflags);
 
 

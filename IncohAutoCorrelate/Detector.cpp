@@ -465,17 +465,17 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 			if (j == i)
 				continue;
 			float q[3];
-			float RM[9] = { 1,0,0,0,1,0,0,0,1 };//TODO IMPLEMENT ROTATION MATRIX -> THIS IS A DUMMY
+			//float RM[9] = { 1,0,0,0,1,0,0,0,1 };//TODO IMPLEMENT ROTATION MATRIX -> THIS IS A DUMMY
 
 			q[0] = SparseHitList[i][0] - SparseHitList[j][0];
 			q[1] = SparseHitList[i][1] - SparseHitList[j][1];
 			q[2] = SparseHitList[i][2] - SparseHitList[j][2];
-			BigMesh.Atomic_Add_q_Entry(q, RM, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
+			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
 			//std::cout << SparseHitList[i][3] * SparseHitList[j][3] << ", ";
 			q[0] = SparseHitList[j][0] - SparseHitList[i][0];
 			q[1] = SparseHitList[j][1] - SparseHitList[i][1];
 			q[2] = SparseHitList[j][2] - SparseHitList[i][2];
-			BigMesh.Atomic_Add_q_Entry(q,RM, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
+			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
 		}
 	}
 

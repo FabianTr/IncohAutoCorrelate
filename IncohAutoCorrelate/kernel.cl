@@ -67,7 +67,7 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 	
 
 //Debug Bullshit
-	if (ind == 0)
+	if (ind == 0)//ind == 0
 	{
 		printf("Kernel is alive\n");
 		printf("Detector Size: %d\n", DetSize);
