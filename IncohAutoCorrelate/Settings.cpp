@@ -59,7 +59,6 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 		}
 		if (line.compare("--- Begin crystal") == 0)
 		{
-			//shots.push_back(CRYSTAL());
 
 			while (getline(File, line))
 			{
@@ -198,7 +197,7 @@ void Settings::SetUp_OpenCL()
 	cl::Program::Sources source(1, std::make_pair(prog.c_str(), prog.length() + 1));
 	CL_Program = cl::Program(CL_context, source);
 	err = CL_Program.build(CL_devices);
-	if (err == -11)
+	if (err != 0)
 	{
 		for (cl::Device dev : CL_devices)
 		{

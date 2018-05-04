@@ -45,7 +45,7 @@ inline double d_min(double a, double b)
 }
 
 
-__kernel void AutoCorr_CQ(__global const unsigned int *IntensityData,
+__kernel void AutoCorr_CQ(__global const float *IntensityData,
 	__global const float *KMap,
 	__global const float *Rotations_and_Weights,
 	__global const double *Params,
@@ -54,183 +54,114 @@ __kernel void AutoCorr_CQ(__global const unsigned int *IntensityData,
 	int ind = get_global_id(0);
 	//double Params[5];
 	//Params[0] = DetSize; //Numer of pixels (size[0]*size[1])
-	//Params[1] = deltaV; //Voxel Unit
-	//Params[2] = MeshSize; // [a, a, (a+1)/2]
+	//Params[1] = deltaV; //dq per Voxel
+	//Params[2] = MeshSize; //  a  (V = a*a*(a+1)/2)
 	//Params[3] = NumberOfEvents; // how many events, for roataion and weight loop
 	//Params[4] = InterpolationMode;
 
+	unsigned int DetSize = (unsigned int)Params[0];
+	float dqPerVox = (float)Params[1];
+	unsigned int MeshSize = (unsigned int)Params[2];
+	unsigned int NumEvents = (unsigned int)Params[3];
+	int InterpolMode = (unsigned int)Params[4];
+	
+
+//Debug Bullshit
+	if (ind == 0)
+	{
+		printf("Kernel is alive\n");
+		printf("Detector Size: %d\n", DetSize);
+		printf("Number of Events: %d\n", NumEvents);
+		printf("Interpolation mode: %d\n", InterpolMode);
+		printf("Mesh Size: %d\n", MeshSize);
+		printf("dq per Vox: %d\n", dqPerVox);
+	}
+//END
+	//local Variables
+	float k1[3];
+	float k2[3];
+	float q_RAW[3];
+
+	k1[0] = KMap[0 + 3 * ind];
+	k1[1] = KMap[1 + 3 * ind];
+	k1[2] = KMap[2 + 3 * ind];
+
+	float q[3];
 
 
+	for (unsigned int i = 0; i < DetSize; i++) //Loop over all Pixel
+	{
+		if (i == ind) //exclude zeroth peak
+		{
+			continue;
+		}
+
+		float Val_RAW = IntensityData[ind] * IntensityData[i];
+		k2[0] = KMap[0 + 3 * i];
+		k2[1] = KMap[1 + 3 * i];
+		k2[2] = KMap[2 + 3 * i];
+		q_RAW[0] = k1[0] - k2[0];
+		q_RAW[1] = k1[1] - k2[1];
+		q_RAW[2] = k1[2] - k2[2];
+
+		int MeshCenter = (MeshSize-1)/2;
+		
+
+		for (unsigned int j = 0; j < NumEvents; j++)//Loop over all Events
+		{
+			//rotate
+			q[0] = q_RAW[0] * Rotations_and_Weights[0 + 10 * j] + q_RAW[1] * Rotations_and_Weights[1 + 10 * j] + q_RAW[2] * Rotations_and_Weights[2 + 10 * j];
+			q[1] = q_RAW[0] * Rotations_and_Weights[3 + 10 * j] + q_RAW[1] * Rotations_and_Weights[4 + 10 * j] + q_RAW[2] * Rotations_and_Weights[5 + 10 * j];
+			q[2] = q_RAW[0] * Rotations_and_Weights[6 + 10 * j] + q_RAW[1] * Rotations_and_Weights[7 + 10 * j] + q_RAW[2] * Rotations_and_Weights[8 + 10 * j];
+			// HALF MESH:
+			// Meshsize: [-fs/2, fs/2][-ms/2, ms/2],[0, ss/2] needed to save memory (1000x1000x500*8Byte ~= 4GB)
+			if (q[2] < 0) //needs to be mirrowed in postprocessing on the CPU!
+			{
+				continue;
+			}
+			//weight (by square of mean intensity)
+			float Val = Val_RAW * Rotations_and_Weights[9 + 10 * j] * Rotations_and_Weights[9 + 10 * j];
+
+			//resize (for Mapping)
+			q[0] = q[0] / dqPerVox;
+			q[1] = q[1] / dqPerVox;
+			q[2] = q[2] / dqPerVox;
+
+			//Map to Mesh
+			
+			if (InterpolMode == 0) //nearest Neighbor
+			{
+				unsigned int fs, ms, ss;//fast-scan-, medium-scan-, slow-scan- floor
+				fs = (unsigned int)floor(q[0] + 0.5) + MeshCenter;
+				ms = (unsigned int)floor(q[1] + 0.5) + MeshCenter;
+				ss = (unsigned int)floor(q[2] + 0.5);
+
+				atomic_add_float(&(CQ[fs + ms * MeshSize + ss * MeshSize*MeshSize]), Val);
+			}
+			if (InterpolMode == 1) //linear
+			{ 
+				unsigned int fsf, msf, ssf;//fast-scan-, medium-scan-, slow-scan- floor
+				fsf = (unsigned int)floor(q[0]) + MeshCenter;
+				msf = (unsigned int)floor(q[1]) + MeshCenter;
+				ssf = (unsigned int)floor(q[2]);
+				float SepF, SepM, SepS; //according Seperators
+				SepF = q[0] - floor(q[0]);
+				SepM = q[1] - floor(q[1]);
+				SepS = q[2] - floor(q[2]);
+
+				//add to mesh (8 entries each)
+				atomic_add_float(&(CQ[fsf + msf * MeshSize + ssf * MeshSize*MeshSize]), Val * (1 - SepF)*(1 - SepM)*(1 - SepS));              //A + 0
+				atomic_add_float(&(CQ[(fsf + 1) + (msf + 0) * MeshSize + (ssf + 0) * MeshSize*MeshSize]), Val * (SepF)*(1 - SepM)*(1 - SepS));//ssf + 1
+				atomic_add_float(&(CQ[(fsf + 0) + (msf + 1) * MeshSize + (ssf + 0) * MeshSize*MeshSize]), Val * (1 - SepF)*(SepM)*(1 - SepS));//msf + 1
+				atomic_add_float(&(CQ[(fsf + 0) + (msf + 0) * MeshSize + (ssf + 1) * MeshSize*MeshSize]), Val * (1 - SepF)*(1 - SepM)*(SepS));//ssf + 1
+				atomic_add_float(&(CQ[(fsf + 1) + (msf + 1) * MeshSize + (ssf + 0) * MeshSize*MeshSize]), Val * (SepF)*(SepM)*(1 - SepS));    //ffs + 1 ; msf + 1
+				atomic_add_float(&(CQ[(fsf + 0) + (msf + 1) * MeshSize + (ssf + 1) * MeshSize*MeshSize]), Val * (1 - SepF)*(SepM)*(SepS));    //msf + 1 ; ssf + 1
+				atomic_add_float(&(CQ[(fsf + 1) + (msf + 0) * MeshSize + (ssf + 1) * MeshSize*MeshSize]), Val * (SepF)*(1 - SepM)*(SepS));    //ffs + 1 ; ssf + 1
+				atomic_add_float(&(CQ[(fsf + 1) + (msf + 1) * MeshSize + (ssf + 1) * MeshSize*MeshSize]), Val * (SepF)*(SepM)*(SepS));        // A + 1
+			}
+
+
+			
+		}
+	}
 }
-
-
-
-
-
-
-
-
-
-//double VoxelSize = Params[1];
-//int max_PerpVox = (int)Params[2];
-//int max_ZVox = (int)Params[3];
-
-//int DetSize = (int)Params[0];
-//double DetDist = Params[5];
-
-////calculate Detector coordinates of current pixel (ind)
-//int x_ind_us = ind % DetSize;
-//int y_ind_us = ind / DetSize;
-//double shift = ((double)DetSize - 1.) / 2.;
-//double x_ind = (double)x_ind_us - shift;
-//double y_ind = (double)y_ind_us - shift;
-//double z_ind = sqrt(x_ind*x_ind + y_ind*y_ind + DetDist*DetDist) - DetDist;
-
-//double norm_0 = 1. / sqrt(x_ind*x_ind + y_ind*y_ind + DetDist*DetDist);
-//x_ind = x_ind * norm_0;
-//y_ind = y_ind * norm_0;
-//z_ind = z_ind * norm_0;
-//
-//int V_perp_shift = (max_PerpVox - 1) / 2;
-//int V_z_shift = (max_ZVox - 1) / 2;
-
-////printf("Params: %e \t %e \t %e \t %e \t %e \t %e \t \n", Params[0], Params[1], Params[2], Params[3], Params[4], Params[5]);
-////printf("x_ind_us: %i y_ind_us: %i x_ind: %e y_ind: %e z_ind %e \n", x_ind_us, y_ind_us, x_ind, y_ind, z_ind);
-////printf("shift: %i V_perp_shift: %i V_z_shift: %e\n", shift, V_perp_shift, V_z_shift);
-
-//if (Params[4] ==0 )//no Interpolation (nearest neighbor)
-//{
-
-//	for (int i_ind = ind; i_ind < DetSize*DetSize; ++i_ind)//for (int i_y = 0; i_y < DetSize; ++i_y)// DetSize
-//	{
-//		//for (int i_x = 0; i_x < DetSize; ++i_x)
-//		//{
-//		int i_x = i_ind % DetSize;
-//		int i_y = i_ind / DetSize;
-//			if (x_ind_us == x_ind && y_ind_us == y_ind)
-//				continue;
-
-//			double ACorrVal = Intensity[ind]*Intensity[i_x + DetSize * i_y];//Autocorrellation value
-//																			//calculate position
-//			double x = (double)i_x - shift;
-//			double y = (double)i_y - shift;
-//			double z = sqrt(x*x + y*y + DetDist*DetDist) - DetDist;
-
-//			double norm = 1. / sqrt(x*x + y*y + DetDist*DetDist);
-//			x = x * norm;
-//			y = y * norm;
-//			z = z * norm;
-
-//			double dx = x - x_ind;
-//			double dy = y - y_ind;
-//			double dz = z - z_ind;
-
-//			
-//			int V_x = round((dx / VoxelSize)) + V_perp_shift;
-//			int V_y = round((dy / VoxelSize)) + V_perp_shift;
-//			int V_z = round((dz / VoxelSize)) + V_z_shift;
-
-//			
-
-//			if((V_x > max_PerpVox) || V_x < 0|| (V_y > max_PerpVox) || V_y < 0|| (V_z > max_ZVox) || V_z < 0)
-//			{
-//			//	printf("dx: %i dy: %i dz: %i max perp: %i max z: %i\n", V_x, V_y, V_z, max_PerpVox, max_ZVox);
-//				continue;
-//			}
-//			
-
-//			atomic_add_float(&(AutoCorr[V_x + V_y*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), ACorrVal);
-//			atomic_add_float(&(AutoCorrWeight[V_x + V_y*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), 1.);
-//			
-//		//}
-//	}
-//}
-//else if (Params[4]==1)//linear interpolation
-//{
-//	for (int i_ind = ind; i_ind < DetSize*DetSize; ++i_ind)//for (int i_y = 0; i_y < DetSize; ++i_y)// DetSize
-//	{
-//		//for (int i_x = 0; i_x < DetSize; ++i_x)
-//		//{
-//		int i_x = i_ind % DetSize;
-//		int i_y = i_ind / DetSize;
-//			if (x_ind_us == x_ind && y_ind_us == y_ind)
-//				continue;
-
-//			double ACorrVal = Intensity[ind] * Intensity[i_x + DetSize * i_y];//Autocorrellation value
-//																			//calculate position
-
-//		
-
-
-//			double x = (double)i_x - shift;
-//			double y = (double)i_y - shift;
-//			double z = sqrt(x*x + y*y + DetDist*DetDist) - DetDist;
-
-//			double norm = 1. / sqrt(x*x + y*y + DetDist*DetDist);
-//			x = x * norm;
-//			y = y * norm;
-//			z = z * norm;
-
-//			double dx = x - x_ind;
-//			double dy = y - y_ind;
-//			double dz = z - z_ind;
-
-
-
-//			int V_x = floor((dx / VoxelSize)) + V_perp_shift;
-//			int V_y = floor((dy / VoxelSize)) + V_perp_shift;
-//			int V_z = floor((dz / VoxelSize)) + V_z_shift;
-
-//			if ((V_x>max_PerpVox) || V_x <0 || (V_y > max_PerpVox) || V_y < 0 || (V_z > max_ZVox) || V_z<0)
-//			{
-//				continue;
-//			}
-
-//			double r_x = (dx / VoxelSize) - floor((dx / VoxelSize));
-//			double r_y = (dy / VoxelSize) - floor((dy / VoxelSize));
-//			double r_z = (dz / VoxelSize) - floor((dz / VoxelSize));
-
-//			double a[8];
-//			a[0] = (1 - r_x) * (1 - r_y) * (1 - r_z);
-//			a[1] = r_x * (1 - r_y) * (1 - r_z);
-//			a[2] = (1 - r_x) * r_y * (1 - r_z);
-//			a[3] = (1 - r_x) * (1 - r_y) * r_z;
-//			a[4] = r_x * r_y * (1 - r_z);
-//			a[5] = r_x * (1 - r_y) * r_z;
-//			a[6] = (1 - r_x) * r_y * r_z;
-//			a[7] = r_x * r_y * r_z;
-
-
-//			//(0,0,0)
-//			      atomic_add_float(&(AutoCorr[V_x + V_y*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), ACorrVal * a[0]);
-//			atomic_add_float(&(AutoCorrWeight[V_x + V_y*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), 1. * a[0]);
-//			//(1,0,0)
-//			      atomic_add_float(&(AutoCorr[(V_x + 1) + V_y*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), ACorrVal * a[1]);
-//			atomic_add_float(&(AutoCorrWeight[(V_x + 1) + V_y*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), 1. * a[1]);
-//			//(0,1,0)
-//			      atomic_add_float(&(AutoCorr[V_x + (V_y + 1)*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), ACorrVal * a[2]);
-//			atomic_add_float(&(AutoCorrWeight[V_x + (V_y + 1)*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), 1. * a[2]);
-//			//(0,0,1)
-//			      atomic_add_float(&(AutoCorr[V_x + V_y*max_PerpVox + (V_z + 1)*max_PerpVox*max_PerpVox]), ACorrVal * a[3]);
-//			atomic_add_float(&(AutoCorrWeight[V_x + V_y*max_PerpVox + (V_z + 1)*max_PerpVox*max_PerpVox]), 1. * a[3]);
-//			//(1,1,0)
-//			      atomic_add_float(&(AutoCorr[(V_x + 1) + (V_y + 1)*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), ACorrVal * a[4]);
-//			atomic_add_float(&(AutoCorrWeight[(V_x + 1) + (V_y + 1)*max_PerpVox + V_z*max_PerpVox*max_PerpVox]), 1. * a[4]);
-//			//(1,0,1)
-//			      atomic_add_float(&(AutoCorr[(V_x + 1) + V_y*max_PerpVox + (V_z + 1)*max_PerpVox*max_PerpVox]), ACorrVal * a[5]);
-//			atomic_add_float(&(AutoCorrWeight[(V_x + 1) + V_y*max_PerpVox + (V_z + 1)*max_PerpVox*max_PerpVox]), 1. * a[5]);
-//			//(0,1,1)
-//			      atomic_add_float(&(AutoCorr[V_x + (V_y + 1)*max_PerpVox + (V_z + 1)*max_PerpVox*max_PerpVox]), ACorrVal * a[6]);
-//			atomic_add_float(&(AutoCorrWeight[V_x + (V_y + 1)*max_PerpVox + (V_z + 1)*max_PerpVox*max_PerpVox]), 1. * a[6]);
-//			//(1,1,1)
-//			      atomic_add_float(&(AutoCorr[(V_x + 1) + (V_y + 1)*max_PerpVox + (V_z + 1)*max_PerpVox*max_PerpVox]), ACorrVal * a[7]);
-//			atomic_add_float(&(AutoCorrWeight[(V_x + 1) + (V_y + 1)*max_PerpVox + (V_z + 1)*max_PerpVox*max_PerpVox]), 1. * a[7]);
-
-//			
-//			//DEBUG
-
-
-//			//DEBUG ENDE
-//		//}
-//	}
-//}

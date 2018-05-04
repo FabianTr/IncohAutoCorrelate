@@ -20,3 +20,15 @@ ACMesh:
 	This classes main purpose is to store correlated data in voxels and also store additional information such as voxel size and dimension mapping.
 
 	For (sparse) kernels, ACMesh (as Bigmesh) accepts vectors with q values to be added to the Mesh.
+
+
+
+
+
+
+
+
+
+	==================
+	SCRATCH
+	==================

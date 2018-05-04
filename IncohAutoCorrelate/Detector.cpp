@@ -11,6 +11,7 @@
 #include "ArrayOperators.h"
 #include <thread>         
 #include <chrono> 
+#include "ProfileTime.h"
 
 
 
@@ -481,7 +482,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 
 }
 
-void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, Settings& Options)
+void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings& Options)
 {
 	if (!BigMesh.Checklist.CofQMesh) //check if it is the right Mesh
 	{
@@ -498,13 +499,108 @@ void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::ve
 		std::this_thread::sleep_for(std::chrono::microseconds(Options.ThreadSleepForOCLDev));
 	}
 
-	std::cout << "AC C(q) - function:\n************************\n\n";
-	std::cout << "reserved OpenCl device number: " << OpenCLDeviceNumber << "\n";
+	Options.Echo("AC C(q) - function:\n************************\n");
+	if (Options.echo)
+		std::cout << "reserved OpenCl device number: " << OpenCLDeviceNumber << "\n";
+	cl_int err;
 
+	//LocalEventList
+	float* Rot_and_Weight = new float[10 * (UpperBound - LowerBound)];
+	unsigned int ind = 0;
+	for (unsigned int i = LowerBound; i < UpperBound; i++)
+	{
+		//rotation matrix
+		Rot_and_Weight[ind + 0] = Events[i].RotMatrix[0];
+		Rot_and_Weight[ind + 1] = Events[i].RotMatrix[1];
+		Rot_and_Weight[ind + 2] = Events[i].RotMatrix[2];
+		Rot_and_Weight[ind + 3] = Events[i].RotMatrix[3];
+		Rot_and_Weight[ind + 4] = Events[i].RotMatrix[4];
+		Rot_and_Weight[ind + 5] = Events[i].RotMatrix[5];
+		Rot_and_Weight[ind + 6] = Events[i].RotMatrix[6];
+		Rot_and_Weight[ind + 7] = Events[i].RotMatrix[7];
+		Rot_and_Weight[ind + 8] = Events[i].RotMatrix[8];
 
+		//std::cout << Events[i].RotMatrix[0] << "\t" << Events[i].RotMatrix[1] << "\t" << Events[2].RotMatrix[1] << "\n";
+		//std::cout << Events[i].RotMatrix[3] << "\t" << Events[i].RotMatrix[4] << "\t" << Events[5].RotMatrix[1] << "\n";
+		//std::cout << Events[i].RotMatrix[6] << "\t" << Events[i].RotMatrix[7] << "\t" << Events[2].RotMatrix[8] << "\n \n";
+
+		//int wa;
+		//std::cin >> wa;
+
+		//weight (mean Intensity)
+		Rot_and_Weight[ind + 9] = Events[i].MeanIntensity;
+		ind += 10;
+	}
+
+	//obtain Device
+	cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
+
+	//set Parameter
+	double Params[5];
+	Params[0] = DetectorSize[0]* DetectorSize[1]; //Numer of pixels (size[0]*size[1])
+	Params[1] = BigMesh.Shape.dq_per_Voxel; //dq per Voxel
+	Params[2] = BigMesh.Shape.Size_AB; // a  (V = a*a*(a+1)/2)
+	Params[3] = (UpperBound - LowerBound); // how many events, for roataion and weight loop
+	Params[4] = Flags.InterpolationMode;
+
+	//Half AC-Buffer
+	double* CQ_Half = new double[BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * ((BigMesh.Shape.Size_AB + 1) / 2)]();
+
+	//OpenCL Buffer:
+	//AutoCorr_CQ(const float *IntensityData, const float *KMap, const float *Rotations_and_Weights, const double *Params, double *CQ)
+	//Output:
+	size_t ACsize = sizeof(double) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * ((BigMesh.Shape.Size_AB + 1) / 2);
+	cl::Buffer CL_CQ_Half(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, CQ_Half, &err);
+	//Input:
+	size_t Intsize = sizeof(float) * DetectorSize[0]* DetectorSize[1];
+	cl::Buffer CL_Intensity(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Intsize, Intensity, &err);
+	size_t KMapsize = sizeof(float) * 3 * DetectorSize[0] * DetectorSize[1];
+	cl::Buffer CL_kMap(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, KMapsize, kMap, &err);
+	size_t RaWsize = sizeof(float) * 10 * (UpperBound - LowerBound);
+	cl::Buffer CL_RaW(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, RaWsize, Rot_and_Weight, &err);
+	cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
+
+	//Setup Kernel
+	cl::Kernel kernel(Options.CL_Program, "AutoCorr_CQ", &err);
+	Options.checkErr(err, "Setup AutoCorr_CQ in Detector::AutoCorrelate_CofQ() ");
+
+	//Set Arguments
+	kernel.setArg(0, CL_Intensity);
+	kernel.setArg(1, CL_kMap);
+	kernel.setArg(2, CL_RaW);
+	kernel.setArg(3, CL_Params);
+	kernel.setArg(4, CL_CQ_Half);
+
+	//Setup Queue
+	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
+	Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelate_CofQ() ");
+	cl::Event cl_event;
+
+	//profiler stuff
+	ProfileTime Profiler;
+	//
+
+	const size_t &global_size = DetectorSize[0] * DetectorSize[1];
+	//launch Kernel
+	Options.Echo("Launch kernel ... \n");
+	err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
+	Profiler.Tic();
+	Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelate_CofQ() ");
+	cl_event.wait();
+	Options.Echo("C(q) kernel finished in");
+	Profiler.Toc(true);
+
+	//read Buffer
+	err = queue.enqueueReadBuffer(CL_CQ_Half, CL_TRUE, 0, ACsize, CQ_Half);
+	Options.checkErr(err, "OpenCL kernel, launched in Detector::AutoCorrelate_CofQ() ");
 	//ToImplement
+
+	std::cout << "Ret[0]: " << CQ_Half[0] << "\tRet[1]: " << CQ_Half[1] << "\tRet[2]: " << CQ_Half[2] << "\n";
+
 
 	//Free Device
 	Options.OCL_FreeDevice(OpenCLDeviceNumber);
-}
 
+	// Mirrow and Postprocess Data:
+
+}

@@ -76,7 +76,7 @@ public:
 
 	//Correlation Kernels:
 	void AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags);
-	void AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, int LowerBound, int UpperBound, Settings& Options);
+	void AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings& Options);
 
 
 //Vars
@@ -88,7 +88,7 @@ public:
 	//Pixelmap Stuff
 	float* PixelMap = NULL;    // Pixelmap with vitually three dimensions [n_y][n_x][3]
 	//k-map
-	float* kMap = NULL;
+	float* kMap = NULL;// k-Map with vitually three dimensions [n_y][n_x][3]
 	float Max_k[3];
 	float Min_k[3];// to estimate required Q Volume
 	float Max_q[3];

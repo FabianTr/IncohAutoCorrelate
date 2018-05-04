@@ -93,7 +93,7 @@ int main()
 	Options.Echo("Create sparese detector");
 	TestDet.CreateSparseHitList(3.2f, 6.4f);//
 	Detector::AutoCorrFlags ACflags;
-	ACflags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+	ACflags.InterpolationMode = Settings::Interpolation::Linear;
 	TestDet.AutoCorrelateSparseList(BigMesh, ACflags);
 
 
@@ -140,6 +140,7 @@ int main()
 	}
 
 	Detector::AutoCorrFlags flags;
+	flags.InterpolationMode = Settings::Interpolation::Linear;
 	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 1000, Options);
 
 	//int ind = 0;
