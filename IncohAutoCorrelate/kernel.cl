@@ -51,7 +51,7 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 	__global const double *Params,
 	__global double *CQ)
 {
-	int ind = get_global_id(0);
+	unsigned int ind = get_global_id(0);
 	//double Params[5];
 	//Params[0] = DetSize; //Numer of pixels (size[0]*size[1])
 	//Params[1] = deltaV; //dq per Voxel
@@ -89,7 +89,7 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 	float q[3];
 
 
-	for (unsigned int i = 0; i < DetSize; i++) //Loop over all Pixel
+	for (unsigned int i = 0; i < DetSize; ++i) //Loop over all Pixel
 	{
 		if (i == ind) //exclude zeroth peak
 		{
@@ -107,7 +107,7 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 		int MeshCenter = (MeshSize-1)/2;
 		
 
-		for (unsigned int j = 0; j < NumEvents; j++)//Loop over all Events
+		for (unsigned int j = 0; j < NumEvents; ++j)//Loop over all Events
 		{
 			//rotate
 			q[0] = q_RAW[0] * Rotations_and_Weights[0 + 10 * j] + q_RAW[1] * Rotations_and_Weights[1 + 10 * j] + q_RAW[2] * Rotations_and_Weights[2 + 10 * j];

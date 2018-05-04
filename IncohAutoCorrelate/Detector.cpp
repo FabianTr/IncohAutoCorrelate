@@ -583,8 +583,11 @@ void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::ve
 	const size_t &global_size = DetectorSize[0] * DetectorSize[1];
 	//launch Kernel
 	Options.Echo("Launch kernel ... \n");
-	err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
+	std::cout << "for " << Params[3] << "Events\n";
+	std::cout << "on a " << Params[0] << " pixel detector" << std::endl;
 	Profiler.Tic();
+	err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
+
 	Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelate_CofQ() ");
 	cl_event.wait();
 	Options.Echo("C(q) kernel finished in");

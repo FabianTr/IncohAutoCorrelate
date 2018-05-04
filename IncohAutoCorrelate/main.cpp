@@ -200,8 +200,6 @@ int main()
 	//}
 
 	//std::cout << "Max PI: " << MaxPi << "\t Min PI: " << MinPi << "\t M PI: " << MPI << "\n";
-
-
 	
 	std::cout << "Program ended\n";
 	std::cin >> end;
