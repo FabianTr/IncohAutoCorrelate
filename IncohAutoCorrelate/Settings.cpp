@@ -3,6 +3,7 @@
 #include "Settings.h"
 #include <string>
 #include <math.h>
+#include <Eigen/SVD>
 
 
 
@@ -64,16 +65,51 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 			{
 				if (line.find("Cell parameters") == 0) break;
 			}
+			Eigen::Matrix<float, 3, 3> Mprime;
 			for (size_t i = 0; getline(File, line) && i<3; ++i) {
 				float x, y, z;
 				stringstream ss(line);
 				ss.seekg(7);
 				ss >> x >> y >> z;
 				//         cout << line << endl;
-				currEvent.RotMatrix[i * 3 + 0] = x;
-				currEvent.RotMatrix[i * 3 + 1] = y;
-				currEvent.RotMatrix[i * 3 + 2] = z;
+
+				Mprime(0, i) = x;
+				Mprime(1, i) = y;
+				Mprime(2, i) = z;
+
+				
+
+
 			}
+			//Kabsch algorithm, see https://en.wikipedia.org/wiki/Kabsch_algorithm 
+			Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3>> svd(Mprime.transpose() * MReference.inverse(), Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+			float det;
+			det = (svd.matrixV()*svd.matrixU().transpose()).determinant();
+
+			Eigen::Matrix<float, 3, 3> Diag;
+			Diag << 1, 0, 0, 0, 1, 0, 0, 0, det;
+
+			Eigen::Matrix<float, 3, 3> Rot;
+			Rot = svd.matrixV()*Diag*svd.matrixU().transpose();
+
+			//currEvent.RotMatrix[i * 3 + 0] = x;
+			//currEvent.RotMatrix[i * 3 + 1] = y;
+			//currEvent.RotMatrix[i * 3 + 2] = z;
+
+			for (int k = 0; k < 3; k++)
+			{
+				for (int l = 0; l < 3; l++)
+				{
+					currEvent.RotMatrix[l + 3*k] = Rot(k, l);
+				}
+			}
+			//std::cout << "\n\n";
+			//std::cout <<"Kabsch Rot\n" << Rot << "\n\n";
+
+			//int stop;
+			//std::cin >> stop;
+
 			currEvent.Dataset = DatasetFIntensity;
 			tmpHitEvents.push_back(currEvent);
 

@@ -61,7 +61,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Linux Include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Linux Include\eigen3;C:\Linux Include;$(IncludePath)</IncludePath>
     <AdditionalSourcesToCopyMapping>kernel.cl;$(AdditionalSourcesToCopyMapping)</AdditionalSourcesToCopyMapping>
   </PropertyGroup>
   <ItemGroup>
@@ -90,7 +90,7 @@
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/lib64 /opt/opencl/intel/lib64;$(RemoteRootDir)/opt/opencl/intel/include/;$(RemoteRootDir)/usr/lib64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/include/eigen3;/usr/lib64 /opt/opencl/intel/lib64;$(RemoteRootDir)/opt/opencl/intel/include/;$(RemoteRootDir)/usr/lib64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ShowIncludes>true</ShowIncludes>
       <AdditionalOptions>-lOpenCL -fopenmp %(AdditionalOptions)</AdditionalOptions>
       <CAdditionalWarning />

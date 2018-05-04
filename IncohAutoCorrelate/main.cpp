@@ -19,7 +19,7 @@
 
 #include "ArrayOperators.h"
 #include "ProfileTime.h"
-
+#include <Eigen/Dense>
 
 
 
@@ -60,6 +60,13 @@ int main()
 	
 
 	Options.Echo("Load Streamfile");
+
+	Options.MReference << 6.227, 0, 0,
+		0, 8.066, 0,
+		0, 0, 11.1;
+
+
+
 	Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/3fs_JF.stream","entry_1/instrument_1/detector_2/detector_corrected/data",false);
 	//Options.AlternateDetectorSourcePath("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/cheetah/hdf5");
 
@@ -67,6 +74,14 @@ int main()
 	//{
 	//	std::cout << Options.HitEvents[i].Filename << " index: " << Options.HitEvents[i].SerialNumber <<" Event: " << Options.HitEvents[i].Event << "\n";
 	//}
+
+
+
+
+
+
+
+
 
 	
 	Options.Echo("Load intensity data for Hit 0");
@@ -95,11 +110,6 @@ int main()
 	Detector::AutoCorrFlags ACflags;
 	ACflags.InterpolationMode = Settings::Interpolation::Linear;
 	TestDet.AutoCorrelateSparseList(BigMesh, ACflags);
-
-
-
-
-
 
 
 
@@ -141,7 +151,7 @@ int main()
 
 	Detector::AutoCorrFlags flags;
 	flags.InterpolationMode = Settings::Interpolation::Linear;
-	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 1000, Options);
+	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 1, Options);
 
 	//int ind = 0;
 	//for (int i = 0; i < 10; i++)

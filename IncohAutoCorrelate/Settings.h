@@ -15,6 +15,7 @@
 #include <CL/cl.hpp>
 
 #include <omp.h>
+#include <Eigen/Dense>
 
 
 class Settings
@@ -87,5 +88,8 @@ public:
 	};
 	
 	SettingsChecklist  Checklist;
+
+
+	Eigen::Matrix<float, 3, 3> MReference;
 };
 
