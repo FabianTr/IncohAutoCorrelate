@@ -292,8 +292,12 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		if (PhotonSamplingStep > 0)
 			IntensityPhotonDiscr = new int[DetectorSize[1] * DetectorSize[0]]();
 		Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
+		std::cout << " \n ";
 		for (int i = LowerBound; i < UpperBound; i++)//get  slides
 		{
+			printf("\r%d/%d", i, UpperBound);
+			fflush(stdout);
+
 			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
 			if (PhotonSamplingStep <= 0)// No Photon discretising
 			{

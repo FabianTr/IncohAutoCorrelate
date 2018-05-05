@@ -1,8 +1,9 @@
 *****
 
 TODO:
-	*obtain the right rotation matrix from the streamfile and implement. Ath the moment->Dummy in sparse acc kernel
-
+	* check the format of the pixlemap and get it compatible with the stored intensity by cheetah
+	* develop some kind of external scripting to operate the programm with different modes and settings
+	* profile and improve C(q) creation 
 
 
 *****
