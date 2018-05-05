@@ -39,6 +39,8 @@ public:
 	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode);
 
 
+
+
 	struct ACMesh_Checklist {
 		bool SmallMesh = false;
 		bool BigMesh = false;

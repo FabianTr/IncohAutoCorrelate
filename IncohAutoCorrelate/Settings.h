@@ -60,6 +60,8 @@ public:
 	};
 
 	std::vector<HitEvent> HitEvents;
+	void SafeHitEventListToFile(char* Filename);
+	void LoadHitEventListFromFile(char* Filename);
 
 	// AC Settings
 	int halfACMeshEdgeLength = 100; //half EdgeLength of (cube) 3D Volume for auto-correlation without padding (intern +1 zeropadding)

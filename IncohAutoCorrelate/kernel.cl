@@ -74,7 +74,7 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 		printf("Number of Events: %d\n", NumEvents);
 		printf("Interpolation mode: %d\n", InterpolMode);
 		printf("Mesh Size: %d\n", MeshSize);
-		printf("dq per Vox: %d\n", dqPerVox);
+		printf("dq per Vox: %f\n", dqPerVox);
 	}
 //END
 	//local Variables

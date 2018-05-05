@@ -82,4 +82,11 @@ namespace ArrayOperators
 		}
 		return sum;
 	}
+
+
+	//Functions for File and storage Stuff
+	enum FileType{Binary=1, HDF5=2};
+	void SafeArrayToFile(char* Filename, double* Array, unsigned int Size, FileType Type);
+	void SafeArrayToFile(char* Filename, float* Array, unsigned int Size, FileType Type);
+	void SafeArrayToFile(char* Filename, unsigned int* Array, unsigned int Size, FileType Type);
 }

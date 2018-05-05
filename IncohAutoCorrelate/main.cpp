@@ -59,6 +59,25 @@ int main()
 
 	
 
+
+	//Options.Echo("Load HitEventList");
+
+	//Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/test.xml");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	Options.Echo("Load Streamfile");
 
 	Options.MReference << 6.227, 0, 0,
@@ -132,11 +151,23 @@ int main()
 	//
 	//profiler.Toc(true);
 
-	Options.Echo("Load and average intensities (1000x)");
+	Options.Echo("Load and average intensities (all)");
 	profiler.Tic();
-	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f,6.4f, 0, 1000);
+	//TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f,6.4f, 0, 1000);
+
+	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f, 6.4f);
+
 	profiler.Toc(true);
 	std::cout << "done.\n";
+
+
+	Options.Echo("Save EventList as XML");
+	Options.SafeHitEventListToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_JF.xml");
+	Options.Echo("Save averaged Intensity");
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF.bin",TestDet.Intensity,TestDet.DetectorSize[0]* TestDet.DetectorSize[1],ArrayOperators::FileType::Binary);
+
+	std::cout << "Program ended\n";
+	std::cin >> end;
 
 
 	Options.Echo("Create C(q) - Mesh");
@@ -152,8 +183,8 @@ int main()
 	}
 
 	Detector::AutoCorrFlags flags;
-	flags.InterpolationMode = Settings::Interpolation::Linear;
-	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 1, Options);
+	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 3, Options);
 
 	//int ind = 0;
 	//for (int i = 0; i < 10; i++)

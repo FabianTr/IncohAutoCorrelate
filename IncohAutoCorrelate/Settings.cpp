@@ -4,8 +4,12 @@
 #include <string>
 #include <math.h>
 #include <Eigen/SVD>
+#include <fstream>
 
-
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/foreach.hpp>
+#include <set>
 
 
 Settings::Settings()
@@ -304,3 +308,89 @@ void Settings::OCL_FreeDevice(int DeviceIndex)
 	}
 }
 
+void Settings::SafeHitEventListToFile(char * Filename)
+{
+	//HitEventList is stored in xml format
+	using boost::property_tree::ptree;
+	ptree pt;
+
+	pt.put("root.Info.Size", HitEvents.size());
+	for (unsigned int i = 0; i < HitEvents.size(); i++)
+	{
+		std::string path = "root.content.";
+		path = path + std::to_string(i);
+
+		pt.put(path + ".Filename", HitEvents[i].Filename);
+		pt.put(path + ".Dataset", HitEvents[i].Dataset);
+		pt.put(path + ".Event", HitEvents[i].Event);
+		pt.put(path + ".SerialNumber", HitEvents[i].SerialNumber);
+		pt.put(path + ".MeanIntensity", HitEvents[i].MeanIntensity);
+		pt.put(path + ".PhotonCount", HitEvents[i].PhotonCount);
+
+		pt.put(path + ".R0", HitEvents[i].RotMatrix[0]);
+		pt.put(path + ".R1", HitEvents[i].RotMatrix[1]);
+		pt.put(path + ".R2", HitEvents[i].RotMatrix[2]);
+		pt.put(path + ".R3", HitEvents[i].RotMatrix[3]);
+		pt.put(path + ".R4", HitEvents[i].RotMatrix[4]);
+		pt.put(path + ".R5", HitEvents[i].RotMatrix[5]);
+		pt.put(path + ".R6", HitEvents[i].RotMatrix[6]);
+		pt.put(path + ".R7", HitEvents[i].RotMatrix[7]);
+		pt.put(path + ".R8", HitEvents[i].RotMatrix[8]);
+	}
+	boost::property_tree::write_xml(Filename,pt);
+}
+void Settings::LoadHitEventListFromFile(char * Filename)
+{
+	using boost::property_tree::ptree;
+	ptree pt;
+	boost::property_tree::read_xml(Filename, pt);
+	
+	unsigned int Size = 0;
+	Size = pt.get<unsigned int>("root.Info.Size", -1);
+
+	if (Size == -1)
+	{
+		std::cerr << "ERROR: Empty or not readable xml HitEvents File\n";
+		std::cerr << "    -> in  Settings::LoadHitEventListFromFile()\n";
+		throw;
+	}
+
+	HitEvents.clear();
+
+	for (unsigned int i = 0; i < Size; i++)
+	{
+		std::string path = "root.content.";
+		path = path + std::to_string(i);
+
+		HitEvent tmp;
+		tmp.Filename = pt.get<std::string>(path + ".Filename");
+		tmp.Dataset = pt.get<std::string>(path + ".Dataset");
+		tmp.Event = pt.get<int>(path + ".Event");
+		tmp.SerialNumber = pt.get<int>(path + ".SerialNumber");
+		tmp.MeanIntensity = pt.get<float>(path + ".MeanIntensity");
+		tmp.PhotonCount = pt.get<int>(path + ".PhotonCount");
+
+		tmp.RotMatrix[0] = pt.get<float>(path + ".R0");
+		tmp.RotMatrix[1] = pt.get<float>(path + ".R1");
+		tmp.RotMatrix[2] = pt.get<float>(path + ".R2");
+		tmp.RotMatrix[3] = pt.get<float>(path + ".R3");
+		tmp.RotMatrix[4] = pt.get<float>(path + ".R4");
+		tmp.RotMatrix[5] = pt.get<float>(path + ".R5");
+		tmp.RotMatrix[6] = pt.get<float>(path + ".R6");
+		tmp.RotMatrix[7] = pt.get<float>(path + ".R7");
+		tmp.RotMatrix[8] = pt.get<float>(path + ".R8");
+
+		HitEvents.push_back(tmp);
+	}
+
+
+}
+
+//float RotMatrix[9]; // in rez space [x1 y1 z1 x2 y2 z2 x3 y3 z3] so it is multiplied as: q = M * q_local = {{q_local_1 * x1 + q_local_2 * y1 + q_local_3 * z1},{q_local_1 * x2 + ...},  {...}}
+//std::string Filename;
+//std::string Dataset;
+//int Event;
+//int SerialNumber;
+//
+//float MeanIntensity = -1;
+//int PhotonCount = -1;
