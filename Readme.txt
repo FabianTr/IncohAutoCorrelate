@@ -1,7 +1,7 @@
 *****
 
 TODO:
-	* check the format of the pixlemap and get it compatible with the stored intensity by cheetah
+	* check the format of the pixlemap and get it compatible with the stored intensity by cheetah !!!!!!!! 
 	* develop some kind of external scripting to operate the programm with different modes and settings
 	* profile and improve C(q) creation 
 
@@ -19,9 +19,13 @@ Detector:
 
 ACMesh:
 	This classes main purpose is to store correlated data in voxels and also store additional information such as voxel size and dimension mapping.
-
 	For (sparse) kernels, ACMesh (as Bigmesh) accepts vectors with q values to be added to the Mesh.
 
+
+*****
+	C(q)-creation Profiling at Tesla K20 (per exposure):
+		-LinInterpol: ~ 54min
+		-NearesNeigh: ~ 12min 
 
 
 

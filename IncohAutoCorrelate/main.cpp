@@ -65,21 +65,8 @@ int main()
 	//Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/test.xml");
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 	Options.Echo("Load Streamfile");
-
+	//Hb reference-unit-cell
 	Options.MReference << 6.227, 0, 0,
 		0, 8.066, 0,
 		0, 0, 11.1;
@@ -151,23 +138,21 @@ int main()
 	//
 	//profiler.Toc(true);
 
-	Options.Echo("Load and average intensities (all)");
+	Options.Echo("Load and average intensities (1000x)");
 	profiler.Tic();
-	//TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f,6.4f, 0, 1000);
+	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f,6.4f, 0, 1000);
 
-	TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f, 6.4f);
+	//TestDet.LoadAndAverageIntensity(Options.HitEvents, 3.2f, 6.4f);
 
 	profiler.Toc(true);
 	std::cout << "done.\n";
 
 
-	Options.Echo("Save EventList as XML");
-	Options.SafeHitEventListToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_JF.xml");
+	/*Options.Echo("Save EventList as XML");
+	Options.SafeHitEventListToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_JF_TMP.xml");
 	Options.Echo("Save averaged Intensity");
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF.bin",TestDet.Intensity,TestDet.DetectorSize[0]* TestDet.DetectorSize[1],ArrayOperators::FileType::Binary);
-
-	std::cout << "Program ended\n";
-	std::cin >> end;
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF_TMP.bin",TestDet.Intensity,TestDet.DetectorSize[0]* TestDet.DetectorSize[1],ArrayOperators::FileType::Binary);
+*/
 
 
 	Options.Echo("Create C(q) - Mesh");

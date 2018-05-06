@@ -413,9 +413,6 @@ void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
 }
 
 
-
-
-
 float Detector::CalculateMeanIntensity(bool FromSparse)
 {
 	double IntInt = 0;
