@@ -1,6 +1,7 @@
 #pragma once
 
 #include <omp.h>
+#include <fstream>
 
 namespace ArrayOperators
 {
@@ -30,6 +31,22 @@ namespace ArrayOperators
 		for (int i = 0; i < Size; i++)
 		{
 			Array[i] *= Factor;
+		}
+	}
+	inline void ParMultiplyElementwise(float* Array, float* Factor, unsigned int Size)
+	{
+		#pragma omp parallel for
+		for (int i = 0; i < Size; i++)
+		{
+			Array[i] = Array[i] * Factor[i];
+		}
+	}
+	inline void ParMultiplyElementwise(float* Array, int* Factor, unsigned int Size)
+	{
+		#pragma omp parallel for
+		for (int i = 0; i < Size; i++)
+		{
+			Array[i] = Array[i] * (float)Factor[i];
 		}
 	}
 
@@ -89,4 +106,12 @@ namespace ArrayOperators
 	void SafeArrayToFile(char* Filename, double* Array, unsigned int Size, FileType Type);
 	void SafeArrayToFile(char* Filename, float* Array, unsigned int Size, FileType Type);
 	void SafeArrayToFile(char* Filename, unsigned int* Array, unsigned int Size, FileType Type);
+	
+	template<typename T>
+	void LoadArrayFromFile(char * Filename, T * Array, unsigned int Size)
+	{
+		std::ifstream FILE(Filename, std::ios::in | std::ofstream::binary);
+		FILE.read(reinterpret_cast<char*>(Array), Size * sizeof(T));
+		FILE.close();
+	}
 }

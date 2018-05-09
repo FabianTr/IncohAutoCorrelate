@@ -145,48 +145,76 @@ void Detector::Calc_kMap()
 	delete kMap;
 	kMap = new float[3 * DetectorSize[0] * DetectorSize[1]];
 
-	Max_k[0] = - std::numeric_limits<float>::max();
-	Max_k[1] = - std::numeric_limits<float>::max();
-	Max_k[2] = - std::numeric_limits<float>::max();
-	Min_k[0] = std::numeric_limits<float>::max();
-	Min_k[1] = std::numeric_limits<float>::max();
-	Min_k[2] = std::numeric_limits<float>::max();
+	Max_k[0] = -100.0f;
+	Max_k[1] = -100.0f;
+	Max_k[2] = -100.0f;
+	Min_k[0] = 100.0f;
+	Min_k[1] = 100.0f;
+	Min_k[2] = 100.0f;
 
-	for (unsigned int i_x = 0; i_x < DetectorSize[0]; i_x++)
+
+	//float Pmax[3] = { -99999999, -99999999, -99999999 };
+	//float Pmin[3] = { 99999999, 99999999, 99999999 };
+
+	for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
 	{
-		for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
+		for (unsigned int i_x = 0; i_x < DetectorSize[0]; i_x++)
 		{
 			float x, y, z, r;
 			x = GetPixelPos(0, i_x, i_y);
 			y = GetPixelPos(1, i_x, i_y);
 			z = GetPixelPos(2, i_x, i_y);
 
+
+			//if (x > Pmax[0])
+			//	Pmax[0] = x;
+			//if (y > Pmax[1])
+			//	Pmax[1] = y;
+			//if (z > Pmax[2])
+			//	Pmax[2] = z;
+
+			//if (x < Pmin[0])
+			//	Pmin[0] = x;
+			//if (y < Pmin[1])
+			//	Pmin[1] = y;
+			//if (z < Pmin[2])
+			//	Pmin[2] = z;
+
+
+
 			r = sqrtf(x*x + y*y + z*z);
-			
-			kMap[0 + 3 * i_x + 3 * DetectorSize[0] * i_y] = x / r;
-			kMap[1 + 3 * i_x + 3 * DetectorSize[0] * i_y] = y / r;
-			kMap[2 + 3 * i_x + 3 * DetectorSize[0] * i_y] = z / r;
 
-			if (x / r > Max_k[0])
-				Max_k[0] = x / r;
-			if (y / r > Max_k[1])
-				Max_k[1] = y / r;
-			if (z / r > Max_k[2])
-				Max_k[2] = z / r;
+			x = x / r;
+			y = y / r;
+			z = z / r;
+		
+			kMap[0 + 3 * i_x + 3 * DetectorSize[0] * i_y] = x;
+			kMap[1 + 3 * i_x + 3 * DetectorSize[0] * i_y] = y;
+			kMap[2 + 3 * i_x + 3 * DetectorSize[0] * i_y] = z;
 
-			if (x / r < Min_k[0])
-				Min_k[0] = x / r;
-			if (y / r < Min_k[1])
-				Min_k[1] = y / r;
-			if (z / r < Min_k[2])
-				Min_k[2] = z / r;
-			
+			if (x > Max_k[0])
+				Max_k[0] = x;
+			if (y > Max_k[1])
+				Max_k[1] = y;
+			if (z > Max_k[2])
+				Max_k[2] = z;
+
+			if (x < Min_k[0])
+				Min_k[0] = x;
+			if (y < Min_k[1])
+				Min_k[1] = y;
+			if (z < Min_k[2])
+				Min_k[2] = z;
 		}
 	}
 	//Calculate maximal q-range for this detector
 	Max_q[0] = fabsf(Max_k[0] - Min_k[0]);
 	Max_q[1] = fabsf(Max_k[1] - Min_k[1]);
 	Max_q[2] = fabsf(Max_k[2] - Min_k[2]);
+
+
+	//std::cout << "PixMap_max = [" << Pmax[0] << "; " << Pmax[1] << "; " << Pmax[2] << "]\n";
+	//std::cout << "PixMap_min = [" << Pmin[0] << "; " << Pmin[1] << "; " << Pmin[2] << "]\n";
 
 }
 
@@ -227,7 +255,7 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 	PixelMap = new float[dims[0] * (int)dims[1] * (int)dims[2]];
 
 
-	if (dims[2] == 3)
+	if (dims[2] == 3)//[ny][nx][3]
 	{
 		DetectorSize[0] = (int)dims[1];//ss
 		DetectorSize[1] = (int)dims[0];//fs
@@ -235,7 +263,7 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 		H5::DataSpace mspace(3, dims);
 		dataset.read(PixelMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
 	}
-	else
+	else// [3][nx][ny] 
 	{
 		DetectorSize[0] = (int)dims[1];//ss
 		DetectorSize[1] = (int)dims[2];//fs
@@ -244,6 +272,9 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 		H5::DataSpace mspace(3, dims);
 		dataset.read(TmpPixleMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
 
+		float Pmax[3] = {-99999999, -99999999, -99999999};
+		float Pmin[3] = { 99999999, 99999999, 99999999 };
+
 		for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
 		{
 			for (unsigned int i_x = 0; i_x < dims[1]; i_x++)
@@ -251,9 +282,18 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 				for (unsigned int i_d = 0; i_d < 3; i_d++)
 				{
 					PixelMap[i_d + 3*i_x + 3*dims[1]*i_y] = TmpPixleMap[i_y + dims[2]*i_x + dims[2]*dims[1]*i_d];
+					if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] > Pmax[i_d])
+						Pmax[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+					if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] < Pmin[i_d])
+						Pmin[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
 				}
 			}
 		}
+
+		
+		std::cout << "PixMap_max = [" << Pmax[0] << "; " << Pmax[1] << "; " << Pmax[2] << "]\n";
+		std::cout << "PixMap_min = [" << Pmin[0] << "; " << Pmin[1] << "; " << Pmin[2] << "]\n";
+
 		delete[] TmpPixleMap;
 
 	}
@@ -262,7 +302,7 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 	//{
 	//	std::cout << PixelMap[t]<< "\n";
 	//}
-
+	
 	
 }
 
@@ -485,7 +525,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 
 void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings& Options)
 {
-	if (!BigMesh.Checklist.CofQMesh) //check if it is the right Mesh
+	if (!BigMesh.Checklist.CofQBigMesh) //check if it is the right Mesh
 	{
 		std::cerr << "ERROR: BigMesh argument is not a CofQ-Mesh\n";
 		std::cerr << "   ->  in Detector::AutoCorrelate_CofQ()\n";
@@ -606,5 +646,96 @@ void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::ve
 	Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
 	// Mirrow and Postprocess Data:
-
+	std::cerr << "\nTO IMPLEMENT IN Detector::AutoCorrelate_CofQ()\n\n";
 }
+
+void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Flags, Settings & Options)
+{
+	if (!SmallMesh.Checklist.CofQSmallMesh) //check if it is the right Mesh
+	{
+		std::cerr << "ERROR: SmallMesh argument is not a CofQ-Mesh\n";
+		std::cerr << "   ->  in Detector::AutoCorrelate_CofQ_SMallMesh()\n";
+		throw;
+	}
+
+
+	//reserve OpenCL Device
+	int OpenCLDeviceNumber = -1;
+	cl_int err;
+
+	while ((OpenCLDeviceNumber = Options.OCL_ReserveDevice()) == -1)
+	{
+		std::this_thread::sleep_for(std::chrono::microseconds(Options.ThreadSleepForOCLDev));
+	}
+
+	//obtain Device
+	cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
+
+	//set Parameter
+	double Params[8];
+	Params[0] = DetectorSize[0] * DetectorSize[1]; //Numer of pixels (size[0]*size[1])
+	Params[1] = SmallMesh.Shape.dq_per_Voxel; //dq per Voxel
+	Params[2] = SmallMesh.Shape.Size_AB; // Size perp
+	Params[3] = SmallMesh.Shape.Size_C; // Size C
+	Params[4] = SmallMesh.Shape.k_A; // Dimension Alignment
+	Params[5] = SmallMesh.Shape.k_B; // Dimension Alignment 
+	Params[6] = SmallMesh.Shape.k_C; // Dimension Alignment 
+	Params[7] = Flags.InterpolationMode;
+
+	//DEBUG BULLSHIT
+	std::cout << "Params:\n";
+	for (int i = 0; i < 8; i++)
+	{
+		std::cout << Params[i] << "\n";
+	}
+	
+	//Setup Queue
+	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
+	Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelate_CofQ_SmallMesh() ");
+	cl::Event cl_event;
+
+	//profiler stuff
+	ProfileTime Profiler;
+	//
+	size_t ACsize = sizeof(double) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
+
+	cl::Buffer CL_CQ_Small(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, SmallMesh.CQMesh, &err);
+	//Input:
+	size_t Intsize = sizeof(float) * DetectorSize[0] * DetectorSize[1];
+	cl::Buffer CL_Intensity(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Intsize, Intensity, &err);
+	size_t KMapsize = sizeof(float) * 3 * DetectorSize[0] * DetectorSize[1];
+	cl::Buffer CL_kMap(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, KMapsize, kMap, &err);
+	cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
+
+
+	//Setup Kernel
+	cl::Kernel kernel(Options.CL_Program, "AutoCorr_CQ_small", &err);
+	Options.checkErr(err, "Setup AutoCorr_CQ in Detector::AutoCorrelate_CofQ_SmallMesh() ");
+
+	//Set Arguments
+	kernel.setArg(0, CL_Intensity);
+	kernel.setArg(1, CL_kMap);
+	kernel.setArg(2, CL_Params);
+	kernel.setArg(3, CL_CQ_Small);
+	const size_t &global_size = DetectorSize[0] * DetectorSize[1];
+	
+	//launch Kernel
+	Options.Echo("Launch kernel ... \n");
+
+	Profiler.Tic();
+	
+	err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
+
+	Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelate_CofQ_SmallMesh() ");
+	cl_event.wait();
+	Options.Echo("C(q)-small kernel finished in");
+	Profiler.Toc(true);
+
+	err = queue.enqueueReadBuffer(CL_CQ_Small, CL_TRUE, 0, ACsize, SmallMesh.CQMesh);
+	Options.checkErr(err, "OpenCL kernel, launched in Detector::AutoCorrelate_CofQ_SmallMesh() ");
+
+	//Free Device
+	Options.OCL_FreeDevice(OpenCLDeviceNumber);
+}
+
+

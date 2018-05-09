@@ -37,7 +37,6 @@ private:
 
 	//Autocorrelation
 	enum KernelMode	{	CQ_creator = 0, FullAutoCorr = 1, SparseAutoCorr = 2, AngularAveragedAutoCorr = 3	};
-
 	
 
 	enum DataType { NONE = -1, INT = 1, LONG = 2, FLOAT = 3, DOUBLE = 4 };
@@ -69,7 +68,6 @@ public:
 	float CalculateMeanIntensity(bool FromSparse);
 
 	//Function "wraps":
-	
 
 	void InitializeDetector(H5std_string PixelMap_Path, H5std_string PixelMap_DataSet, float Pixel_Threshold);
 	
@@ -78,13 +76,15 @@ public:
 	void AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags);
 	void AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings& Options);
 
+	void AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Flags, Settings& Options);
 
 //Vars
 	unsigned int DetectorSize[2]; // Number of Pixels in n_y (0) and n_x (1) dimension: [n_y][n_x] => DetectorSize[0] ^= slow-scan; DetectorSize[1] ^= fast-scan
 
-	float* Intensity = NULL;
+	//Intensity
+	float* Intensity = NULL; // COntent of Detector
 
-
+	int* PixelMask = NULL; //Binarymask to mask bad Pixel
 	//Pixelmap Stuff
 	float* PixelMap = NULL;    // Pixelmap with vitually three dimensions [n_y][n_x][3]
 	//k-map
@@ -101,3 +101,5 @@ public:
 	Settings::HitEvent* DetectorEvent=NULL;
 
 };
+
+

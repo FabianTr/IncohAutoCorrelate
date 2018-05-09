@@ -25,7 +25,7 @@ public:
 	};
 
 //Settings Pointer
-	Settings* Options;
+	Settings* Options; //important to obtain the float to int mapping (functionpointer)
 	
 
 	MeshShape Shape;
@@ -34,6 +34,7 @@ public:
 	void CreateBigMeshForDetector(Detector Det, int EdgeSize);
 
 	void CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize);
+	void CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize);
 
 	void Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode);
 	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode);
@@ -44,7 +45,8 @@ public:
 	struct ACMesh_Checklist {
 		bool SmallMesh = false;
 		bool BigMesh = false;
-		bool CofQMesh = false;
+		bool CofQBigMesh = false;
+		bool CofQSmallMesh = false;
 	};
 	ACMesh_Checklist Checklist;
 };

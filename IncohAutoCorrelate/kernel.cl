@@ -2,15 +2,12 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
-__constant double PI = 3.1415926535897932;
 
 
-
-inline void atomic_add_float(__global double *source, const double value) 
-{
-	// Atomic add of floats or double
-	// Adapted from:
-	// https://streamcomputing.eu/blog/2016-02-09/atomic-operations-for-floats-in-opencl-improved/
+// Atomic add of floats or double
+// Adapted from:
+// https://streamcomputing.eu/blog/2016-02-09/atomic-operations-for-floats-in-opencl-improved/
+inline void atomic_add_float(__global double *source, const double value) {
 	union {
 		ulong int_val;
 		double float_val;
@@ -23,26 +20,6 @@ inline void atomic_add_float(__global double *source, const double value)
 	} while (current.int_val != expected.int_val);
 }
 
-inline double d_abs(double x)
-{
-	if (x < 0)
-	{
-		x = -x;
-	}
-	return x;
-}
-
-inline double d_min(double a, double b)
-{
-	if (a < b)
-	{
-		return a;
-	}
-	else
-	{
-		return b;
-	}
-}
 
 
 __kernel void AutoCorr_CQ(__global const float *IntensityData,
@@ -64,20 +41,20 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 	unsigned int MeshSize = (unsigned int)Params[2];
 	unsigned int NumEvents = (unsigned int)Params[3];
 	int InterpolMode = (unsigned int)Params[4];
-	
 
-//Debug Bullshit
-	if (ind == 0)//ind == 0
-	{
-		printf("Kernel is alive\n");
-		printf("Detector Size: %d\n", DetSize);
-		printf("Number of Events: %d\n", NumEvents);
-		printf("Interpolation mode: %d\n", InterpolMode);
-		printf("Mesh Size: %d\n", MeshSize);
-		printf("dq per Vox: %f\n", dqPerVox);
-	}
-//END
-	//local Variables
+
+	////Debug Bullshit
+	//if (ind == 0)//ind == 0
+	//{
+	//	printf("Kernel is alive\n");
+	//	printf("Detector Size: %d\n", DetSize);
+	//	printf("Number of Events: %d\n", NumEvents);
+	//	printf("Interpolation mode: %d\n", InterpolMode);
+	//	printf("Mesh Size: %d\n", MeshSize);
+	//	printf("dq per Vox: %f\n", dqPerVox);
+	//}
+	////END
+		//local Variables
 	float k1[3];
 	float k2[3];
 	float q_RAW[3];
@@ -91,10 +68,10 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 
 	for (unsigned int i = 0; i < DetSize; ++i) //Loop over all Pixel
 	{
-		if (i == ind) //exclude zeroth peak
-		{
-			continue;
-		}
+		//if (i == ind) //exclude zeroth peak
+		//{
+		//	continue;
+		//}
 
 		float Val_RAW = IntensityData[ind] * IntensityData[i];
 		k2[0] = KMap[0 + 3 * i];
@@ -104,8 +81,8 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 		q_RAW[1] = k1[1] - k2[1];
 		q_RAW[2] = k1[2] - k2[2];
 
-		int MeshCenter = (MeshSize-1)/2;
-		
+		int MeshCenter = (MeshSize - 1) / 2;
+
 
 		for (unsigned int j = 0; j < NumEvents; ++j)//Loop over all Events
 		{
@@ -128,7 +105,7 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 			q[2] = q[2] / dqPerVox;
 
 			//Map to Mesh
-			
+
 			if (InterpolMode == 0) //nearest Neighbor
 			{
 				unsigned int fs, ms, ss;//fast-scan-, medium-scan-, slow-scan- floor
@@ -139,7 +116,7 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 				atomic_add_float(&(CQ[fs + ms * MeshSize + ss * MeshSize*MeshSize]), Val);
 			}
 			if (InterpolMode == 1) //linear
-			{ 
+			{
 				unsigned int fsf, msf, ssf;//fast-scan-, medium-scan-, slow-scan- floor
 				fsf = (unsigned int)floor(q[0]) + MeshCenter;
 				msf = (unsigned int)floor(q[1]) + MeshCenter;
@@ -161,7 +138,123 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 			}
 
 
-			
+
 		}
 	}
+}
+
+
+
+
+__kernel void AutoCorr_CQ_small(__global const float *IntensityData,
+	__global const float *KMap,
+	__global const double *Params,
+	__global double *CQsmall)
+{
+	unsigned int ind = get_global_id(0);
+	//Params[0] = DetectorSize[0] * DetectorSize[1]; //Numer of pixels (size[0]*size[1])
+	//Params[1] = SmallMesh.Shape.dq_per_Voxel; //dq per Voxel
+	//Params[2] = SmallMesh.Shape.Size_AB; // Size perp
+	//Params[3] = SmallMesh.Shape.Size_C; // Size C
+	//Params[4] = SmallMesh.Shape.k_A; // Dimension Alignment
+	//Params[5] = SmallMesh.Shape.k_B; // Dimension Alignment 
+	//Params[6] = SmallMesh.Shape.k_C; // Dimension Alignment 
+	//Params[7] = Flags.InterpolationMode;
+
+	unsigned int DetSize = (unsigned int)Params[0];
+	float dqPerVox = (float)Params[1];
+	unsigned int MeshSizeAB = (unsigned int)Params[2];
+	unsigned int MeshSizeC = (unsigned int)Params[3];
+
+	int Aind = (int)Params[4];
+	int Bind = (int)Params[5];
+	int Cind = (int)Params[6];
+
+	int InterpolMode = (unsigned int)Params[7];
+
+
+	////Debug Bullshit
+	//if (ind == 0)//ind == 0
+	//{
+	//	printf("Kernel is alive\n");
+	//	printf("Detector Size: %d\n", DetSize);
+	//	printf("Interpolation mode: %d\n", InterpolMode);
+	//	printf("Mesh Size AB: %d\n", MeshSizeAB);
+	//	printf("Mesh Size C: %d\n", MeshSizeC);
+	//	printf("dq per Vox: %f\n", dqPerVox);
+	//}
+	////END
+	////local Variables
+
+	float k1[3];
+	float k2[3];
+
+	k1[0] = KMap[0 + 3 * ind];
+	k1[1] = KMap[1 + 3 * ind];
+	k1[2] = KMap[2 + 3 * ind];
+
+	float q[3];
+
+	int MeshCenterAB = (MeshSizeAB - 1) / 2;
+	int MeshCenterC = (MeshSizeC - 1) / 2;
+
+	float INT_ind = IntensityData[ind];
+
+
+
+
+
+	//int N = 10;
+	//int n = (ind*777)%N ;
+	//int i = n;
+	//do{
+
+
+	for (int i = DetSize - 1; i > 0; i--) //Loop over all Pixel //< DetSize
+	{
+		//if (i == ind) //exclude zeroth peak need to be set to infinity afterwards
+		//{
+		//	continue;
+		//}
+
+		double Val = INT_ind * IntensityData[i];
+
+		if (Val < 1e-37f) //no entry shortcut
+		{
+			continue;
+		}
+
+		k2[0] = KMap[0 + 3 * i];
+		k2[1] = KMap[1 + 3 * i];
+		k2[2] = KMap[2 + 3 * i];
+		q[0] = k1[0] - k2[0];
+		q[1] = k1[1] - k2[1];
+		q[2] = k1[2] - k2[2];
+
+
+		if (q[Cind] < 0)
+		{
+			continue;
+		}
+
+		//resize (for Mapping)
+		q[0] = q[0] / dqPerVox;
+		q[1] = q[1] / dqPerVox;
+		q[2] = q[2] / dqPerVox;
+
+		//Map to Mesh
+
+
+		unsigned int fs, ms, ss;//fast-scan-, medium-scan-, slow-scan
+		fs = (unsigned int)floor(q[Aind] + 0.5) + MeshCenterAB;
+		ms = (unsigned int)floor(q[Bind] + 0.5) + MeshCenterAB;
+		ss = (unsigned int)floor(q[Cind] + 0.5) + MeshCenterC;
+		//CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB*MeshSizeAB] += Val;
+		atomic_add_float(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), Val);
+
+
+		//	printf("%d  ", fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB);
+
+
+	}//while ((i = (i + 1) % N) != n);
 }
