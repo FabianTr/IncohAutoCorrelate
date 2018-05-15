@@ -60,7 +60,9 @@ public:
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, int LowerBound, int UpperBound);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep);
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, bool Pixelmask);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound);
+	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound, bool Pixelmask);
 
 	void CreateSparseHitList(float Threshold);
 	void CreateSparseHitList(float Threshold, float PhotonSamplingStep);
@@ -101,5 +103,3 @@ public:
 	Settings::HitEvent* DetectorEvent=NULL;
 
 };
-
-

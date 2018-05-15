@@ -318,7 +318,15 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 {
 	LoadAndAverageIntensity(Events, Threshold, PhotonSamplingStep, 0, Events.size());
 }
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep,bool Pixelmask)
+{
+	LoadAndAverageIntensity(Events, Threshold, PhotonSamplingStep, 0, Events.size(), Pixelmask);
+}
 void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound)
+{
+	LoadAndAverageIntensity(Events, Threshold, PhotonSamplingStep, LowerBound, UpperBound, false);
+}
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound,bool Pixelmask)
 {
 	if (Events.size() == 0)
 	{
@@ -339,6 +347,12 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 			//fflush(stdout);
 
 			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
+			if (PixelMask)
+			{
+				//TODO IMPLEMENT Checklist for PixelMask and a LoadPixelmask() method
+				ArrayOperators::ParMultiplyElementwise(tmpIntensity, PixelMask, DetectorSize[0]* DetectorSize[1]);
+			}
+
 			if (PhotonSamplingStep <= 0)// No Photon discretising
 			{
 				ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //add with threshold
@@ -737,5 +751,4 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 	//Free Device
 	Options.OCL_FreeDevice(OpenCLDeviceNumber);
 }
-
 

@@ -63,32 +63,33 @@ public:
 	void SafeHitEventListToFile(char* Filename);
 	void LoadHitEventListFromFile(char* Filename);
 
+
 	// AC Settings
 	int halfACMeshEdgeLength = 100; //half EdgeLength of (cube) 3D Volume for auto-correlation without padding (intern +1 zeropadding)
-	enum Interpolation {NearestNeighbour = 0, Linear = 1};
+	enum Interpolation { NearestNeighbour = 0, Linear = 1 };
 
 
 	//conversion for ACMesh and Rounding
 	struct FloatIntConversion
 	{
-		float Offset=0; //shift before rounding to int
-		float Step=1; //steps for discretization
+		float Offset = 0; //shift before rounding to int
+		float Step = 1; //steps for discretization
 	};
 	FloatIntConversion F_I_Conversion;
 	inline int FloatToInt(float f)
 	{
-		return (int)floorf(((f + F_I_Conversion.Offset ) / F_I_Conversion.Step) + 0.5f);
+		return (int)floorf(((f + F_I_Conversion.Offset) / F_I_Conversion.Step) + 0.5f);
 	}
-	inline float IntToFloat( int i)
+	inline float IntToFloat(int i)
 	{
-		return ((float)i * F_I_Conversion.Step)- (float)(F_I_Conversion.Offset );
+		return ((float)i * F_I_Conversion.Step) - (float)(F_I_Conversion.Offset);
 	}
 
 
 	struct SettingsChecklist {
 		bool OpenCL = false;
 	};
-	
+
 	SettingsChecklist  Checklist;
 
 

@@ -71,6 +71,7 @@
     <ClCompile Include="ProfileTime.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="ArrayOperators.cpp" />
+    <ClCompile Include="Statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ACMesh.h" />
@@ -79,6 +80,7 @@
     <ClInclude Include="Forward.h" />
     <ClInclude Include="ProfileTime.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="Statistics.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.gitignore" />
