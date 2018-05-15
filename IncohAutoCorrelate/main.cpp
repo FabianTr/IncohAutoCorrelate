@@ -50,7 +50,7 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//}
 
 	ACMesh smallCQMesh;
-	smallCQMesh.CreateSmallMesh_CofQ_ForDetector(Det, 1001);
+	smallCQMesh.CreateSmallMesh_CofQ_ForDetector(Det, 1001,12);
 
 	Detector::AutoCorrFlags flags;
 	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;

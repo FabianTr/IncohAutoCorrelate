@@ -172,6 +172,8 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 
 	int InterpolMode = (unsigned int)Params[7];
 
+	float MaxQ = (float)Params[8];
+
 
 	////Debug Bullshit
 	//if (ind == 0)//ind == 0
@@ -235,6 +237,11 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		q2[0] = (k2[0] - k1[0]) / dqPerVox;
 		q2[1] = (k2[1] - k1[1]) / dqPerVox;
 		q2[2] = (k2[2] - k1[2]) / dqPerVox;
+
+		if (sqrt(q2[0] * q2[0] + q2[1] * q2[1] + q2[2] * q2[2]) > MaxQ)
+		{
+			continue;
+		}
 
 
 		//Map to Mesh

@@ -686,7 +686,7 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 	cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
 
 	//set Parameter
-	double Params[8];
+	double Params[9];
 	Params[0] = DetectorSize[0] * DetectorSize[1]; //Numer of pixels (size[0]*size[1])
 	Params[1] = SmallMesh.Shape.dq_per_Voxel; //dq per Voxel
 	Params[2] = SmallMesh.Shape.Size_AB; // Size perp
@@ -695,6 +695,7 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 	Params[5] = SmallMesh.Shape.k_B; // Dimension Alignment 
 	Params[6] = SmallMesh.Shape.k_C; // Dimension Alignment 
 	Params[7] = Flags.InterpolationMode;
+	Params[8] = SmallMesh.Shape.Max_Q; // for q-zoom
 
 	//DEBUG BULLSHIT
 	std::cout << "Params:\n";

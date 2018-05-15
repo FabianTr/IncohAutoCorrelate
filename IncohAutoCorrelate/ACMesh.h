@@ -22,6 +22,8 @@ public:
 		int Size_AB, Size_C; //Mesh size with padding (+1 in each direction)
 		int Center[3]; //Voxel where q is (0, 0, 0) in [q_A, q_B, q_C]
 		float dq_per_Voxel;
+
+		float Max_Q; // is not dq_per_Voxel*Size_AB because of the rotation factor sqrt(2.00001)
 	};
 
 //Settings Pointer
@@ -31,10 +33,16 @@ public:
 	MeshShape Shape;
 //Functions
 	void CreateSmallMeshForDetector(Detector Det, int PerpSize);
+	void CreateSmallMeshForDetector(Detector Det, int PerpSize, float q_Zoom);
+
 	void CreateBigMeshForDetector(Detector Det, int EdgeSize);
+	void CreateBigMeshForDetector(Detector Det, int EdgeSize, float q_Zoom);
 
 	void CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize);
+	void CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize, float q_Zoom);
+
 	void CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize);
+	void CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize, float q_Zoom);
 
 	void Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode);
 	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode);

@@ -15,6 +15,10 @@ ACMesh::~ACMesh()
 
 void ACMesh::CreateSmallMeshForDetector(Detector Det, int PerpSize)
 {
+	CreateSmallMeshForDetector(Det, PerpSize, 1.0f);
+}
+void ACMesh::CreateSmallMeshForDetector(Detector Det, int PerpSize, float q_Zoom)
+{
 	if (PerpSize % 2 == 0)//check if PerpSize is even or odd 
 	{
 		std::cerr << "ERROR: Meshsize must be odd for each dimension.\n";
@@ -36,9 +40,9 @@ void ACMesh::CreateSmallMeshForDetector(Detector Det, int PerpSize)
 		Shape.k_C = 2;
 	// calculate the second largest q-axis
 	Shape.k_B = 3 - Shape.k_A - Shape.k_C;
-    //Set Size
+	//Set Size
 	Shape.Size_AB = PerpSize + 2;//+2 padding
-	Shape.Size_C = (int) floor((Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A])*PerpSize + 2.5); //+ 2 padding
+	Shape.Size_C = (int)floor((Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A])*PerpSize + 2.5); //+ 2 padding
 	if (Shape.Size_C % 2 == 0)//check if PerpSize is even or odd 
 	{
 		Shape.Size_C += 1;
@@ -47,11 +51,13 @@ void ACMesh::CreateSmallMeshForDetector(Detector Det, int PerpSize)
 	Shape.Center[1] = (Shape.Size_AB - 1) / 2;
 	Shape.Center[2] = (Shape.Size_C - 1) / 2;
 
+	float MaxQ = Det.Max_q[Shape.k_A] / q_Zoom;
 
-	
-	Shape.dq_per_Voxel =( Det.Max_q[Shape.k_A] / (((Shape.Size_AB - 1) / 2) - 2))* sqrt(2.00001); //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
 
-	
+	Shape.Max_Q = MaxQ;
+	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2)) * sqrt(2.00001); //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
+
+
 	delete Mesh;
 	Mesh = new unsigned int[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 	Checklist.SmallMesh = true;
@@ -59,13 +65,17 @@ void ACMesh::CreateSmallMeshForDetector(Detector Det, int PerpSize)
 
 void ACMesh::CreateBigMeshForDetector(Detector Det, int EdgeSize)
 {
+	CreateBigMeshForDetector(Det, EdgeSize, 1.0f);
+}
+void ACMesh::CreateBigMeshForDetector(Detector Det, int EdgeSize, float q_Zoom)
+{
 	if (EdgeSize % 2 == 0)//check if PerpSize is even or odd 
 	{
 		std::cerr << "ERROR: Meshsize must be odd for each dimension.\n";
 		std::cerr << "   ->: ACMesh::CreateBigMeshForDetector()\n";
 		throw std::invalid_argument("PerpSize must be odd");
 	}
-	
+
 	//Shape is trivial (k-map native):
 	Shape.k_A = 0;
 	Shape.k_B = 1;
@@ -79,9 +89,10 @@ void ACMesh::CreateBigMeshForDetector(Detector Det, int EdgeSize)
 	Shape.Center[1] = (Shape.Size_AB - 1) / 2;
 	Shape.Center[2] = (Shape.Size_C - 1) / 2;
 
-	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2])* sqrt(2.00001);//sqrt(2.00001) is factor to ensure every rotation fits in mesh
+	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2]) / q_Zoom;
 
-	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1)/2)  - 2); //Calculate Voxel Size (the last -2 takes care of zero padding)
+	Shape.Max_Q = MaxQ;
+	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1) / 2) - 2)* sqrt(2.00001); //Calculate Voxel Size (the last -2 takes care of zero padding)//sqrt(2.00001) is factor to ensure every rotation fits in mesh
 
 
 	delete[] Mesh;
@@ -92,6 +103,10 @@ void ACMesh::CreateBigMeshForDetector(Detector Det, int EdgeSize)
 
 void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize)
 {
+	CreateBigMesh_CofQ_ForDetector(Det, EdgeSize, 1.0f);
+} 
+void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize, float q_Zoom)
+{
 	if (EdgeSize % 2 == 0)//check if PerpSize is even or odd 
 	{
 		std::cerr << "ERROR: Meshsize must be odd for each dimension.\n";
@@ -112,8 +127,9 @@ void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize)
 	Shape.Center[1] = (Shape.Size_AB - 1) / 2;
 	Shape.Center[2] = (Shape.Size_C - 1) / 2;
 
-	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2]) * sqrt(2.00001);//sqrt(2.00001) is factor to ensure every rotation fits in mesh
-
+	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2]) * sqrt(2.00001) / q_Zoom;//sqrt(2.00001) is factor to ensure every rotation fits in mesh
+	
+	Shape.Max_Q = MaxQ;
 	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1) / 2) - 2); //Calculate Voxel Size (the last -2 takes care of zero padding)
 
 	delete CQMesh;
@@ -122,6 +138,10 @@ void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize)
 }
 
 void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize)
+{
+	CreateSmallMesh_CofQ_ForDetector(Det, PerpSize, 1.0f);
+}
+void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize, float q_Zoom)
 {
 	if (PerpSize % 2 == 0)//check if PerpSize is even or odd 
 	{
@@ -156,8 +176,10 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize)
 	Shape.Center[2] = (Shape.Size_C - 1) / 2;
 
 
+	float MaxQ = Det.Max_q[Shape.k_A] / q_Zoom;
 
-	Shape.dq_per_Voxel = (Det.Max_q[Shape.k_A] / (((Shape.Size_AB - 1) / 2) - 2))* sqrt(2.00001); //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
+	Shape.Max_Q = MaxQ;
+	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2))* sqrt(2.00001); //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
 
 
 	delete CQMesh;
@@ -170,6 +192,13 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 {
 	//re normalize q to the Mesh spacing
 //	std::cout << "q: " << q[0] << ", " << q[1] << ", " << q[2] << " \tdq_per_Voxel: " << Shape.dq_per_Voxel << "\n";
+
+
+	//Check if q is in Range
+	if (sqrtf(q[0] * q[0] + q[3] * q[3] + q[2] * q[2]) > Shape.Max_Q)
+	{
+		return;
+	}
 
 	ArrayOperators::MultiplyScalar(q, 1.0 / Shape.dq_per_Voxel, 3);
 	switch (InterpolationMode)
