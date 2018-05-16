@@ -38,7 +38,27 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//apply Pixelmask
 	ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, 1024 * 1024);
 
+	
 
+	float Min=0, Max=0, Mean=0;
+
+	ArrayOperators::Min_Max_Mean_Value(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], Min, Max, Mean);
+
+	std::cout << "Min: " << Min << "    Max: " << Max << "    Mean: " << Mean<<"\n";
+
+	std::cout << "Size of long: " << sizeof(uint64_t) << "\n";
+
+
+	long Multiplicator = 1;
+	for (; 1 > Mean*Mean * Multiplicator; )
+	{
+		Multiplicator *= 10;
+	}
+	Multiplicator = Multiplicator * 100000;
+	std::cout << "Multiplicator: " << Multiplicator << "\n";
+
+	
+	//return;
 
 	//for (int i = 0; i < 50; i++)
 	//{
@@ -50,13 +70,23 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//}
 
 	ACMesh smallCQMesh;
-	smallCQMesh.CreateSmallMesh_CofQ_ForDetector(Det, 1001,12);
+	smallCQMesh.CreateSmallMesh_CofQ_ForDetector(Det, 1001,1);
 
+
+	std::cout << "MAX VOXEL OCC: " << 2 * smallCQMesh.Shape.Max_Q / smallCQMesh.Shape.dq_per_Voxel << "\n";
+
+	
 	Detector::AutoCorrFlags flags;
 	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
 
+	
+
+
 	std::cout << "Calc C(q) (small)\n";
 	Det.AutoCorrelate_CofQ_SmallMesh(smallCQMesh, flags, Options);
+
+
+	std::cout << "q-Max: " << smallCQMesh.Shape.Max_Q << "\n";
 
 	//
 	//{
@@ -65,9 +95,13 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 1, Options);
 	//}
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_small.bin", smallCQMesh.CQMesh, smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_half.bin \n";
+	 ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_small.bin", smallCQMesh.CQMesh, smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
+	 std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_small.bin \n";
 }
+
+
+
+
 
 
 void Load_and_average_Intensities(Settings &Options, Detector &Det)

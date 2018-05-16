@@ -166,7 +166,20 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize, float 
 	Shape.k_B = 3 - Shape.k_A - Shape.k_C;
 	//Set Size
 	Shape.Size_AB = PerpSize + 2;//+2 padding
-	Shape.Size_C = (int)floor((Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A])*PerpSize + 2.5); //+ 2 padding
+
+
+
+	if (q_Zoom == 1)
+	{
+		Shape.Size_C = (int)floor((Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A])*PerpSize + 2.5); //+ 2 padding
+	}
+	else
+	{
+		Shape.Size_C= Shape.Size_AB;
+	}
+
+
+
 	if (Shape.Size_C % 2 == 0)//check if PerpSize is even or odd 
 	{
 		Shape.Size_C += 1;
@@ -180,8 +193,7 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize, float 
 
 	Shape.Max_Q = MaxQ;
 	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2))* sqrt(2.00001); //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
-
-
+	
 	delete CQMesh;
 	CQMesh = new double[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 
@@ -267,7 +279,6 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 		throw;
 	}
 }
-
 void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode)
 {
 	ArrayOperators::Rotate(q_local, RotationM);

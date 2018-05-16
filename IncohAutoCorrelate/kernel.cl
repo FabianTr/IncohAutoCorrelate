@@ -149,6 +149,160 @@ __kernel void AutoCorr_CQ(__global const float *IntensityData,
 __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 	__global const float *KMap,
 	__global const double *Params,
+	__global long *CQsmall)
+{
+	unsigned int ind = get_global_id(0);
+	//Params[0] = DetectorSize[0] * DetectorSize[1]; //Numer of pixels (size[0]*size[1])
+	//Params[1] = SmallMesh.Shape.dq_per_Voxel; //dq per Voxel
+	//Params[2] = SmallMesh.Shape.Size_AB; // Size perp
+	//Params[3] = SmallMesh.Shape.Size_C; // Size C
+	//Params[4] = SmallMesh.Shape.k_A; // Dimension Alignment
+	//Params[5] = SmallMesh.Shape.k_B; // Dimension Alignment 
+	//Params[6] = SmallMesh.Shape.k_C; // Dimension Alignment 
+	//Params[7] = Flags.InterpolationMode;
+	//Params[9] = Multiplicator; //Multiplicator for conversion to long
+
+	unsigned int DetSize = (unsigned int)Params[0];
+	float dqPerVox = (float)Params[1];
+	unsigned int MeshSizeAB = (unsigned int)Params[2];
+	unsigned int MeshSizeC = (unsigned int)Params[3];
+
+	int Aind = (int)Params[4];
+	int Bind = (int)Params[5];
+	int Cind = (int)Params[6];
+
+	int InterpolMode = (unsigned int)Params[7];
+
+	float MaxQ = (float)Params[8];
+	long Multiplicator = (long)Params[9];
+
+
+	////Debug Bullshit
+	//if (ind == 0)//ind == 0
+	//{
+	//	printf("Kernel is alive\n");
+	//	printf("Detector Size: %d\n", DetSize);
+	//	printf("Interpolation mode: %d\n", InterpolMode);
+	//	printf("Mesh Size AB: %d\n", MeshSizeAB);
+	//	printf("Mesh Size C: %d\n", MeshSizeC);
+	//	printf("dq per Vox: %f\n", dqPerVox);
+	//	printf("Max q: %f\n", MaxQ);
+	//}
+	////END
+
+
+	//local Variables
+
+	float k1[3];
+	float k2[3];
+
+	k1[0] = KMap[0 + 3 * ind];
+	k1[1] = KMap[1 + 3 * ind];
+	k1[2] = KMap[2 + 3 * ind];
+
+	float q1[3];
+	float q2[3];
+
+	int MeshCenterAB = (MeshSizeAB - 1) / 2;
+	int MeshCenterC = (MeshSizeC - 1) / 2;
+
+	float INT_ind = IntensityData[ind];
+
+
+
+
+
+	//int N = 10;
+	//int n = (ind*777)%N ;
+	//int i = n;
+	//do{
+
+
+	for (int i = 0; i < DetSize; i++) //Loop over all Pixel //< DetSize
+	{
+		if (i == ind) //exclude zeroth peak need to be set to infinity afterwards
+		{
+			continue;
+		}
+
+		double Val = INT_ind * IntensityData[i];
+
+		if (Val < 1e-37f) //no entry shortcut
+		{
+			continue;
+		}
+
+		long ValConv = 0;
+		ValConv = (long)(Val*Multiplicator);
+
+		k2[0] = KMap[0 + 3 * i];
+		k2[1] = KMap[1 + 3 * i];
+		k2[2] = KMap[2 + 3 * i];
+		q1[0] = (k1[0] - k2[0]);
+		q1[1] = (k1[1] - k2[1]);
+		q1[2] = (k1[2] - k2[2]);
+
+		//q2[0] = (k2[0] - k1[0]);
+		//q2[1] = (k2[1] - k1[1]);
+		//q2[2] = (k2[2] - k1[2]);
+
+		if (sqrt(q1[0] * q1[0] + q1[1] * q1[1] + q1[2] * q1[2]) > MaxQ)
+		{
+			continue;
+		}
+
+		q1[0] = q1[0] / dqPerVox;
+		q1[1] = q1[1] / dqPerVox;
+		q1[2] = q1[2] / dqPerVox;
+
+		//q2[0] = q2[0] / dqPerVox;
+		//q2[1] = q2[1] / dqPerVox;
+		//q2[2] = q2[2] / dqPerVox;
+
+
+
+		//Map to Mesh
+		unsigned int fs, ms, ss;//fast-scan-, medium-scan-, slow-scan
+		fs = (unsigned int) (floor(q1[Aind] + 0.5) + MeshCenterAB);
+		ms = (unsigned int) (floor(q1[Bind] + 0.5) + MeshCenterAB);
+		ss = (unsigned int) (floor(q1[Cind] + 0.5) + MeshCenterC);
+		atomic_add(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), ValConv);
+
+
+		//CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB*MeshSizeAB] += Val;
+
+		//if (fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB > MeshSizeAB*MeshSizeAB*MeshSizeC)
+		//{
+		//	printf("q: %f, %f, %f ; Q = %f \n", q1[0], q1[1], q1[2], sqrt(q1[0] * q1[0] + q1[1] * q1[1] + q1[2] * q1[2]));
+		//	printf("scans: %d, %d, %d \n",fs,ms,ss);
+		//}
+
+		//atomic_add_float(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), Val);
+		
+
+
+
+	}//while ((i = (i + 1) % N) != n);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//OldStuff
+__kernel void AutoCorr_CQ_small_Double(__global const float *IntensityData,
+	__global const float *KMap,
+	__global const double *Params,
 	__global double *CQsmall)
 {
 	unsigned int ind = get_global_id(0);
@@ -184,9 +338,12 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 	//	printf("Mesh Size AB: %d\n", MeshSizeAB);
 	//	printf("Mesh Size C: %d\n", MeshSizeC);
 	//	printf("dq per Vox: %f\n", dqPerVox);
+	//	printf("Max q: %f\n", MaxQ);
 	//}
 	////END
-	////local Variables
+
+
+	//local Variables
 
 	float k1[3];
 	float k2[3];
@@ -230,18 +387,27 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		k2[0] = KMap[0 + 3 * i];
 		k2[1] = KMap[1 + 3 * i];
 		k2[2] = KMap[2 + 3 * i];
-		q1[0] = (k1[0] - k2[0]) / dqPerVox;
-		q1[1] = (k1[1] - k2[1]) / dqPerVox;
-		q1[2] = (k1[2] - k2[2]) / dqPerVox;
+		q1[0] = (k1[0] - k2[0]);
+		q1[1] = (k1[1] - k2[1]);
+		q1[2] = (k1[2] - k2[2]);
 
-		q2[0] = (k2[0] - k1[0]) / dqPerVox;
-		q2[1] = (k2[1] - k1[1]) / dqPerVox;
-		q2[2] = (k2[2] - k1[2]) / dqPerVox;
+		q2[0] = (k2[0] - k1[0]);
+		q2[1] = (k2[1] - k1[1]);
+		q2[2] = (k2[2] - k1[2]);
 
-		if (sqrt(q2[0] * q2[0] + q2[1] * q2[1] + q2[2] * q2[2]) > MaxQ)
+		if (sqrt(q1[0] * q1[0] + q1[1] * q1[1] + q1[2] * q1[2]) > MaxQ)
 		{
 			continue;
 		}
+
+		q1[0] = q1[0] / dqPerVox;
+		q1[1] = q1[1] / dqPerVox;
+		q1[2] = q1[2] / dqPerVox;
+
+		q2[0] = q2[0] / dqPerVox;
+		q2[1] = q2[1] / dqPerVox;
+		q2[2] = q2[2] / dqPerVox;
+
 
 
 		//Map to Mesh
@@ -250,6 +416,13 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		ms = (unsigned int)floor(q1[Bind] + 0.5) + MeshCenterAB;
 		ss = (unsigned int)floor(q1[Cind] + 0.5) + MeshCenterC;
 		//CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB*MeshSizeAB] += Val;
+
+		//if (fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB > MeshSizeAB*MeshSizeAB*MeshSizeC)
+		//{
+		//	printf("q: %f, %f, %f ; Q = %f \n", q1[0], q1[1], q1[2], sqrt(q1[0] * q1[0] + q1[1] * q1[1] + q1[2] * q1[2]));
+		//	printf("scans: %d, %d, %d \n",fs,ms,ss);
+		//}
+
 		atomic_add_float(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), Val);
 
 		//mirrowed entry
@@ -257,12 +430,17 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		ms = (unsigned int)floor(q2[Bind] + 0.5) + MeshCenterAB;
 		ss = (unsigned int)floor(q2[Cind] + 0.5) + MeshCenterC;
 		//CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB*MeshSizeAB] += Val;
+
+
+		//if (fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB > MeshSizeAB*MeshSizeAB*MeshSizeC)
+		//{
+		//	printf("q: %f, %f, %f ; Q = %f \n", q2[0], q2[1], q2[2], sqrt(q2[0] * q2[0] + q2[1] * q2[1] + q2[2] * q2[2]));
+		//	printf("scans: %d, %d, %d \n", fs, ms, ss);
+		//}
+
 		atomic_add_float(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), Val);
-
-
 		//	printf("%d  ", fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB);
 
 
 	}//while ((i = (i + 1) % N) != n);
 }
-

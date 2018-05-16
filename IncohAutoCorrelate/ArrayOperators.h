@@ -60,6 +60,22 @@ namespace ArrayOperators
 		}
 	}
 
+	inline void Min_Max_Mean_Value(float* Array, int Size, float& MinValue, float& MaxValue, float& MeanValue)
+	{
+		double t_mean=0;
+		MinValue = 1e38f;
+		MaxValue = -1e38f;
+		for (int i = 0; i < Size; i++)
+		{
+			if (Array[i] > MaxValue)
+				MaxValue = Array[i];
+			if (Array[i] < MinValue)
+				MinValue = Array[i];
+			t_mean += Array[i];
+		}
+		t_mean = t_mean / Size;
+		MeanValue = (float)t_mean;
+	}
 
 
 	//serialfunctions
