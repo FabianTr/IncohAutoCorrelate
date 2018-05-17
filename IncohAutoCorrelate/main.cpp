@@ -110,8 +110,8 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//Det.Merge_smallCofQ(MergedCq, smallCQMesh, Options.HitEvents, 0, 1000, Options, flags);
 	Det.Merge_smallCofQ(MergedCq, smallCQMesh, Options.HitEvents, Options, flags);
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_1k.bin", MergedCq.CQMesh, MergedCq.Shape.Size_AB*MergedCq.Shape.Size_AB*MergedCq.Shape.Size_C, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_1k.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big.bin", MergedCq.CQMesh, MergedCq.Shape.Size_AB*MergedCq.Shape.Size_AB*MergedCq.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big.bin \n";
 }
 
 
@@ -153,6 +153,53 @@ void GetOrientationStatistic(Settings &Options)
 	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Orientations.bin", OrientationVectors, 3 * Options.HitEvents.size(), ArrayOperators::FileType::Binary);
 }
 
+
+void AutoCorrelateEvents(Settings &Options, Detector &Det)
+{
+	ProfileTime profiler;
+	Options.Echo("Create BigMesh");
+	ACMesh BigMesh;
+
+	BigMesh.CreateBigMeshForDetector(Det, 1001, 1.0f);
+
+	std::cout << "BiglMesh Size: " << BigMesh.Shape.Size_C << "\t; dq/dV: " << BigMesh.Shape.dq_per_Voxel << "\n";
+
+
+	BigMesh.Options = &Options;
+
+	Options.Echo("AutoCorrelate");
+	std::cout << Options.HitEvents.size() << " Events\n";
+
+	profiler.Tic();
+
+	for (int i = 0; i <Options.HitEvents.size(); i++) // Options.HitEvents.size()
+	{
+		//std::cout << i << "/" << Options.HitEvents.size() << std::endl;
+		Det.LoadIntensityData(&Options.HitEvents[i]);
+		Det.CreateSparseHitList(3.2f, 6.4f);
+
+		Detector::AutoCorrFlags flags;
+		flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+		Det.AutoCorrelateSparseList(BigMesh, flags);
+
+	}
+
+	profiler.Toc(true);
+
+	
+	double* ACMesh = new double[BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C]();
+	#pragma omp parallel for
+	for (int i = 0; i < BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C; i++)
+	{
+		ACMesh[i] = Options.IntToFloat(BigMesh.Mesh[i]);
+	}
+
+
+
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW.bin", ACMesh, BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW.bin \n";
+
+}
 
 
 int main()
@@ -217,9 +264,9 @@ int main()
 	
 
 
-	Test_CQ_small(Options, TestDet);
+	//Test_CQ_small(Options, TestDet);
 
-
+	AutoCorrelateEvents(Options, TestDet);
 
 
 	std::cout << "Program ended\n";
