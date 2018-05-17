@@ -773,8 +773,11 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 	err = queue.enqueueReadBuffer(CL_CQ_Small, CL_TRUE, 0, ACsize, TempMesh);
 	Options.checkErr(err, "OpenCL kernel, launched in Detector::AutoCorrelate_CofQ_SmallMesh() ");
 
+	//Free Device
+	Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
 
+	//convert to Double
 	#pragma omp parallel for
 	for (unsigned int i = 0; i <  SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_C; i++)
 	{
@@ -783,13 +786,9 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 	delete[] TempMesh;
 
 
-
-
-	//Free Device
-	Options.OCL_FreeDevice(OpenCLDeviceNumber);
 }
 
-void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings & Options)
+void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings & Options, AutoCorrFlags Flags)
 {
 	{//Test stuff
 		if (SmallMesh.Shape.Size_AB != BigMesh.Shape.Size_AB)
@@ -823,13 +822,26 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		Rot_and_Weight[ind + 7] = Events[i].RotMatrix[7];
 		Rot_and_Weight[ind + 8] = Events[i].RotMatrix[8];
 		//weight (mean intensity)
-		Rot_and_Weight[ind + 9] = Events[i].MeanIntensity;
+		Rot_and_Weight[ind + 9] = Events[i].MeanIntensity*Events[i].MeanIntensity;
 
 		if (Events[i].MeanIntensity>MaxWeight)
-			MaxWeight = Events[i].MeanIntensity;
+			MaxWeight = Events[i].MeanIntensity*Events[i].MeanIntensity;
+
+
+
+		//if (i < 20)
+		//{
+		//	std::cout << Rot_and_Weight[ind + 0] << "   " << Rot_and_Weight[ind + 1] << "   " << Rot_and_Weight[ind + 2] << "\n";
+		//	std::cout << Rot_and_Weight[ind + 3] << "   " << Rot_and_Weight[ind + 4] << "   " << Rot_and_Weight[ind + 5] << "\n";
+		//	std::cout << Rot_and_Weight[ind + 6] << "   " << Rot_and_Weight[ind + 7] << "   " << Rot_and_Weight[ind + 8] << "\n";
+		//	std::cout << Rot_and_Weight[ind + 9] << ";\n";
+		//	std::cout << "\n";
+		//}
 
 		ind += 10;
 	}
+
+	std::cout << "Max weight: " << MaxWeight << "\n";
 
 	double Multiplicator = 1;
 	for(; 1>MaxWeight*Multiplicator;) //Order of magnitude of largest weight
@@ -842,18 +854,152 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		OOM *= 10;
 	}
 	Multiplicator = Multiplicator / OOM;
-	Multiplicator *= 1e18;
+	Multiplicator *= 1e16;
 
-	uint64_t * TempSmallMesh = new uint64_t[SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_C];
+	//uint64_t * TempSmallMesh = new uint64_t[SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_C];
+
+	//#pragma omp parallel for
+	//for (unsigned int i = 0; i < SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_C; i++)
+	//{
+	//	TempSmallMesh[i] = (uint64_t)(SmallMesh.CQMesh[i]* Multiplicator);
+	//}
+	
+	uint64_t * TempBigMesh_half = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB+1)/2)]();
+
+
+
+
+	//set Parameter
+	double Params[9];
+	Params[0] = SmallMesh.Shape.dq_per_Voxel; //dq per Voxel
+	Params[1] = SmallMesh.Shape.Size_AB; // Size perp
+	Params[2] = SmallMesh.Shape.Size_C; // Size C
+	Params[3] = SmallMesh.Shape.k_A; // Dimension Alignment
+	Params[4] = SmallMesh.Shape.k_B; // Dimension Alignment 
+	Params[5] = SmallMesh.Shape.k_C; // Dimension Alignment 
+	Params[6] = Flags.InterpolationMode;
+	Params[7] = Multiplicator; //Multiplicator for conversion to long
+	Params[8] = UpperBound - LowerBound; //Number of Rotations
+
+							   //DEBUG BULLSHIT
+	std::cout << "\n***************\nParams:\n";
+	for (int i = 0; i < 9; i++)
+	{
+		std::cout << Params[i] << "\n";
+	}
+	std::cout << "**************\n";
+
+
+	//reserve OpenCL Device
+	int OpenCLDeviceNumber = -1;
+	cl_int err;
+
+	while ((OpenCLDeviceNumber = Options.OCL_ReserveDevice()) == -1)
+	{
+		std::this_thread::sleep_for(std::chrono::microseconds(Options.ThreadSleepForOCLDev));
+	}
+
+	//obtain Device
+	cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
+
+
+
+	//Setup Queue
+	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
+	Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelate_CofQ_SmallMesh() ");
+	cl::Event cl_event;
+
+
+
+
+	//profiler stuff
+	ProfileTime Profiler;
+
+	// KernelBuffer
+	size_t ACsize = sizeof(uint64_t) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2);
+	cl::Buffer CL_CQ(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempBigMesh_half, &err);
+	//Input:
+	size_t ACsizeSmall = sizeof(double) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
+	cl::Buffer CL_CQ_Small(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ACsizeSmall, SmallMesh.CQMesh, &err);
+	size_t RotWeightSize = sizeof(float) * 10 * (UpperBound - LowerBound);
+	cl::Buffer CL_RW(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, RotWeightSize, Rot_and_Weight, &err);
+	cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
+
+
+	//Setup Kernel
+	cl::Kernel kernel(Options.CL_Program, "Merge_CQ", &err);
+	Options.checkErr(err, "Setup AutoCorr_CQ in Detector::AutoCorrelate_CofQ_SmallMesh() ");
+
+	//Set Arguments
+	kernel.setArg(0, CL_CQ_Small);
+	kernel.setArg(1, CL_RW);
+	kernel.setArg(2, CL_Params);
+	kernel.setArg(3, CL_CQ);
+	const size_t &global_size = SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
+
+
+
+	//launch Kernel
+	Options.Echo("Launch kernel (Merge C(q)) ... \n");
+
+	Profiler.Tic();
+
+	err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
+
+	Options.checkErr(err, "Launch Kernel in Detector::Merge_smallCofQ() ");
+	cl_event.wait();
+	Options.Echo("C(q)-Merge kernel finished in");
+	Profiler.Toc(true);
+
+	err = queue.enqueueReadBuffer(CL_CQ, CL_TRUE, 0, ACsize, TempBigMesh_half);
+	Options.checkErr(err, "OpenCL kernel, launched in Detector::Merge_smallCofQ() ");
+
+	//Free Device
+	Options.OCL_FreeDevice(OpenCLDeviceNumber);
+
+	//*****************PostProcessing***********************
+
+	double * DoubleBigMesh_half = new double[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2)];
 
 	#pragma omp parallel for
-	for (unsigned int i = 0; i < SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_C; i++)
+	for (int i = 0; i < SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2); i++)
 	{
-		TempSmallMesh[i] = (uint64_t)(SmallMesh.CQMesh[i]* Multiplicator);
+		DoubleBigMesh_half[i] = ((double)TempBigMesh_half[i] / Multiplicator);
 	}
-	
-	uint64_t * TempBigMesh = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB+1)/2)];
+
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_half.bin", DoubleBigMesh_half, SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2), ArrayOperators::FileType::Binary);
+	std::cout << "\nSaved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_half.bin \n";
 
 
+	//Mirrow half Mesh to full Mesh and convert to double
+
+	int shift = (BigMesh.Shape.Size_AB - 1) / 2;
+	#pragma omp parallel for
+	for ( int ss = 0; ss < (BigMesh.Shape.Size_AB + 1)/2; ss++)
+	{
+		for (int ms = 0; ms < BigMesh.Shape.Size_AB; ms++)
+		{
+			for (int fs = 0; fs < BigMesh.Shape.Size_AB; fs++)
+			{
+				//convert to double
+				double Val = ((double)TempBigMesh_half[fs + ms * BigMesh.Shape.Size_AB + ss * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB])/(Multiplicator); 
+				//positive z
+				BigMesh.CQMesh[fs + ms * BigMesh.Shape.Size_AB + (ss + shift) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
+				//negative
+				if (ss != 0)//prevent double fill on ss == 0
+				{
+					BigMesh.CQMesh[fs + ms * BigMesh.Shape.Size_AB + (shift - ss) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
+				}
+
+			}
+		}
+	}
+
+
+
+}
+void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector<Settings::HitEvent>& Events, Settings & Options, AutoCorrFlags Flags)
+{
+	Merge_smallCofQ(BigMesh, SmallMesh, Events, 0, Events.size(), Options, Flags);
 }
 

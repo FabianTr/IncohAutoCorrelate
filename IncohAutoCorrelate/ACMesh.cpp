@@ -55,7 +55,7 @@ void ACMesh::CreateSmallMeshForDetector(Detector Det, int PerpSize, float q_Zoom
 
 
 	Shape.Max_Q = MaxQ;
-	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2)) * sqrt(2.00001); //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
+	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2));// * sqrt(2.00001) //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
 
 
 	delete Mesh;
@@ -92,7 +92,7 @@ void ACMesh::CreateBigMeshForDetector(Detector Det, int EdgeSize, float q_Zoom)
 	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2]) / q_Zoom;
 
 	Shape.Max_Q = MaxQ;
-	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1) / 2) - 2)* sqrt(2.00001); //Calculate Voxel Size (the last -2 takes care of zero padding)//sqrt(2.00001) is factor to ensure every rotation fits in mesh
+	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1) / 2) - 2);//* sqrt(2.00001) //Calculate Voxel Size (the last -2 takes care of zero padding)//sqrt(2.00001) is factor to ensure every rotation fits in mesh
 
 
 	delete[] Mesh;
@@ -127,7 +127,7 @@ void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize, float q_
 	Shape.Center[1] = (Shape.Size_AB - 1) / 2;
 	Shape.Center[2] = (Shape.Size_C - 1) / 2;
 
-	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2]) * sqrt(2.00001) / q_Zoom;//sqrt(2.00001) is factor to ensure every rotation fits in mesh
+	float MaxQ = std::max(std::max(Det.Max_q[0], Det.Max_q[1]), Det.Max_q[2])  / q_Zoom;//* sqrt(2.00001)//sqrt(2.00001) is factor to ensure every rotation fits in mesh
 	
 	Shape.Max_Q = MaxQ;
 	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1) / 2) - 2); //Calculate Voxel Size (the last -2 takes care of zero padding)
@@ -192,7 +192,7 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize, float 
 	float MaxQ = Det.Max_q[Shape.k_A] / q_Zoom;
 
 	Shape.Max_Q = MaxQ;
-	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2))* sqrt(2.00001); //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
+	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2));//* sqrt(2.00001) //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
 	
 	delete CQMesh;
 	CQMesh = new double[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
@@ -280,6 +280,9 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 	}
 }
 void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode)
+{
+}
+void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode, bool DoubleBinning)
 {
 	ArrayOperators::Rotate(q_local, RotationM);
 	Atomic_Add_q_Entry(q_local,  Value,  InterpolationMode);

@@ -45,7 +45,8 @@ public:
 	void CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize, float q_Zoom);
 
 	void Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode);
-	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode);
+	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode );
+	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode, bool DoubleBinning);
 	
 
 

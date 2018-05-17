@@ -289,7 +289,122 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 
 
 
+__kernel void Merge_CQ(__global const double *smallMesh,
+	__global const float *RW,
+	__global const double *Params,
+	__global long *CQ)
+{
+	unsigned int ind = get_global_id(0);
+	//Params[0] = SmallMesh.Shape.dq_per_Voxel; //dq per Voxel
+	//Params[1] = SmallMesh.Shape.Size_AB; // Size perp
+	//Params[2] = SmallMesh.Shape.Size_C; // Size C
+	//Params[3] = SmallMesh.Shape.k_A; // Dimension Alignment
+	//Params[4] = SmallMesh.Shape.k_B; // Dimension Alignment 
+	//Params[5] = SmallMesh.Shape.k_C; // Dimension Alignment 
+	//Params[6] = Flags.InterpolationMode;
+	//Params[7] = Multiplicator; //Multiplicator for conversion to long
+	//Params[8] = UpperBound - LowerBound; //Number of Rotations
 
+	int smallMeshSize_AB = (int)Params[1];
+	int smallMeshSize_C = (int)Params[2];
+
+	int smallMeshCenterAB = (smallMeshSize_AB - 1) / 2;
+	int smallMeshCenterC = (smallMeshSize_C - 1) / 2;
+
+	int InterpolMode = (int)Params[6];
+
+	unsigned int Aind = (unsigned int)Params[3];
+	unsigned int Bind = (unsigned int)Params[4];
+	unsigned int Cind = (unsigned int)Params[5];
+
+	double Multiplicator = (double)Params[7];
+
+	unsigned int ListSize = (unsigned int)Params[8];
+
+
+
+
+
+
+	//Debug Bullshit
+	if (ind == 0)//ind == 0
+	{
+		printf("Kernel is alive\n");
+		printf("MeshShape AB: %d\n", smallMeshSize_AB);
+		printf("MeshShape  C: %d\n", smallMeshSize_C);
+
+		printf("Alingment: %d, %d, %d\n", Aind, Bind, Cind);
+		printf("Multiplicator: %f\n", Multiplicator);
+		printf("Listsize: %d\n", ListSize);
+	}
+	//END
+
+
+
+	//*************
+
+
+	float q_in[3];
+	int ss_in = 0, ms_in = 0, fs_in = 0;
+	//retrive scans from index
+	ss_in = ind / (smallMeshSize_AB*smallMeshSize_AB);
+	ms_in = (ind - ss_in * smallMeshSize_AB*smallMeshSize_AB) / (smallMeshSize_AB);
+	fs_in = ind - ss_in * smallMeshSize_AB*smallMeshSize_AB - ms_in * smallMeshSize_AB;
+	//retrive q vectros (in voxels) fromm small C(q) mesh
+	q_in[Aind] = fs_in - smallMeshCenterAB;
+	q_in[Bind] = ms_in - smallMeshCenterAB;
+	q_in[Cind] = ss_in - smallMeshCenterC;
+
+
+	for (unsigned int i = 0; i < ListSize; i++)
+	{
+		float q_out[3];
+		//Rotate Vector
+		q_out[0] = RW[10 * i + 0] * q_in[0] + RW[10 * i + 1] * q_in[1] + RW[10 * i + 2] * q_in[2];
+		q_out[1] = RW[10 * i + 3] * q_in[0] + RW[10 * i + 4] * q_in[1] + RW[10 * i + 5] * q_in[2];
+		q_out[2] = RW[10 * i + 6] * q_in[0] + RW[10 * i + 7] * q_in[1] + RW[10 * i + 8] * q_in[2];
+
+
+		if (q_out[2] < 0) //Use only the half space to safe memory (positive q_z only)
+		{
+			continue;
+		}
+
+		//weight entry and transform to int64
+		double Val_in = (double)smallMesh[ind];
+
+		if (Val_in == 0)
+		{
+			continue;
+		}
+
+		Val_in = Val_in * RW[10 * i + 9];
+		Val_in = Val_in * Multiplicator;
+		unsigned long Val_out = (unsigned long)Val_in;
+
+		
+
+		
+		if (InterpolMode == 0) //Nearest Neighbour
+		{
+			//get new scans
+			int fs = 0, ms = 0, ss = 0;
+			fs = (unsigned int)(floor(q_out[0] + 0.5) + smallMeshCenterAB);
+			ms = (unsigned int)(floor(q_out[1] + 0.5) + smallMeshCenterAB);
+			ss = (unsigned int)(floor(q_out[2] + 0.5));
+
+			//if(fs >= smallMeshSize_AB || ms >= smallMeshSize_AB || ss >= )
+
+			atomic_add(&(CQ[fs + ms * smallMeshSize_AB + ss * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
+
+		}
+		if (InterpolMode == 1) //Linear
+		{
+			printf("ERROR: Linear Interpolation not implemented yet\n");
+		}
+
+	}
+}
 
 
 

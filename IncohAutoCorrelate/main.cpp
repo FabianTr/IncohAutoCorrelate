@@ -26,6 +26,10 @@
 
 void Test_CQ_small(Settings &Options, Detector &Det)
 {
+
+	int const MeshSize = 1001;
+	float const QZoom = 1.0f;
+
 	ProfileTime profiler;
 
 	 // Get Sparse C(q)  --- TEST
@@ -70,7 +74,7 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//}
 
 	ACMesh smallCQMesh;
-	smallCQMesh.CreateSmallMesh_CofQ_ForDetector(Det, 1001,1);
+	smallCQMesh.CreateSmallMesh_CofQ_ForDetector(Det, MeshSize,QZoom);
 
 
 	std::cout << "MAX VOXEL OCC: " << 2 * smallCQMesh.Shape.Max_Q / smallCQMesh.Shape.dq_per_Voxel << "\n";
@@ -95,11 +99,20 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 1, Options);
 	//}
 
-	 ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_small.bin", smallCQMesh.CQMesh, smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
-	 std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_small.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_small.bin", smallCQMesh.CQMesh, smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_small.bin \n";
+
+
+	std::cout << "\n\n\nMerge and weight C(q):\n";
+	ACMesh MergedCq;
+	MergedCq.CreateBigMesh_CofQ_ForDetector(Det, MeshSize, QZoom);
+
+	//Det.Merge_smallCofQ(MergedCq, smallCQMesh, Options.HitEvents, 0, 1000, Options, flags);
+	Det.Merge_smallCofQ(MergedCq, smallCQMesh, Options.HitEvents, Options, flags);
+
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_1k.bin", MergedCq.CQMesh, MergedCq.Shape.Size_AB*MergedCq.Shape.Size_AB*MergedCq.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_1k.bin \n";
 }
-
-
 
 
 
