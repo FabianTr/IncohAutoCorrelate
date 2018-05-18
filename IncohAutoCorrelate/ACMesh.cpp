@@ -240,7 +240,7 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 
 		int s = Shape.Size_AB;
 
-		int val;
+		unsigned int val;
 		val = Options->FloatToInt(Value);
 
 #pragma omp atomic
@@ -276,7 +276,7 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 
 		int s = Shape.Size_AB;
 
-		int val;
+		unsigned int val;
 		val = Options->FloatToInt(Value);
 
 #pragma omp atomic

@@ -114,9 +114,6 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big.bin \n";
 }
 
-
-
-
 void Load_and_average_Intensities(Settings &Options, Detector &Det)
 {
 	ProfileTime profiler;
@@ -136,7 +133,6 @@ void Load_and_average_Intensities(Settings &Options, Detector &Det)
 
 }
 
-
 void GetOrientationStatistic(Settings &Options)
 {
 	Options.Echo("calc orientations");
@@ -152,7 +148,6 @@ void GetOrientationStatistic(Settings &Options)
 
 	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Orientations.bin", OrientationVectors, 3 * Options.HitEvents.size(), ArrayOperators::FileType::Binary);
 }
-
 
 void AutoCorrelateEvents(Settings &Options, Detector &Det)
 {
@@ -172,11 +167,24 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 	profiler.Tic();
 
-	for (int i = 0; i <Options.HitEvents.size(); i++) // Options.HitEvents.size()
+	for (int i = 40000; i <60000; i++) // Options.HitEvents.size()
 	{
-		//std::cout << i << "/" << Options.HitEvents.size() << std::endl;
+		if (i%50 == 0)
+			std::cout << i << "/" << Options.HitEvents.size() << std::endl;
 		Det.LoadIntensityData(&Options.HitEvents[i]);
+		ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, 1024 * 1024);
 		Det.CreateSparseHitList(3.2f, 6.4f);
+
+
+		//for (int i = 0; i < Det.SparseHitList.size(); i++)
+		//{
+		//	std::cout << Det.SparseHitList[i][0] << ", " << Det.SparseHitList[i][1]
+		//		<< Det.SparseHitList[i][2] <<": " << Det.SparseHitList[i][3] << "\n";
+		//}
+
+		//int x;
+		//std::cin >> x;
+
 
 		Detector::AutoCorrFlags flags;
 		flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
@@ -196,8 +204,8 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW.bin", ACMesh, BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_40k-60k.bin", ACMesh, BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_40k-60k.bin \n";
 
 }
 

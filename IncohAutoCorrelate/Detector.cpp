@@ -415,6 +415,9 @@ void Detector::LoadIntensityData()
 	H5std_string Path = DetectorEvent->Filename;
 	H5std_string DataSet = DetectorEvent->Dataset;
 
+	if (Intensity != NULL)
+		delete[] Intensity;
+
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]];
 	GetSliceOutOfHDFCuboid(Intensity, Path, DataSet, DetectorEvent->Event);
 }
@@ -428,9 +431,9 @@ void Detector::CreateSparseHitList(float Threshold)
 	SparseHitList.clear();
 	SparseHitList.reserve(1000);
 
-	struct TmpSparseVecStr { std::vector<std::array<float,4>> Vec; };
+	//struct TmpSparseVecStr { std::vector<std::array<float,4>> Vec; };
 
-	TmpSparseVecStr* TmpSparseVec = new TmpSparseVecStr[DetectorSize[1]];
+	//TmpSparseVecStr* TmpSparseVec = new TmpSparseVecStr[DetectorSize[1]];
 
 	for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
 	{
@@ -444,16 +447,33 @@ void Detector::CreateSparseHitList(float Threshold)
 				TmpEntry[1] = GetkVal(1, i_x, i_y);
 				TmpEntry[2] = GetkVal(2, i_x, i_y);
 				TmpEntry[3] = Intensity[i_x + DetectorSize[0] * i_y];
-				TmpSparseVec[i_y].Vec.push_back(TmpEntry);
+				SparseHitList.push_back(TmpEntry);
 			}
 		}
 	}
 
-	for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
-	{
-		SparseHitList.insert(SparseHitList.end(), TmpSparseVec[i_y].Vec.begin(), TmpSparseVec[i_y].Vec.end());
-	}
 	Checklist.SparseHitList = true;
+	//for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
+	//{
+	//	for (unsigned int i_x = 0; i_x < DetectorSize[0]; i_x++)
+	//	{
+	//		if (Intensity[i_x + DetectorSize[0] * i_y] >= Threshold)
+	//		{
+	//			std::array< float, 4> TmpEntry;
+
+	//			TmpEntry[0] = GetkVal(0, i_x, i_y);
+	//			TmpEntry[1] = GetkVal(1, i_x, i_y);
+	//			TmpEntry[2] = GetkVal(2, i_x, i_y);
+	//			TmpEntry[3] = Intensity[i_x + DetectorSize[0] * i_y];
+	//			TmpSparseVec[i_y].Vec.push_back(TmpEntry);
+	//		}
+	//	}
+	//}
+
+	//for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
+	//{
+	//	SparseHitList.insert(SparseHitList.end(), TmpSparseVec[i_y].Vec.begin(), TmpSparseVec[i_y].Vec.end());
+	//}
 }
 
 void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
