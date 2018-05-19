@@ -27,7 +27,7 @@
 void Test_CQ_small(Settings &Options, Detector &Det)
 {
 
-	int const MeshSize = 1001;
+	int const MeshSize = 501;
 	float const QZoom = 1.0f;
 
 	ProfileTime profiler;
@@ -99,8 +99,8 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 1, Options);
 	//}
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_1003_small.bin", smallCQMesh.CQMesh, smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_1003_small.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503_small.bin", smallCQMesh.CQMesh, smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503_small.bin \n";
 
 
 	std::cout << "\n\n\nMerge and weight C(q):\n";
@@ -110,8 +110,8 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//Det.Merge_smallCofQ(MergedCq, smallCQMesh, Options.HitEvents, 0, 1000, Options, flags);
 	Det.Merge_smallCofQ(MergedCq, smallCQMesh, Options.HitEvents, Options, flags);
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_1003_Big.bin", MergedCq.CQMesh, MergedCq.Shape.Size_AB*MergedCq.Shape.Size_AB*MergedCq.Shape.Size_C, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_1003_Big.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503_Big.bin", MergedCq.CQMesh, MergedCq.Shape.Size_AB*MergedCq.Shape.Size_AB*MergedCq.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503_Big.bin \n";
 }
 
 void Load_and_average_Intensities(Settings &Options, Detector &Det)
@@ -204,15 +204,15 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_1003.bin", ACMesh, BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_1003.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503.bin", ACMesh, BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503.bin \n";
 
 }
 
 
 void CombineStuff()
 {
-	int size = 1003 * 1003 * 1003;
+	int size = 503 * 503 * 503;
 
 	double * CQ = new double[size]();
 
@@ -229,7 +229,7 @@ void CombineStuff()
 	std::cout << "\n\n\n*************************\n";
 
 	std::cout << "\n Load C(q)\n";
-	ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big.bin", CQ, size);
+	ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503_Big.bin", CQ, size);
 
 	//std::cout << "\n Load AC1: 0 - 20k\n";
 	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_0-20k.bin", AC1, 1003 * 1003 * 1003);
@@ -258,7 +258,7 @@ void CombineStuff()
 
 
 	std::cout << "\n Load AC ...\n";
-	ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_1003.bin", AC, size);
+	ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503.bin", AC, size);
 
 	std::cout << "\n Apply C(q) ...\n";
 
@@ -272,8 +272,8 @@ void CombineStuff()
 	}
 
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_1003.bin", AC_Final, size, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_1003.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_503.bin", AC_Final, size, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_503.bin \n";
 
 }
 
