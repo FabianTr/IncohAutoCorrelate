@@ -214,7 +214,7 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 			std::cerr << "ERROR: Linear interpolation not implemented for double binning yet.\nContinue with nearest neighbor.\n";
 		}
 
-		if (sqrtf(q_local[0] * q_local[0] + q_local[3] * q_local[3] + q_local[2] * q_local[2]) > Shape.Max_Q)
+		if (sqrtf(q_local[0] * q_local[0] + q_local[1] * q_local[1] + q_local[2] * q_local[2]) > Shape.Max_Q)
 		{
 			return;
 		}
@@ -226,11 +226,35 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 		ms_l = (int)floorf(q_local[1] + 0.5) + Shape.Center[1];
 		ss_l = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
 
+
+		//float q0 = q_local[0];
+		//float q1 = q_local[1];
+		//float q2 = q_local[2];
+
 		q_local[0] = (float)(fs_l - Shape.Center[0]);
 		q_local[1] = (float)(ms_l - Shape.Center[1]);
 		q_local[2] = (float)(ss_l - Shape.Center[2]);
 
+		//float qs0 = q_local[0];
+		//float qs1 = q_local[1];
+		//float qs2 = q_local[2];
+
+		//float r1 = RotationM[0];
+		//float r2 = RotationM[1];
+		//float r3 = RotationM[2];
+		//float r4 = RotationM[3];
+		//float r5 = RotationM[4];
+		//float r6 = RotationM[5];
+		//float r7 = RotationM[6];
+		//float r8 = RotationM[7];
+		//float r9 = RotationM[8];
+
+
 		ArrayOperators::Rotate(q_local, RotationM);
+
+		//float qr0 = q_local[0];
+		//float qr1 = q_local[1];
+		//float qr2 = q_local[2];
 		
 		//second binning
 		int fs, ms, ss;

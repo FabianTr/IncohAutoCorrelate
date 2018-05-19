@@ -99,8 +99,8 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 1, Options);
 	//}
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_small.bin", smallCQMesh.CQMesh, smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_small.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_1003_small.bin", smallCQMesh.CQMesh, smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_AB*smallCQMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_1003_small.bin \n";
 
 
 	std::cout << "\n\n\nMerge and weight C(q):\n";
@@ -110,8 +110,8 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//Det.Merge_smallCofQ(MergedCq, smallCQMesh, Options.HitEvents, 0, 1000, Options, flags);
 	Det.Merge_smallCofQ(MergedCq, smallCQMesh, Options.HitEvents, Options, flags);
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big.bin", MergedCq.CQMesh, MergedCq.Shape.Size_AB*MergedCq.Shape.Size_AB*MergedCq.Shape.Size_C, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_1003_Big.bin", MergedCq.CQMesh, MergedCq.Shape.Size_AB*MergedCq.Shape.Size_AB*MergedCq.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_1003_Big.bin \n";
 }
 
 void Load_and_average_Intensities(Settings &Options, Detector &Det)
@@ -167,7 +167,7 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 	profiler.Tic();
 
-	for (int i = 40000; i <60000; i++) // Options.HitEvents.size()
+	for (int i = 0; i < Options.HitEvents.size(); i++) // Options.HitEvents.size()
 	{
 		if (i%50 == 0)
 			std::cout << i << "/" << Options.HitEvents.size() << std::endl;
@@ -204,8 +204,76 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_40k-60k.bin", ACMesh, BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_40k-60k.bin \n";
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_1003.bin", ACMesh, BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_1003.bin \n";
+
+}
+
+
+void CombineStuff()
+{
+	int size = 1003 * 1003 * 1003;
+
+	double * CQ = new double[size]();
+
+	double * AC = new double[size]();
+
+	//double * AC1 = new double[1003 * 1003 * 1003]();
+	//double * AC2 = new double[1003 * 1003 * 1003]();
+	//double * AC3 = new double[1003 * 1003 * 1003]();
+	//double * AC4 = new double[1003 * 1003 * 1003]();
+	//double * AC5 = new double[1003 * 1003 * 1003]();
+
+	double * AC_Final = new double[1003 * 1003 * 1003]();
+
+	std::cout << "\n\n\n*************************\n";
+
+	std::cout << "\n Load C(q)\n";
+	ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big.bin", CQ, size);
+
+	//std::cout << "\n Load AC1: 0 - 20k\n";
+	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_0-20k.bin", AC1, 1003 * 1003 * 1003);
+
+	//std::cout << "Load AC2: 20 - 40k\n";
+	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_20k-40k.bin", AC2, 1003 * 1003 * 1003);
+
+	//std::cout << "Load AC3: 40 - 60k\n";
+	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_40k-60k.bin", AC3, 1003 * 1003 * 1003);
+
+	//std::cout << "Load AC4: 60 - 80k\n";
+	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_60k-80k.bin", AC4, 1003 * 1003 * 1003);
+
+	//std::cout << "Load AC2: 80 - 96k\n";
+	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_80k-96k.bin", AC5, 1003 * 1003 * 1003);
+
+
+
+	//std::cout << "\n Combine ACs\n";
+
+	//#pragma omp parallel for
+	//for (int i = 0; i < 1003*1003*1003; i++)
+	//{
+	//	AC[i] = AC1[i] + AC2[i] + AC3[i] + AC4[i] + AC5[i];
+	//}
+
+
+	std::cout << "\n Load AC ...\n";
+	ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_1003.bin", AC, size);
+
+	std::cout << "\n Apply C(q) ...\n";
+
+	#pragma omp parallel for
+	for (int i = 0; i <size; i++)
+	{
+		if (CQ[i] <= 0)
+			CQ[i] = 0;
+
+		AC_Final[i] = AC[i] / CQ[i];
+	}
+
+
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_1003.bin", AC_Final, size, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_1003.bin \n";
 
 }
 
@@ -277,8 +345,10 @@ int main()
 	AutoCorrelateEvents(Options, TestDet);
 
 
-	std::cout << "Program ended\n";
-	std::cin >> end;
+	CombineStuff();
+
+	/*std::cout << "Program ended\n";
+	std::cin >> end;*/
 	return 0;
 
 

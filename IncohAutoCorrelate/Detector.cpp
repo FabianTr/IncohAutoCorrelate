@@ -545,12 +545,12 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 			q[0] = SparseHitList[i][0] - SparseHitList[j][0];
 			q[1] = SparseHitList[i][1] - SparseHitList[j][1];
 			q[2] = SparseHitList[i][2] - SparseHitList[j][2];
-			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
+			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode,true); // DetectorEvent->RotMatrix
 			//std::cout << SparseHitList[i][3] * SparseHitList[j][3] << ", ";
 			q[0] = SparseHitList[j][0] - SparseHitList[i][0];
 			q[1] = SparseHitList[j][1] - SparseHitList[i][1];
 			q[2] = SparseHitList[j][2] - SparseHitList[i][2];
-			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode); // DetectorEvent->RotMatrix
+			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode,true); // DetectorEvent->RotMatrix
 		}
 	}
 
@@ -1008,7 +1008,11 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 				//negative
 				if (ss != 0)//prevent double fill on ss == 0
 				{
-					BigMesh.CQMesh[fs + ms * BigMesh.Shape.Size_AB + (shift - ss) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
+					int fs_P, ms_P, ss_P;
+					ss_P = shift - ss;
+					fs_P = 2 * shift - fs;
+					ms_P = 2 * shift - ms;
+					BigMesh.CQMesh[fs_P + ms_P * BigMesh.Shape.Size_AB + ss_P * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
 				}
 
 			}
