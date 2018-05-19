@@ -340,7 +340,7 @@ int main()
 	
 
 
-	//Test_CQ_small(Options, TestDet);
+	Test_CQ_small(Options, TestDet);
 
 	AutoCorrelateEvents(Options, TestDet);
 
