@@ -20,8 +20,10 @@
 #include "ArrayOperators.h"
 #include "ProfileTime.h"
 #include <Eigen/Dense>
-
 #include "Statistics.h"
+#include "RunIAC.h"
+
+#include <thread>
 
 
 void Test_CQ_small(Settings &Options, Detector &Det)
@@ -151,11 +153,15 @@ void GetOrientationStatistic(Settings &Options)
 
 void AutoCorrelateEvents(Settings &Options, Detector &Det)
 {
+	int const MeshSize = 501;
+	float const QZoom = 1.0f;
+
+
 	ProfileTime profiler;
 	Options.Echo("Create BigMesh");
 	ACMesh BigMesh;
 
-	BigMesh.CreateBigMeshForDetector(Det, 1001, 1.0f);
+	BigMesh.CreateBigMeshForDetector(Det, MeshSize, QZoom);
 
 	std::cout << "BiglMesh Size: " << BigMesh.Shape.Size_C << "\t; dq/dV: " << BigMesh.Shape.dq_per_Voxel << "\n";
 
@@ -188,7 +194,7 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 		Detector::AutoCorrFlags flags;
 		flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-		Det.AutoCorrelateSparseList(BigMesh, flags);
+		Det.AutoCorrelateSparseList(BigMesh, flags,true);
 
 	}
 
@@ -224,7 +230,7 @@ void CombineStuff()
 	//double * AC4 = new double[1003 * 1003 * 1003]();
 	//double * AC5 = new double[1003 * 1003 * 1003]();
 
-	double * AC_Final = new double[1003 * 1003 * 1003]();
+	double * AC_Final = new double[size]();
 
 	std::cout << "\n\n\n*************************\n";
 
@@ -266,7 +272,7 @@ void CombineStuff()
 	for (int i = 0; i <size; i++)
 	{
 		if (CQ[i] <= 0)
-			CQ[i] = 0;
+			AC_Final[i] = 0;
 
 		AC_Final[i] = AC[i] / CQ[i];
 	}
@@ -278,47 +284,28 @@ void CombineStuff()
 }
 
 
+void CQPass(ACMesh & CQ, RunIAC::CreateCQ_Settings CQ_Settings, Settings & PrgSettings)
+{
+	RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, PrgSettings);
+}
+
+void ACPass(ACMesh & AC, RunIAC::CreateAC_Settings AC_Settings, Settings & PrgSettings)
+{
+	RunIAC::Run_AC_UW(AC, AC_Settings, PrgSettings);
+}
+
 int main()
 {
-	//Run Stiings:
-
 	const bool HitsFromXml = true; //otherwise from stream
-
-
-	//****************************************************************************************************************************************************
-	//Basic Startup (needed for [nearly] everything )
-	//
-	int end;
 	ProfileTime profiler;
 	Settings Options;
 	Options.echo = true;
 
-	Options.F_I_Conversion.Step = 0.01f;
-	
-	Options.Echo("Load Open CL stuff:\n");
-
+	Options.Echo("Set up OpenCl Devices");
 	Options.SetUp_OpenCL();
 
 
-	Detector TestDet;
-
-	TestDet.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5", "data/data");
-
-	Options.Echo("Create k-map");
-	TestDet.Calc_kMap();
-
-	std::cout << "Max k = [" << TestDet.Max_k[0] << "; " << TestDet.Max_k[1] << "; " << TestDet.Max_k[2] << "]\n";
-	std::cout << "Min k = [" << TestDet.Min_k[0] << "; " << TestDet.Min_k[1] << "; " << TestDet.Min_k[2] << "]\n";
-	std::cout << "Max q = [" << TestDet.Max_q[0] << "; " << TestDet.Max_q[1] << "; " << TestDet.Max_q[2] << "]\n";
-
-	Options.Echo("\nLoad pixel-mask");
-	TestDet.PixelMask = new int[1024 * 1024]();
-	ArrayOperators::LoadArrayFromFile<int>("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin", TestDet.PixelMask,1024*1024);
-
-
-
-
-	
+	Options.F_I_Conversion.Step = 0.01f;
 	//Hb reference-unit-cell
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
@@ -334,174 +321,317 @@ int main()
 	}
 
 
-	//****************************************************************************************************************************************************
 
+	//Further Settings
+
+	RunIAC::CreateCQ_Settings CQ_Settings;
+	RunIAC::CreateAC_Settings AC_Settings;
+
+	CQ_Settings.AC_Merge_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+	CQ_Settings.AC_Small_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+
+	CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF.bin";
+	CQ_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
+	CQ_Settings.PixelMap_DataSet = "data/data";
+	CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
+
+	CQ_Settings.echo = true;
+
+	CQ_Settings.MeshSize = 501;
+	CQ_Settings.QZoom = 1.0f;
+
+	CQ_Settings.SaveSmall_CQ = false;
+	CQ_Settings.SaveBig_CQ = true;
+	CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503_Big.bin";
+
+	//ac shared settings
+	AC_Settings.AC_FirstMap_Flags = CQ_Settings.AC_Small_Flags;
+	AC_Settings.AC_SecondMap_Flags = CQ_Settings.AC_Merge_Flags;
+	AC_Settings.MeshSize = CQ_Settings.MeshSize;
+	AC_Settings.QZoom = CQ_Settings.QZoom;
+	AC_Settings.PixelMap_Path = CQ_Settings.PixelMap_Path;
+	AC_Settings.PixelMap_DataSet = CQ_Settings.PixelMap_DataSet;
+	AC_Settings.PixelMask_Path = CQ_Settings.PixelMask_Path;
+
+	//ac further settings
+	AC_Settings.SaveBig_AC = true;
+	AC_Settings.BigAC_Path= "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_503_Big.bin";
+
+	AC_Settings.DoubleMap = true;
+	AC_Settings.echo = true;
+	AC_Settings.PhotonOffset = 3.2f;
+	AC_Settings.PhotonStep = 6.4f;
+	
+
+	//
+
+	ACMesh CQ;
+	ACMesh AC;
+
+	profiler.Tic();
+
+	//std::thread CQ_Thread(RunIAC::Create_CQ_Mesh, CQ, CQ_Settings, Options);
+	Options.Echo("Launch threads");
+
+#pragma omp parallel for
+	for (int i = 0; i < 2; i++)
+	{
+		if (i == 0)
+		{
+			RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
+		}
+		if (i == 1)
+		{
+			RunIAC::Run_AC_UW(AC, AC_Settings, Options);
+		}
+	}
+
+	//std::thread thr_cq(&CQPass, CQ, CQ_Settings, Options);
+	//std::thread thr_ac(&ACPass, AC, AC_Settings, Options);
+
+	//thr_cq.join();
+	//thr_ac.join();
+
+	Options.Echo("Merge Stuff");
+
+	double * FinalAC = new double[CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB];
+
+	RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
+
+	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_503.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_503.bin \n";
 
 	
 
-
-	Test_CQ_small(Options, TestDet);
-
-	AutoCorrelateEvents(Options, TestDet);
+	std::cout << "\n\n Finished in ";
+	profiler.Toc(true);
 
 
-	CombineStuff();
-
-	/*std::cout << "Program ended\n";
-	std::cin >> end;*/
 	return 0;
 
 
+	////Run Stiings:
+
+	//const bool HitsFromXml = true; //otherwise from stream
 
 
+	////****************************************************************************************************************************************************
+	////Basic Startup (needed for [nearly] everything )
+	////
+	//int end;
+	//ProfileTime profiler;
+	//Settings Options;
+	//Options.echo = true;
 
-
-	
-
-
-
-
-
-
-
-
-	//	std::cout << "Program ended\n";
-	//	std::cin >> end;
-	//	return 0;
-	//}
-
-
-
-
-
-
-	
-	//Options.Echo("Load intensity data for Hit 0");
-	//TestDet.LoadIntensityData(&Options.HitEvents[0]);
-
-	//std::cout << "\n";
-	//for (int iy = 0; iy <20; iy++)
-	//{
-	//	for (int ix = 0; ix <20; ix++)
-	//	{
-	//		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "   ";
-	//	}
-	//	std::cout << "\n";
-	//}
-
-
-
-	//{
-	//	Options.Echo("Create BigMesh");
-	//	ACMesh BigMesh;
-
-	//	BigMesh.CreateBigMeshForDetector(TestDet, TestDet.DetectorSize[0] + 1);
-
-	//	std::cout << "BiglMesh Size: " << BigMesh.Shape.Size_C << "\t; dq/dV: " << BigMesh.Shape.dq_per_Voxel << "\n";
-
-
-	//	BigMesh.Options = &Options;
-
-	//	Options.Echo("Create sparese detector");
-	//	TestDet.CreateSparseHitList(3.2f, 6.4f);//
-	//	Detector::AutoCorrFlags ACflags;
-	//	ACflags.InterpolationMode = Settings::Interpolation::Linear;
-
-	//	Options.Echo("check");
-	//	TestDet.AutoCorrelateSparseList(BigMesh, ACflags);
-	//}
-
-
-	//Options.Echo("AutoCorrelate");
-
-	//profiler.Tic();
-
-	//for (int i = 0; i < 1000; i++)
-	//{
-	//	TestDet.LoadIntensityData(&Options.HitEvents[i]);
-	//	TestDet.CreateSparseHitList(3.0);
-
-	//	Detector::AutoCorrFlags flags;
-	//	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-	//	TestDet.AutoCorrelateSparseList(BigMesh, flags);
-
-	//}
+	//Options.F_I_Conversion.Step = 0.01f;
 	//
-	//profiler.Toc(true);
+	//Options.Echo("Load Open CL stuff:\n");
+
+	//Options.SetUp_OpenCL();
+
+
+	//Detector TestDet;
+
+	//TestDet.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5", "data/data");
+
+	//Options.Echo("Create k-map");
+	//TestDet.Calc_kMap();
+
+	//std::cout << "Max k = [" << TestDet.Max_k[0] << "; " << TestDet.Max_k[1] << "; " << TestDet.Max_k[2] << "]\n";
+	//std::cout << "Min k = [" << TestDet.Min_k[0] << "; " << TestDet.Min_k[1] << "; " << TestDet.Min_k[2] << "]\n";
+	//std::cout << "Max q = [" << TestDet.Max_q[0] << "; " << TestDet.Max_q[1] << "; " << TestDet.Max_q[2] << "]\n";
+
+	//Options.Echo("\nLoad pixel-mask");
+	//TestDet.PixelMask = new int[1024 * 1024]();
+	//ArrayOperators::LoadArrayFromFile<int>("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin", TestDet.PixelMask,1024*1024);
 
 
 
 
-	
+	//
+	////Hb reference-unit-cell
+	//Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
-
-
-
-
-
-	Options.Echo("Create C(q) - Mesh");
-
-	ACMesh CQMesh;
-	CQMesh.CreateBigMesh_CofQ_ForDetector(TestDet, 1025);
-
-
-	std::vector<Settings::HitEvent> SmallEventList;
-	for (unsigned int i = 0; i < 1000; i++)
-	{
-		SmallEventList.push_back(Options.HitEvents[i]);
-	}
-
-	Detector::AutoCorrFlags flags;
-	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-	TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 3, Options);
-
-	//int ind = 0;
-	//for (int i = 0; i < 10; i++)
+	//if (HitsFromXml)
 	//{
-	//	for (int j = 0; j < 10; j++)
-	//	{
-	//		std::cout << Options.HitEvents[ind].PhotonCount << " : " << Options.HitEvents[ind].MeanIntensity << "\t";
-	//		ind++;
-	//	}
-	//	std::cout << "\n";
+	//	Options.Echo("Load Events from XML");
+	//	Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml");
 	//}
-	//std::cout << "\n\n\n";
-
-	//for (int iy = 0; iy <10; iy++)
+	//else
 	//{
-	//	for (int ix = 0; ix <10; ix++)
-	//	{
-	//		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "\t";
-	//	}
-	//	std::cout << "\n";
-	//}
-	//std::cout << "\n\n\n";
-
-	//double MPI = 0;
-	//double MinPi = 99999;
-	//double MaxPi = 0;
-	//for (int i = 0; i < 5000; i++)
-	//{
-	//	MPI += Options.HitEvents[i].PhotonCount;
-	//	if (Options.HitEvents[i].PhotonCount > MaxPi)
-	//		MaxPi = Options.HitEvents[i].PhotonCount;
-	//	if (Options.HitEvents[i].PhotonCount < MinPi)
-	//		MinPi = Options.HitEvents[i].PhotonCount;
-	//}
-	//MPI = MPI / 10000;
-
-	//for (int iy = 0; iy <10; iy++)
-	//{
-	//	for (int ix = 0; ix <10; ix++)
-	//	{
-	//		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] * (MPI) << "\t";
-	//	}
-	//	std::cout << "\n";
+	//	Options.Echo("Load Streamfile");
+	//	Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/3fs_JF.stream", "entry_1/instrument_1/detector_2/detector_corrected/data", false);
 	//}
 
-	//std::cout << "Max PI: " << MaxPi << "\t Min PI: " << MinPi << "\t M PI: " << MPI << "\n";
-	
-	std::cout << "Program ended\n";
-	std::cin >> end;
-    return 0;
+
+	////****************************************************************************************************************************************************
+
+
+	//
+
+
+	//Test_CQ_small(Options, TestDet);
+
+	//AutoCorrelateEvents(Options, TestDet);
+
+
+	//CombineStuff();
+
+	///*std::cout << "Program ended\n";
+	//std::cin >> end;*/
+	//return 0;
+
+
+
+
+
+
+	//
+
+
+
+
+
+
+
+
+	////	std::cout << "Program ended\n";
+	////	std::cin >> end;
+	////	return 0;
+	////}
+
+
+
+
+
+
+	//
+	////Options.Echo("Load intensity data for Hit 0");
+	////TestDet.LoadIntensityData(&Options.HitEvents[0]);
+
+	////std::cout << "\n";
+	////for (int iy = 0; iy <20; iy++)
+	////{
+	////	for (int ix = 0; ix <20; ix++)
+	////	{
+	////		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "   ";
+	////	}
+	////	std::cout << "\n";
+	////}
+
+
+
+	////{
+	////	Options.Echo("Create BigMesh");
+	////	ACMesh BigMesh;
+
+	////	BigMesh.CreateBigMeshForDetector(TestDet, TestDet.DetectorSize[0] + 1);
+
+	////	std::cout << "BiglMesh Size: " << BigMesh.Shape.Size_C << "\t; dq/dV: " << BigMesh.Shape.dq_per_Voxel << "\n";
+
+
+	////	BigMesh.Options = &Options;
+
+	////	Options.Echo("Create sparese detector");
+	////	TestDet.CreateSparseHitList(3.2f, 6.4f);//
+	////	Detector::AutoCorrFlags ACflags;
+	////	ACflags.InterpolationMode = Settings::Interpolation::Linear;
+
+	////	Options.Echo("check");
+	////	TestDet.AutoCorrelateSparseList(BigMesh, ACflags);
+	////}
+
+
+	////Options.Echo("AutoCorrelate");
+
+	////profiler.Tic();
+
+	////for (int i = 0; i < 1000; i++)
+	////{
+	////	TestDet.LoadIntensityData(&Options.HitEvents[i]);
+	////	TestDet.CreateSparseHitList(3.0);
+
+	////	Detector::AutoCorrFlags flags;
+	////	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+	////	TestDet.AutoCorrelateSparseList(BigMesh, flags);
+
+	////}
+	////
+	////profiler.Toc(true);
+
+
+
+
+	//
+
+
+
+
+
+
+	//Options.Echo("Create C(q) - Mesh");
+
+	//ACMesh CQMesh;
+	//CQMesh.CreateBigMesh_CofQ_ForDetector(TestDet, 1025);
+
+
+	//std::vector<Settings::HitEvent> SmallEventList;
+	//for (unsigned int i = 0; i < 1000; i++)
+	//{
+	//	SmallEventList.push_back(Options.HitEvents[i]);
+	//}
+
+	//Detector::AutoCorrFlags flags;
+	//flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+	//TestDet.AutoCorrelate_CofQ(CQMesh, flags, Options.HitEvents, 0, 3, Options);
+
+	////int ind = 0;
+	////for (int i = 0; i < 10; i++)
+	////{
+	////	for (int j = 0; j < 10; j++)
+	////	{
+	////		std::cout << Options.HitEvents[ind].PhotonCount << " : " << Options.HitEvents[ind].MeanIntensity << "\t";
+	////		ind++;
+	////	}
+	////	std::cout << "\n";
+	////}
+	////std::cout << "\n\n\n";
+
+	////for (int iy = 0; iy <10; iy++)
+	////{
+	////	for (int ix = 0; ix <10; ix++)
+	////	{
+	////		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] << "\t";
+	////	}
+	////	std::cout << "\n";
+	////}
+	////std::cout << "\n\n\n";
+
+	////double MPI = 0;
+	////double MinPi = 99999;
+	////double MaxPi = 0;
+	////for (int i = 0; i < 5000; i++)
+	////{
+	////	MPI += Options.HitEvents[i].PhotonCount;
+	////	if (Options.HitEvents[i].PhotonCount > MaxPi)
+	////		MaxPi = Options.HitEvents[i].PhotonCount;
+	////	if (Options.HitEvents[i].PhotonCount < MinPi)
+	////		MinPi = Options.HitEvents[i].PhotonCount;
+	////}
+	////MPI = MPI / 10000;
+
+	////for (int iy = 0; iy <10; iy++)
+	////{
+	////	for (int ix = 0; ix <10; ix++)
+	////	{
+	////		std::cout << TestDet.Intensity[ix + TestDet.DetectorSize[1] * iy] * (MPI) << "\t";
+	////	}
+	////	std::cout << "\n";
+	////}
+
+	////std::cout << "Max PI: " << MaxPi << "\t Min PI: " << MinPi << "\t M PI: " << MPI << "\n";
+	//
+	//std::cout << "Program ended\n";
+	//std::cin >> end;
+ //   return 0;
 }

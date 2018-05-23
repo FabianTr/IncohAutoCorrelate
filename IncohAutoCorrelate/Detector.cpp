@@ -23,6 +23,10 @@ Detector::Detector()
 
 Detector::~Detector()
 {
+	//delete[] Intensity;
+	//delete[] PixelMask;
+	//delete[] PixelMap;
+	//delete[] kMap;
 }
 
 
@@ -221,89 +225,90 @@ void Detector::Calc_kMap()
 void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 {
 
-
-	H5::H5File file(Path, H5F_ACC_RDONLY);
-	H5::DataSet dataset = file.openDataSet(DataSet);
-
-	if (dataset.getTypeClass() != H5T_FLOAT)
+#pragma omp critical
 	{
-		std::cerr << "ERROR: PixelMap is not stored as floating point numbers.\n";
-		throw;
-	}
-	std::cout <<"DataSize: " << dataset.getFloatType().getSize() << "\n";
-	std::cout <<"float: "<< sizeof(float) << "\n";
+		H5::H5File file(Path, H5F_ACC_RDONLY);
+		H5::DataSet dataset = file.openDataSet(DataSet);
 
-	H5::DataSpace DS = dataset.getSpace();
-	std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
-
-	if (DS.getSimpleExtentNdims() != 3) //check if shape is [3][nx][ny] or [ny][nx][3]
-	{
-		std::cerr << "ERROR: PixelMap dimension is not 3 => shape is not (3, nx, ny) or (ny, nx, 3)\n";
-		throw;
-	}
-	hsize_t dims[3];
-	DS.getSimpleExtentDims(dims, NULL);
-	std::cout << "PixelMap shape: " << dims[0] << " x " << dims[1] << " x " << dims[2] << "\n";
-	
-	if (dims[0] != 3 && dims[2] != 3)
-	{
-		std::cerr << "ERROR: PixelMap first or third dimensions extend != 3  => shape is not (3, nx, ny) or (ny, nx, 3)\n";
-		throw;
-	}
-
-	delete PixelMap;
-	PixelMap = new float[dims[0] * (int)dims[1] * (int)dims[2]];
-
-
-	if (dims[2] == 3)//[ny][nx][3]
-	{
-		DetectorSize[0] = (int)dims[1];//ss
-		DetectorSize[1] = (int)dims[0];//fs
-
-		H5::DataSpace mspace(3, dims);
-		dataset.read(PixelMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
-	}
-	else// [3][nx][ny] 
-	{
-		DetectorSize[0] = (int)dims[1];//ss
-		DetectorSize[1] = (int)dims[2];//fs
-
-		float* TmpPixleMap = new float[dims[0] * dims[1] * dims[2]];
-		H5::DataSpace mspace(3, dims);
-		dataset.read(TmpPixleMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
-
-		float Pmax[3] = {-99999999, -99999999, -99999999};
-		float Pmin[3] = { 99999999, 99999999, 99999999 };
-
-		for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
+		if (dataset.getTypeClass() != H5T_FLOAT)
 		{
-			for (unsigned int i_x = 0; i_x < dims[1]; i_x++)
-			{
-				for (unsigned int i_d = 0; i_d < 3; i_d++)
-				{
-					PixelMap[i_d + 3*i_x + 3*dims[1]*i_y] = TmpPixleMap[i_y + dims[2]*i_x + dims[2]*dims[1]*i_d];
-					if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] > Pmax[i_d])
-						Pmax[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
-					if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] < Pmin[i_d])
-						Pmin[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
-				}
-			}
+			std::cerr << "ERROR: PixelMap is not stored as floating point numbers.\n";
+			throw;
+		}
+		std::cout << "DataSize: " << dataset.getFloatType().getSize() << "\n";
+		std::cout << "float: " << sizeof(float) << "\n";
+
+		H5::DataSpace DS = dataset.getSpace();
+		std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
+
+		if (DS.getSimpleExtentNdims() != 3) //check if shape is [3][nx][ny] or [ny][nx][3]
+		{
+			std::cerr << "ERROR: PixelMap dimension is not 3 => shape is not (3, nx, ny) or (ny, nx, 3)\n";
+			throw;
+		}
+		hsize_t dims[3];
+		DS.getSimpleExtentDims(dims, NULL);
+		std::cout << "PixelMap shape: " << dims[0] << " x " << dims[1] << " x " << dims[2] << "\n";
+
+		if (dims[0] != 3 && dims[2] != 3)
+		{
+			std::cerr << "ERROR: PixelMap first or third dimensions extend != 3  => shape is not (3, nx, ny) or (ny, nx, 3)\n";
+			throw;
 		}
 
-		
-		std::cout << "PixMap_max = [" << Pmax[0] << "; " << Pmax[1] << "; " << Pmax[2] << "]\n";
-		std::cout << "PixMap_min = [" << Pmin[0] << "; " << Pmin[1] << "; " << Pmin[2] << "]\n";
+		delete PixelMap;
+		PixelMap = new float[dims[0] * (int)dims[1] * (int)dims[2]];
 
-		delete[] TmpPixleMap;
+
+		if (dims[2] == 3)//[ny][nx][3]
+		{
+			DetectorSize[0] = (int)dims[1];//ss
+			DetectorSize[1] = (int)dims[0];//fs
+
+			H5::DataSpace mspace(3, dims);
+			dataset.read(PixelMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
+		}
+		else// [3][nx][ny] 
+		{
+			DetectorSize[0] = (int)dims[1];//ss
+			DetectorSize[1] = (int)dims[2];//fs
+
+			float* TmpPixleMap = new float[dims[0] * dims[1] * dims[2]];
+			H5::DataSpace mspace(3, dims);
+			dataset.read(TmpPixleMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
+
+			float Pmax[3] = { -99999999, -99999999, -99999999 };
+			float Pmin[3] = { 99999999, 99999999, 99999999 };
+
+			for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
+			{
+				for (unsigned int i_x = 0; i_x < dims[1]; i_x++)
+				{
+					for (unsigned int i_d = 0; i_d < 3; i_d++)
+					{
+						PixelMap[i_d + 3 * i_x + 3 * dims[1] * i_y] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] > Pmax[i_d])
+							Pmax[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] < Pmin[i_d])
+							Pmin[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+					}
+				}
+			}
+
+
+			std::cout << "PixMap_max = [" << Pmax[0] << "; " << Pmax[1] << "; " << Pmax[2] << "]\n";
+			std::cout << "PixMap_min = [" << Pmin[0] << "; " << Pmin[1] << "; " << Pmin[2] << "]\n";
+
+			delete[] TmpPixleMap;
+
+		}
+		file.close();
+		//for (int t =0; t < 100; t++)
+		//{
+		//	std::cout << PixelMap[t]<< "\n";
+		//}
 
 	}
-	file.close();
-	//for (int t =0; t < 100; t++)
-	//{
-	//	std::cout << PixelMap[t]<< "\n";
-	//}
-	
-	
 }
 
 void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, int LowerBound, int UpperBound)
@@ -517,7 +522,7 @@ void Detector::InitializeDetector(H5std_string PixelMap_Path, H5std_string Pixel
 	CreateSparseHitList(Pixel_Threshold);
 }
 
-void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
+void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping)
 {
 	if (!Checklist.SparseHitList)
 	{
@@ -545,12 +550,12 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags)
 			q[0] = SparseHitList[i][0] - SparseHitList[j][0];
 			q[1] = SparseHitList[i][1] - SparseHitList[j][1];
 			q[2] = SparseHitList[i][2] - SparseHitList[j][2];
-			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode,true); // DetectorEvent->RotMatrix
+			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
 			//std::cout << SparseHitList[i][3] * SparseHitList[j][3] << ", ";
 			q[0] = SparseHitList[j][0] - SparseHitList[i][0];
 			q[1] = SparseHitList[j][1] - SparseHitList[i][1];
 			q[2] = SparseHitList[j][2] - SparseHitList[i][2];
-			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode,true); // DetectorEvent->RotMatrix
+			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
 		}
 	}
 

@@ -2,6 +2,7 @@
 
 #include <omp.h>
 #include <fstream>
+#include <string>
 
 namespace ArrayOperators
 {
@@ -122,9 +123,22 @@ namespace ArrayOperators
 	void SafeArrayToFile(char* Filename, double* Array, unsigned int Size, FileType Type);
 	void SafeArrayToFile(char* Filename, float* Array, unsigned int Size, FileType Type);
 	void SafeArrayToFile(char* Filename, unsigned int* Array, unsigned int Size, FileType Type);
+
+	void SafeArrayToFile(std::string Filename, double* Array, unsigned int Size, FileType Type);
+	void SafeArrayToFile(std::string Filename, float* Array, unsigned int Size, FileType Type);
+	void SafeArrayToFile(std::string Filename, unsigned int* Array, unsigned int Size, FileType Type);
+
 	
 	template<typename T>
 	void LoadArrayFromFile(char * Filename, T * Array, unsigned int Size)
+	{
+		std::ifstream FILE(Filename, std::ios::in | std::ofstream::binary);
+		FILE.read(reinterpret_cast<char*>(Array), Size * sizeof(T));
+		FILE.close();
+	}
+
+	template<typename T>
+	void LoadArrayFromFile(std::string Filename, T * Array, unsigned int Size)
 	{
 		std::ifstream FILE(Filename, std::ios::in | std::ofstream::binary);
 		FILE.read(reinterpret_cast<char*>(Array), Size * sizeof(T));

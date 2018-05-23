@@ -27,7 +27,7 @@ public:
 	};
 
 //Settings Pointer
-	Settings* Options; //important to obtain the float to int mapping (functionpointer)
+	Settings* Options = NULL; //important to obtain the float to int mapping (functionpointer)
 	
 
 	MeshShape Shape;
