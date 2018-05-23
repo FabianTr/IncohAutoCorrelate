@@ -1,6 +1,7 @@
 #include "ArrayOperators.h"
 #include <fstream>
 #include <iostream>
+#include "H5Cpp.h"
 
 namespace ArrayOperators
 {
@@ -21,6 +22,10 @@ namespace ArrayOperators
 			std::cerr << "ERROR: HDF5 storage is not implemented\n";
 			std::cerr << "    -> in ArrayOperators::SafeArrayToFile()\n";
 			throw;
+
+
+
+
 		}
 			break;
 		}
@@ -131,4 +136,5 @@ namespace ArrayOperators
 		break;
 		}
 	}
+
 }

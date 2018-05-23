@@ -128,6 +128,7 @@ namespace ArrayOperators
 	void SafeArrayToFile(std::string Filename, float* Array, unsigned int Size, FileType Type);
 	void SafeArrayToFile(std::string Filename, unsigned int* Array, unsigned int Size, FileType Type);
 
+
 	
 	template<typename T>
 	void LoadArrayFromFile(char * Filename, T * Array, unsigned int Size)
