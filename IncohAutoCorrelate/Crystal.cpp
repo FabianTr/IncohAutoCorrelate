@@ -15,7 +15,7 @@ Crystal::~Crystal()
 {
 }
 
-std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Settings)
+std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Settings,  std::array<float, 9> & RotationMatrix)
 {
 	//Temporary Atom Positions
 	std::vector<std::array<double, 3>> At_temp;
@@ -53,7 +53,28 @@ std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Setting
 		double alpha = Drand() * 2 * M_PIl;
 
 		//Rotate
-		RotateVectors(At_temp, alpha, V);
+		std::array<float, 9> tRM;
+
+		tRM=RotateVectors(At_temp, alpha, V);
+		for (int i = 0; i < 9; i++)
+		{
+			RotationMatrix[i] = tRM[i];
+		}
+	}
+	else
+	{
+		//return unity matrix
+		RotationMatrix[0] = 1;
+		RotationMatrix[1] = 0;
+		RotationMatrix[2] = 0;
+
+		RotationMatrix[3] = 0;
+		RotationMatrix[4] = 1;
+		RotationMatrix[5] = 0;
+
+		RotationMatrix[6] = 0;
+		RotationMatrix[7] = 0;
+		RotationMatrix[8] = 1;
 	}
 
 	//Copy remaining positions and roll phase, if requested
@@ -75,7 +96,7 @@ std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Setting
 }
 
 
-void Crystal::RotateVectors(std::vector<std::array<double, 3>> &Vectors, const double angle, std::array<double, 3> axis)
+std::array<float, 9> Crystal::RotateVectors(std::vector<std::array<double, 3>> &Vectors, const double angle, std::array<double, 3> axis)
 {
 	//normalize axis vector
 	double N = sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
@@ -95,6 +116,19 @@ void Crystal::RotateVectors(std::vector<std::array<double, 3>> &Vectors, const d
 	double c2 = axis[1] * axis[2] * (1 - cos(angle)) + axis[0] * sin(angle);
 	double c3 = axis[2] * axis[2] * (1 - cos(angle)) + cos(angle);
 
+	std::array<float, 9> RotationMatrix;
+	RotationMatrix[0] = a1;
+	RotationMatrix[1] = a2;
+	RotationMatrix[2] = a3;
+
+	RotationMatrix[3] = b1;
+	RotationMatrix[4] = b2;
+	RotationMatrix[5] = b3;
+
+	RotationMatrix[6] = c1;
+	RotationMatrix[7] = c2;
+	RotationMatrix[8] = c3;
+
 #pragma omp parallel for
 	for (int i = 0; i < (int)Vectors.size(); i++)
 	{
@@ -104,6 +138,8 @@ void Crystal::RotateVectors(std::vector<std::array<double, 3>> &Vectors, const d
 		Vectors[i][1] = b1 * V[0] + b2 * V[1] + b3 * V[2];
 		Vectors[i][2] = c1 * V[0] + c2 * V[1] + c3 * V[2];
 	}
+
+	return RotationMatrix;
 }
 
 inline double Crystal::Drand()

@@ -66,22 +66,26 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="ACMesh.cpp" />
+    <ClCompile Include="Crystal.cpp" />
     <ClCompile Include="Detector.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ProfileTime.cpp" />
     <ClCompile Include="RunIAC.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="ArrayOperators.cpp" />
+    <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="Statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ACMesh.h" />
     <ClInclude Include="ArrayOperators.h" />
+    <ClInclude Include="Crystal.h" />
     <ClInclude Include="Detector.h" />
     <ClInclude Include="Forward.h" />
     <ClInclude Include="ProfileTime.h" />
     <ClInclude Include="RunIAC.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="Simulator.h" />
     <ClInclude Include="Statistics.h" />
   </ItemGroup>
   <ItemGroup>

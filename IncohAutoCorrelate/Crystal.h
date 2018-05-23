@@ -21,7 +21,7 @@ public:
 	Crystal(double LatticeVector[3][3], unsigned int CrystalSize[3], std::vector<std::array<double, 3>> UnitCell);
 	~Crystal();
 
-	static void RotateVectors(std::vector<std::array<double, 3>> &Vectors, const double angle, std::array<double, 3> axis);
+	static std::array<float, 9> RotateVectors(std::vector<std::array<double, 3>> &Vectors, const double angle, std::array<double, 3> axis);
 
 
 	std::vector<std::array<double, 3>> AtomPositions; //Atom Positions of the whole structure //x_1,y_1,z_1, ..., x_n, y_n, z_
@@ -41,7 +41,7 @@ public:
 		float Isotropie = 1.0f;
 	};
 
-	std::vector<Emitter> GetEmitters(EmittingCrystSettings Settings);
+	std::vector<Emitter> GetEmitters(EmittingCrystSettings Settings, std::array<float,9> & RotationMatrix);
 	
 
 

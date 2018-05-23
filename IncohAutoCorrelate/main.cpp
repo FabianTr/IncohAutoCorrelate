@@ -296,6 +296,9 @@ void ACPass(ACMesh & AC, RunIAC::CreateAC_Settings AC_Settings, Settings & PrgSe
 
 int main()
 {
+	//omp_set_nested(1);
+	//omp_set_max_active_levels(2);
+
 	const bool HitsFromXml = true; //otherwise from stream
 	ProfileTime profiler;
 	Settings Options;
@@ -373,18 +376,21 @@ int main()
 	//std::thread CQ_Thread(RunIAC::Create_CQ_Mesh, CQ, CQ_Settings, Options);
 	Options.Echo("Launch threads");
 
-#pragma omp parallel for
-	for (int i = 0; i < 2; i++)
-	{
-		if (i == 0)
-		{
-			RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
-		}
-		if (i == 1)
-		{
-			RunIAC::Run_AC_UW(AC, AC_Settings, Options);
-		}
-	}
+////#pragma omp parallel for
+//	for (int i = 0; i < 2; i++)
+//	{
+//		if (i == 0)
+//		{
+//			RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
+//		}
+//		if (i == 1)
+//		{
+//			RunIAC::Run_AC_UW(AC, AC_Settings, Options);
+//		}
+//	}
+
+	RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
+	RunIAC::Run_AC_UW(AC, AC_Settings, Options);
 
 	//std::thread thr_cq(&CQPass, CQ, CQ_Settings, Options);
 	//std::thread thr_ac(&ACPass, AC, AC_Settings, Options);
