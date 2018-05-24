@@ -29,7 +29,7 @@ public:
 	struct Emitter
 	{
 		std::array<double, 3> Position;
-		float Phase = 0.0f;
+		double Phase = 0.0f;
 	};
 
 	struct EmittingCrystSettings

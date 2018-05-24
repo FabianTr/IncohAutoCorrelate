@@ -11,9 +11,8 @@ ACMesh::ACMesh()
 
 ACMesh::~ACMesh()
 {
-	delete[] CQMesh;
-	delete[] Mesh;
-	delete Options;
+	//delete[] CQMesh;
+	//delete[] Mesh;
 }
 
 void ACMesh::CreateSmallMeshForDetector(Detector Det, int PerpSize)

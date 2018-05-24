@@ -219,7 +219,7 @@ void Detector::Calc_kMap()
 
 	//std::cout << "PixMap_max = [" << Pmax[0] << "; " << Pmax[1] << "; " << Pmax[2] << "]\n";
 	//std::cout << "PixMap_min = [" << Pmin[0] << "; " << Pmin[1] << "; " << Pmin[2] << "]\n";
-
+	Checklist.KMap = true;
 }
 
 void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
@@ -302,6 +302,7 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 			delete[] TmpPixleMap;
 
 		}
+		Checklist.PixelMap = true;
 		file.close();
 		//for (int t =0; t < 100; t++)
 		//{
@@ -889,8 +890,8 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	//	TempSmallMesh[i] = (uint64_t)(SmallMesh.CQMesh[i]* Multiplicator);
 	//}
 	
-	uint64_t * TempBigMesh_half = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB+1)/2)]();
-
+	//uint64_t * TempBigMesh_half = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB+1)/2)]();
+	uint64_t * TempBigMesh = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB *SmallMesh.Shape.Size_AB]();
 
 
 
@@ -941,8 +942,9 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	ProfileTime Profiler;
 
 	// KernelBuffer
-	size_t ACsize = sizeof(uint64_t) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2);
-	cl::Buffer CL_CQ(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempBigMesh_half, &err);
+	//size_t ACsize = sizeof(uint64_t) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2);
+	size_t ACsize = sizeof(uint64_t) * (SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB );
+	cl::Buffer CL_CQ(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempBigMesh, &err);
 	//Input:
 	size_t ACsizeSmall = sizeof(double) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
 	cl::Buffer CL_CQ_Small(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ACsizeSmall, SmallMesh.CQMesh, &err);
@@ -976,7 +978,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	Options.Echo("C(q)-Merge kernel finished in");
 	Profiler.Toc(true);
 
-	err = queue.enqueueReadBuffer(CL_CQ, CL_TRUE, 0, ACsize, TempBigMesh_half);
+	err = queue.enqueueReadBuffer(CL_CQ, CL_TRUE, 0, ACsize, TempBigMesh);
 	Options.checkErr(err, "OpenCL kernel, launched in Detector::Merge_smallCofQ() ");
 
 	//Free Device
@@ -984,45 +986,52 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 
 	//*****************PostProcessing***********************
 
-	double * DoubleBigMesh_half = new double[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2)];
+	//double * DoubleBigMesh = new double[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2)];
 
 	#pragma omp parallel for
 	for (int i = 0; i < SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2); i++)
 	{
-		DoubleBigMesh_half[i] = ((double)TempBigMesh_half[i] / Multiplicator);
+		//DoubleBigMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
+		BigMesh.CQMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
 	}
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_half.bin", DoubleBigMesh_half, SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2), ArrayOperators::FileType::Binary);
-	std::cout << "\nSaved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_half.bin \n";
+//	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_half.bin", DoubleBigMesh_half, SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2), ArrayOperators::FileType::Binary);
+//	std::cout << "\nSaved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_half.bin \n";
 
 
-	//Mirrow half Mesh to full Mesh and convert to double
+	////Mirrow half Mesh to full Mesh and convert to double
 
-	int shift = (BigMesh.Shape.Size_AB - 1) / 2;
-	#pragma omp parallel for
-	for ( int ss = 0; ss < (BigMesh.Shape.Size_AB + 1)/2; ss++)
-	{
-		for (int ms = 0; ms < BigMesh.Shape.Size_AB; ms++)
-		{
-			for (int fs = 0; fs < BigMesh.Shape.Size_AB; fs++)
-			{
-				//convert to double
-				double Val = ((double)TempBigMesh_half[fs + ms * BigMesh.Shape.Size_AB + ss * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB])/(Multiplicator); 
-				//positive z
-				BigMesh.CQMesh[fs + ms * BigMesh.Shape.Size_AB + (ss + shift) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
-				//negative
-				if (ss != 0)//prevent double fill on ss == 0
-				{
-					int fs_P, ms_P, ss_P;
-					ss_P = shift - ss;
-					fs_P = 2 * shift - fs;
-					ms_P = 2 * shift - ms;
-					BigMesh.CQMesh[fs_P + ms_P * BigMesh.Shape.Size_AB + ss_P * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
-				}
+	//int shift = (BigMesh.Shape.Size_AB - 1) / 2;
+	//#pragma omp parallel for
+	//for ( int ss = 0; ss < (BigMesh.Shape.Size_AB + 1)/2; ss++)
+	//{
+	//	for (int ms = 0; ms < BigMesh.Shape.Size_AB; ms++)
+	//	{
+	//		for (int fs = 0; fs < BigMesh.Shape.Size_AB; fs++)
+	//		{
+	//			//convert to double
+	//			double Val = ((double)TempBigMesh_half[fs + ms * BigMesh.Shape.Size_AB + ss * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB])/(Multiplicator); 
 
-			}
-		}
-	}
+
+
+	//			//positive z
+	//			BigMesh.CQMesh[fs + ms * BigMesh.Shape.Size_AB + (ss + shift) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
+	//			
+	//			
+	//			
+	//			//negative
+	//			if (ss != 0)//prevent double fill on ss == 0
+	//			{
+	//				int fs_P, ms_P, ss_P;
+	//				ss_P = shift - ss;
+	//				fs_P = 2 * shift - fs;
+	//				ms_P = 2 * shift - ms;
+	//				BigMesh.CQMesh[fs_P + ms_P * BigMesh.Shape.Size_AB + ss_P * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
+	//			}
+
+	//		}
+	//	}
+	//}
 
 
 

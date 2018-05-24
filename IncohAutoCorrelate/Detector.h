@@ -42,12 +42,12 @@ private:
 
 	enum DataType { NONE = -1, INT = 1, LONG = 2, FLOAT = 3, DOUBLE = 4 };
 
-	struct DetChecklist { bool SparseHitList = false; bool Event = false; };
-	DetChecklist Checklist;
+	struct DetChecklist { bool SparseHitList = false; bool Event = false; bool PixelMap = false; bool KMap = false; };
+	
 
 public:
 	struct AutoCorrFlags { Settings::Interpolation InterpolationMode; };
-
+	DetChecklist Checklist;
 	Detector();
 	~Detector();
 
@@ -88,7 +88,7 @@ public:
 	unsigned int DetectorSize[2]; // Number of Pixels in n_y (0) and n_x (1) dimension: [n_y][n_x] => DetectorSize[0] ^= slow-scan; DetectorSize[1] ^= fast-scan
 
 	//Intensity
-	float* Intensity = NULL; // COntent of Detector
+	float* Intensity = NULL; // Content of Detector
 
 	int* PixelMask = NULL; //Binarymask to mask bad Pixel
 	//Pixelmap Stuff

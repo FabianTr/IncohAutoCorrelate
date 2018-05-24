@@ -389,6 +389,7 @@ int main()
 //		}
 //	}
 
+	//hard to be parallized because of nested bullshit
 	RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
 	RunIAC::Run_AC_UW(AC, AC_Settings, Options);
 
