@@ -53,7 +53,7 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 		double Norm[2];
 
-		Norm[0] = sqrt(SimSettings.PixelOrientationVectors[0] * SimSettings.PixelOrientationVectors[0] + SimSettings.PixelOrientationVectors[1] * SimSettings.PixelOrientationVectors[1] + SimSettings.PixelOrientationVectors[2] * SimSettings.PixelOrientationVectors[3]);
+		Norm[0] = sqrt(SimSettings.PixelOrientationVectors[0] * SimSettings.PixelOrientationVectors[0] + SimSettings.PixelOrientationVectors[1] * SimSettings.PixelOrientationVectors[1] + SimSettings.PixelOrientationVectors[2] * SimSettings.PixelOrientationVectors[2]);
 		Norm[1] = sqrt(SimSettings.PixelOrientationVectors[3] * SimSettings.PixelOrientationVectors[3] + SimSettings.PixelOrientationVectors[4] * SimSettings.PixelOrientationVectors[4] + SimSettings.PixelOrientationVectors[5] * SimSettings.PixelOrientationVectors[5]);
 
 		if (SimSettings.AutoPixelSize)
@@ -74,10 +74,34 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 	{
 		if (SimSettings.AutoPixelSize)
 		{
+			double tmpPixelOrient[6];
 
+			tmpPixelOrient[0] = Det.PixelMap[0 + 3] - Det.PixelMap[0 + 0];
+			tmpPixelOrient[1] = Det.PixelMap[1 + 3] - Det.PixelMap[1 + 0];
+			tmpPixelOrient[2] = Det.PixelMap[2 + 3] - Det.PixelMap[2 + 0];
+
+			tmpPixelOrient[3] = Det.PixelMap[0 + 3 * Det.DetectorSize[1]] - Det.PixelMap[0 + 0];
+			tmpPixelOrient[4] = Det.PixelMap[1 + 3 * Det.DetectorSize[1]] - Det.PixelMap[1 + 0];
+			tmpPixelOrient[5] = Det.PixelMap[2 + 3 * Det.DetectorSize[1]] - Det.PixelMap[2 + 0];
+
+			double Norm[2];
+
+			Norm[0] = sqrt(tmpPixelOrient[0] * tmpPixelOrient[0] + tmpPixelOrient[1] * tmpPixelOrient[1] + tmpPixelOrient[2] * tmpPixelOrient[2]);
+			Norm[1] = sqrt(tmpPixelOrient[3] * tmpPixelOrient[3] + tmpPixelOrient[4] * tmpPixelOrient[4] + tmpPixelOrient[5] * tmpPixelOrient[5]);
+
+			SimSettings.PixelSize[0] = Norm[0];
+			SimSettings.PixelSize[1] = Norm[1];
 		}
 	}
 
+
+	//Debug Bullshit
+	std::cout << "Pixel Orientation a: " << SimSettings.PixelOrientationVectors[0] << ", " << SimSettings.PixelOrientationVectors[1] << ", " << SimSettings.PixelOrientationVectors[2] << "\n";
+	std::cout << "Pixel Orientation b: " << SimSettings.PixelOrientationVectors[3] << ", " << SimSettings.PixelOrientationVectors[4] << ", " << SimSettings.PixelOrientationVectors[5] << "\n";
+
+	std::cout << "Pixel Size a: " << SimSettings.PixelSize[0] << "\n";
+	std::cout << "Pixel Size b: " << SimSettings.PixelSize[1] << "\n";
+	//
 
 
 	//reserve OpenCL Device
@@ -118,13 +142,15 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		}
 
 		double * Intensity = new double(Det.DetectorSize[0] * Det.DetectorSize[1]);
-
-
+		double * Params = new double[2]();
+		Params[0] = (double)NumEM; // number of 
 
 
 		
 		
 
+
+		delete[] Params;
 		delete[] EM;
 		delete[] Intensity;
 	}

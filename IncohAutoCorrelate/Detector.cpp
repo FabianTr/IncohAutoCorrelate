@@ -989,7 +989,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	//double * DoubleBigMesh = new double[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2)];
 
 	#pragma omp parallel for
-	for (int i = 0; i < SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2); i++)
+	for (int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB *  BigMesh.Shape.Size_AB; i++)
 	{
 		//DoubleBigMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
 		BigMesh.CQMesh[i] = ((double)TempBigMesh[i] / Multiplicator);

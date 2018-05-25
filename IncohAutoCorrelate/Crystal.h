@@ -34,11 +34,11 @@ public:
 
 	struct EmittingCrystSettings
 	{
-		bool Incoherent = true;
-		float FlYield = 1.0f;
+		bool Incoherent = true; //Random phases
+		float FlYield = 1.0f; // 0 < FlY <= 1: Fluorescence probability
 
-		bool RandOrientation = false;
-		float Isotropie = 1.0f;
+		bool RandOrientation = false;//Roll orientation for each exposure
+		float Isotropie = 1.0f; // 0 <= Isotr <= 1: 1 istotropic, 0 only one direction
 	};
 
 	std::vector<Emitter> GetEmitters(EmittingCrystSettings Settings, std::array<float,9> & RotationMatrix);

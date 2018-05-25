@@ -165,6 +165,11 @@ namespace RunIAC
 			std::cout << AC_Settings.ThreadName << ": All events autocorrelated in ";
 			profiler.Toc(true);
 			std::cout << "\n";
+
+			std::cout << "Additional Information:\n";
+			std::cout << "Max Q in Mesh: +/- " << AC.Shape.Max_Q << "\n";
+
+
 		}
 
 		if (AC_Settings.SaveBig_AC)
