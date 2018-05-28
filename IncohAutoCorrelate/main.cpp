@@ -350,6 +350,10 @@ void Simulate(Settings & Options, std::string PixelMap_Path )
 
 }
 
+
+
+
+
 int main()
 {
 	std::cout << "\n\n\n===================\n     IncohAutoCorrelate\n===================\n\n";
@@ -374,7 +378,7 @@ int main()
 
 	//1: AutoCorrelate
 
-	int RunMode = 1; 
+	int RunMode = 5; 
 	switch (RunMode)
 	{
 	case 1: //Autocorrelate
@@ -464,6 +468,24 @@ int main()
 		return 0;
 	}
 		break;
+	case 5: //Autocorrelate Single Molecule
+		std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for single molecule\n******************************\n";
+	{
+		RunIAC::CreateSM_Settings SM_Settings;
+
+		SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_139-xes.h5");
+		SM_Settings.H5Dataset.push_back("/mfxlr1716/run139/Jungfrau1M/calib/data");
+
+		SM_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
+		SM_Settings.PixelMap_DataSet = "data/data";
+		SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
+
+		AC1D Results;
+
+		RunIAC::Run_AC_SM_Full(Results, SM_Settings, Options);
+
+	}
+	break;
 	case 10: //Simmulate
 	{
 		std::cout << "\n******************************\nRun IncohAutoCorrelate in Simulation-mode\n******************************\n";

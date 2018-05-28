@@ -1,7 +1,9 @@
 #pragma once
 #include <string>
 #include "ACMesh.h"
+#include "AC1D.h"
 #include "Settings.h"
+#include <vector>
 
 namespace RunIAC
 {
@@ -71,4 +73,27 @@ namespace RunIAC
 
 	void Merge_ACandCQ(double *& Output, ACMesh AC, ACMesh CQ, Settings & PrgSettings);
 	void Merge_ACandCQ(double *& Output, double * AC, ACMesh CQ, Settings & PrgSettings);
+
+
+	//Single Molecule
+
+	struct CreateSM_Settings
+	{
+		std::vector<std::string> Files;
+		std::vector<std::string> H5Dataset;
+
+		std::string PixelMap_Path = "";//H5
+		std::string PixelMap_DataSet = "";//H5
+
+		std::string PixelMask_Path = "";//Binary
+
+		float PhotonOffset = 3.2f;
+		float PhotonStep = 6.4f;
+	};
+
+	void Run_AC_SM_Full(AC1D & Output, CreateSM_Settings SM_Settings, Settings& PrgSettings);
+
+
+	//Helpers
+	unsigned int GetH5StackSize(std::string Filename, std::string Dataset);
 }

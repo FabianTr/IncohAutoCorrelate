@@ -3,4 +3,5 @@
 #define Forward_H
 class Detector;
 class ACMesh;
+class AC1D;
 #endif

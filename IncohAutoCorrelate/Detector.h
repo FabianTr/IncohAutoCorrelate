@@ -58,12 +58,17 @@ public:
 	
 	void LoadIntensityData(Settings::HitEvent* Event);
 	void LoadIntensityData();
+	void LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_string DataSet, unsigned int Index);
+
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, int LowerBound, int UpperBound);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, bool Pixelmask);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound, bool Pixelmask);
+
+
+	
 
 	void CreateSparseHitList(float Threshold);
 	void CreateSparseHitList(float Threshold, float PhotonSamplingStep);
@@ -75,7 +80,7 @@ public:
 	void InitializeDetector(H5std_string PixelMap_Path, H5std_string PixelMap_DataSet, float Pixel_Threshold);
 	
 
-	//Correlation Kernels:
+	//Correlation Kernels (3D):
 	void AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping);
 	void AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings& Options);
 
@@ -84,11 +89,15 @@ public:
 	void Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings& Options, AutoCorrFlags Flags);
 	void Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector<Settings::HitEvent>& Events, Settings& Options, AutoCorrFlags Flags);
 
+	//Correlation Kernels (Angular averaged):
+
+
+
 //Vars
 	unsigned int DetectorSize[2]; // Number of Pixels in n_y (0) and n_x (1) dimension: [n_y][n_x] => DetectorSize[0] ^= slow-scan; DetectorSize[1] ^= fast-scan
 
 	//Intensity
-	float* Intensity = NULL; // Content of Detector
+	float* Intensity = nullptr; // Content of Detector
 
 	int* PixelMask = NULL; //Binarymask to mask bad Pixel
 	//Pixelmap Stuff

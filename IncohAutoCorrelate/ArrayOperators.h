@@ -3,6 +3,7 @@
 #include <omp.h>
 #include <fstream>
 #include <string>
+#include <math.h>
 
 namespace ArrayOperators
 {
@@ -49,6 +50,18 @@ namespace ArrayOperators
 		{
 			Array[i] = Array[i] * (float)Factor[i];
 		}
+	}
+
+	inline void DiscretizeToPhotons(float* Array, float Threshold, float PhotonSamplingStep, int Size)
+	{
+		//Simple Threshold Method
+		#pragma omp parallel for
+		for (int i = 0; i < Size; i++)
+		{
+			float t = ceilf((Array[i] - Threshold) / PhotonSamplingStep)*(Array[i] >= Threshold);
+			
+			Array[i] = t;
+		} 
 	}
 
 	inline void ThresholdValues(float* Array, float Threshold, int Size)

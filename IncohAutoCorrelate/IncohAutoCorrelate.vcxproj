@@ -65,6 +65,7 @@
     <AdditionalSourcesToCopyMapping>kernel.cl;$(AdditionalSourcesToCopyMapping)</AdditionalSourcesToCopyMapping>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="AC1D.cpp" />
     <ClCompile Include="ACMesh.cpp" />
     <ClCompile Include="Crystal.cpp" />
     <ClCompile Include="Detector.cpp" />
@@ -77,6 +78,7 @@
     <ClCompile Include="Statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AC1D.h" />
     <ClInclude Include="ACMesh.h" />
     <ClInclude Include="ArrayOperators.h" />
     <ClInclude Include="Crystal.h" />

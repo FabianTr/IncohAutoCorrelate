@@ -5,6 +5,7 @@
 #include "Detector.h"
 #include "ArrayOperators.h"
 #include"ProfileTime.h"
+#include "H5Cpp.h"
 
 namespace RunIAC
 {
@@ -221,6 +222,93 @@ namespace RunIAC
 
 			Output[i] = AC[i] / CQ.CQMesh[i];
 		}
+
+	}
+
+
+	//Single Molecule
+	unsigned int GetH5StackSize(std::string Filename, std::string Dataset)
+	{
+		H5::H5File file(Filename, H5F_ACC_RDONLY);
+		H5::DataSet dataset = file.openDataSet(Dataset);
+
+		H5::DataSpace DS = dataset.getSpace();
+
+		hsize_t dims[4];
+		DS.getSimpleExtentDims(dims, NULL);
+
+		return (unsigned int)dims[0];
+	}
+
+	void Run_AC_SM_Full(AC1D & Output, CreateSM_Settings SM_Settings, Settings & PrgSettings)
+	{
+		ProfileTime Profiler;
+		std::cout << "Set up Detector.\n";
+		Detector Det;
+
+		//Load PixelMap
+		Det.LoadPixelMap(SM_Settings.PixelMap_Path, SM_Settings.PixelMap_DataSet);
+		//Create k-Map
+		Det.Calc_kMap();
+		//Load Pixelmask
+		Det.PixelMask = new int[Det.DetectorSize[0] * Det.DetectorSize[1]]();
+		if (SM_Settings.PixelMask_Path != "")
+		{
+			ArrayOperators::LoadArrayFromFile<int>(SM_Settings.PixelMask_Path, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
+		}
+		else
+		{
+			// No Pixelmask given => set every entry to one
+			#pragma omp parallel for
+			for (int i = 0; i < Det.DetectorSize[0] * Det.DetectorSize[1]; i++)
+			{
+				Det.PixelMask[i] = 1;
+			}
+		}
+
+		//Get number of events 
+		std::cout << "Calculate full stack size (number of events).\n"; 
+		PrgSettings.HitEvents.clear();
+		PrgSettings.HitEvents.reserve(100000);
+		unsigned int StackSize = 0;
+		for (int i = 0; i < SM_Settings.Files.size(); i++)
+		{
+			unsigned int t_size = GetH5StackSize(SM_Settings.Files[i], SM_Settings.H5Dataset[i]);
+			StackSize += t_size;
+			for (unsigned int j = 0; j < t_size; j++)
+			{
+				Settings::HitEvent t_Event;
+				t_Event.Event = j;
+				t_Event.Filename = SM_Settings.Files[i];
+				t_Event.Dataset = SM_Settings.H5Dataset[i];
+				PrgSettings.HitEvents.push_back(t_Event);
+			}	
+		}
+		std::cout <<"Full stack size: "<< StackSize << "\n\n";
+
+
+		//Average intensity of events
+		Det.Intensity = new float[Det.DetectorSize[0]* Det.DetectorSize[1]]();
+		{
+			Detector t_Int(Det);
+			t_Int.Intensity = nullptr; // otherwise it deletes pointer of Det in LoadIntensityData_PSANA_StyleJungfr ...
+			Profiler.Tic();
+			for (unsigned int i = 0; i < StackSize; i++)
+			{
+				t_Int.LoadIntensityData_PSANA_StyleJungfr(PrgSettings.HitEvents[i].Filename, PrgSettings.HitEvents[i].Dataset, PrgSettings.HitEvents[i].Event);
+				ArrayOperators::DiscretizeToPhotons(t_Int.Intensity, SM_Settings.PhotonOffset, SM_Settings.PhotonStep, Det.DetectorSize[0] * Det.DetectorSize[1]);
+				ArrayOperators::ParAdd(Det.Intensity, t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+			}
+			ArrayOperators::MultiplyScalar(Det.Intensity, (1.0 / ((float)StackSize)), Det.DetectorSize[0] * Det.DetectorSize[1]);
+			Profiler.Toc(true);
+			
+
+		}
+
+		
+
+		// Test at first
+
 
 	}
 }

@@ -428,6 +428,88 @@ void Detector::LoadIntensityData()
 	GetSliceOutOfHDFCuboid(Intensity, Path, DataSet, DetectorEvent->Event);
 }
 
+void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_string DataSet, unsigned int Index)
+{
+	if (Intensity != nullptr)
+	{
+		delete[] Intensity;
+		Intensity = nullptr;
+	}
+
+	H5::H5File file(Path, H5F_ACC_RDONLY);
+	H5::DataSet dataset = file.openDataSet(DataSet);
+
+	if (dataset.getTypeClass() != H5T_FLOAT)
+	{
+		std::cerr << "ERROR: Intensity data is not stored as floating point numbers.\n";
+		std::cerr << "    -> Detector::LoadIntensityData_PSANA_Style()";
+		throw;
+	}
+	H5::DataSpace DS = dataset.getSpace();
+	//std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
+
+	if (DS.getSimpleExtentNdims() != 4) //check if shape is [N][2][nx][ny] or [ny][nx][3]
+	{
+		std::cerr << "ERROR: Intensity data dimension is not 4 => shape is not (N, 2, nx, ny)\n";
+		std::cerr << "    -> Detector::LoadIntensityData_PSANA_Style()";
+		throw;
+	}
+
+	//Temporary Det Parts
+	float * SubDet1 = new float[(DetectorSize[0] / 2 ) * DetectorSize[1]]();
+	float * SubDet2 = new float[(DetectorSize[0] / 2 ) * DetectorSize[1]]();
+
+	//Get Subset 1
+	hsize_t offset[4], count[4], stride[4], block[4];
+	hsize_t dimsm[4];
+
+	offset[0] = (Index);
+	offset[1] = 0;
+	offset[2] = 0;
+	offset[3] = 0;
+
+	count[0] = 1;
+	count[1] = 1;
+	count[2] = DetectorSize[0]/2;
+	count[3] = DetectorSize[1];
+
+	block[0] = 1;
+	block[1] = 1;
+	block[2] = 1;
+	block[3] = 1;
+
+	stride[0] = 1;
+	stride[1] = 1;
+	stride[2] = 1;
+	stride[3] = 1;
+
+	dimsm[0] = 1;
+	dimsm[1] = 1;
+	dimsm[2] = DetectorSize[0]/2;
+	dimsm[3] = DetectorSize[1];
+
+	H5::DataSpace mspace(4, dimsm, NULL);
+	DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
+	dataset.read(SubDet1, H5::PredType::NATIVE_FLOAT, mspace, DS);
+
+	offset[1] = 1;
+	DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
+	dataset.read(SubDet2, H5::PredType::NATIVE_FLOAT, mspace, DS);
+	file.close();
+
+
+	Intensity = new float[DetectorSize[0]* DetectorSize[1]]();
+
+	for (unsigned int i = 0; i < (DetectorSize[0]/2) * DetectorSize[1]; i++)
+	{
+		Intensity[i] = SubDet1[i];
+		Intensity[i + ((DetectorSize[0] / 2) * DetectorSize[1])] = SubDet2[i];
+	}
+
+	delete[] SubDet1;
+	delete[] SubDet2;
+}
+
  
 
 void Detector::CreateSparseHitList(float Threshold)
