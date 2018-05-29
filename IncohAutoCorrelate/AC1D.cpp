@@ -166,7 +166,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 
 
 std::mutex g_display_mutex;
-void AC1D::Calculate_AC_UW_Mapped(Settings & Options, double * AC_M,unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode)
+void Calculate_AC_UW_Mapped(Settings & Options, double * AC_M,unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode)
 {
 	std::thread::id this_id = std::this_thread::get_id();
 

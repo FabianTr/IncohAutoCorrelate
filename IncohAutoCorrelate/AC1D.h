@@ -9,7 +9,7 @@
 class AC1D
 {
 private:
-	void Calculate_AC_UW_Mapped(Settings & Options, double * AC_M, unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode);
+
 public:
 	AC1D();
 	~AC1D();
