@@ -266,6 +266,15 @@ namespace RunIAC
 			}
 		}
 
+
+		//Set up AC1D - Container
+		AC1D AC;
+
+		AC.Shape.Max_Q = (float)(sqrt(Det.Max_q[0] * Det.Max_q[0] + Det.Max_q[1] * Det.Max_q[1] + Det.Max_q[2] * Det.Max_q[2]));
+		AC.Shape.dq_per_Step = AC.Shape.Max_Q / ((float)(AC.Shape.Size - 1));
+
+		std::cout << "Max Q: " << AC.Shape.Max_Q << "    Size: " << AC.Shape.Size << "    dq/dx: " << AC.Shape.dq_per_Step << "\n";
+
 		//Get number of events 
 		std::cout << "Calculate full stack size (number of events).\n"; 
 		PrgSettings.HitEvents.clear();
@@ -288,6 +297,7 @@ namespace RunIAC
 
 
 		//Average intensity of events
+		std::cout << "Average intensity\n";
 		Det.Intensity = new float[Det.DetectorSize[0]* Det.DetectorSize[1]]();
 		{
 			Detector t_Int(Det);
@@ -298,14 +308,22 @@ namespace RunIAC
 				t_Int.LoadIntensityData_PSANA_StyleJungfr(PrgSettings.HitEvents[i].Filename, PrgSettings.HitEvents[i].Dataset, PrgSettings.HitEvents[i].Event);
 				ArrayOperators::DiscretizeToPhotons(t_Int.Intensity, SM_Settings.PhotonOffset, SM_Settings.PhotonStep, Det.DetectorSize[0] * Det.DetectorSize[1]);
 				ArrayOperators::ParAdd(Det.Intensity, t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+				//Save Mean Int of exposure
+				PrgSettings.HitEvents[i].MeanIntensity = (ArrayOperators::Sum(t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]) / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1])));
 			}
 			ArrayOperators::MultiplyScalar(Det.Intensity, (1.0 / ((float)StackSize)), Det.DetectorSize[0] * Det.DetectorSize[1]);
 			Profiler.Toc(true);
-			
-
 		}
 
-		
+
+		//// Calculate C(q)
+		//PrgSettings.Echo("Calculate C(q) - AV");
+		//AC.Calculate_CQ(Det, PrgSettings, Settings::Interpolation::Linear);
+
+
+
+		//Calculate AC_UW
+		AC.Calculate_AC_UW_MR(PrgSettings, Settings::Interpolation::Linear);
 
 		// Test at first
 

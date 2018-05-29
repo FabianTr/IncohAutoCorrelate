@@ -105,6 +105,7 @@
       <AdditionalOptions>-lOpenCL -fopenmp %(AdditionalOptions)</AdditionalOptions>
       <CAdditionalWarning />
       <CppAdditionalWarning />
+      <WarningLevel>EnableAllWarnings</WarningLevel>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/opt/opencl/intel/lib64;/usr/lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

@@ -418,4 +418,117 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 
 
 
+__kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
+	__global const float *KMap,
+	__global const double *Params,
+	__global unsigned long *CQ)
+{
+	unsigned int ind = get_global_id(0);
 
+	unsigned int DetSize = (unsigned int)Params[0];
+	float dqPerVox = (float)Params[1];
+	unsigned int ArraySize = (unsigned int)Params[2];
+	int InterpolMode = (unsigned int)Params[3];
+	float MaxQ = (float)Params[4];
+	double Multiplicator = (double)Params[5];
+	unsigned int MapAndReduce = (unsigned int)Params[6];
+
+
+
+	unsigned int MaR_ScanAdd = ((ind*MapAndReduce) / (DetSize)) * ArraySize;
+
+	////Debug Bullshit
+	//if (ind == 0)//ind == 0
+	//{
+	//	printf("Kernel is alive\n");
+	//	printf("Detector Size: %d\n", DetSize);
+	//	printf("Interpolation mode: %d\n", InterpolMode);
+	//	printf("Mesh Size AB: %d\n", MeshSizeAB);
+	//	printf("Mesh Size C: %d\n", MeshSizeC);
+	//	printf("dq per Vox: %f\n", dqPerVox);
+	//	printf("Max q: %f\n", MaxQ);
+	//}
+	////END
+
+
+	//local Variables
+
+	float k1[3];
+	float k2[3];
+
+	k1[0] = KMap[0 + 3 * ind];
+	k1[1] = KMap[1 + 3 * ind];
+	k1[2] = KMap[2 + 3 * ind];
+
+	float q;
+	float INT_ind = IntensityData[ind];
+
+
+	for (int i = 0; i < DetSize; i++) //Loop over all Pixel //< DetSize
+	{
+		if (i == ind) //exclude zeroth peak need to be set to infinity afterwards
+		{
+			continue;
+		}
+
+		double Val = INT_ind * IntensityData[i];
+
+		if (Val < 1e-37f) //no entry shortcut
+		{
+			continue;
+		}
+
+		
+
+		k2[0] = KMap[0 + 3 * i];
+		k2[1] = KMap[1 + 3 * i];
+		k2[2] = KMap[2 + 3 * i];
+
+		q = sqrt((k1[0] - k2[0]) * (k1[0] - k2[0]) 
+		        + k1[1] - k2[1]) * (k1[1] - k2[1]
+				+ k1[2] - k2[2]) * (k1[2] - k2[2]);
+
+
+
+
+		if (q > MaxQ)
+		{
+			continue;
+		}
+
+		q = q / dqPerVox;
+
+
+		if (InterpolMode == 0) //nearest neighbor interpolation
+		{
+			long ValConv = 0;
+			ValConv = (long)(Val*Multiplicator);
+
+			unsigned int sc;
+			sc = (unsigned int)(floor(q + 0.5)) + MaR_ScanAdd;
+
+			atomic_add(&(CQ[sc]), ValConv);
+		}
+		if (InterpolMode == 1) //linear interpolation
+		{
+			unsigned int sc1, sc2;
+
+			sc1 = (unsigned int)(floor(q)) + MaR_ScanAdd;
+			sc2 = sc1 + 1;
+
+			double Sep = q - sc1; //separator
+
+			long ValConv1 = 0;
+			long ValConv2 = 0;
+			ValConv1 = (long)(Val*(1-Sep)*Multiplicator);
+			ValConv2 = (long)(Val*(Sep)*Multiplicator);
+
+			atomic_add(&(CQ[sc1]), ValConv1);
+			atomic_add(&(CQ[sc2]), ValConv2);
+		}
+
+
+
+
+	}//while ((i = (i + 1) % N) != n);
+}
