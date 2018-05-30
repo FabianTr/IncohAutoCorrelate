@@ -3,6 +3,7 @@
 #include "Forward.h"
 #include "Detector.h"
 #include "Settings.h"
+#include "RunIAC.h"
 
 //In contrast to ACMesh, AC1D represents the angular averaged autocorrelation in 1 dimension. Also both, AC_UW and C(q) is stored 
 //within one class and combination functions are added. //ToDo: Maybe also implement this "double use" for ACMesh.
@@ -37,7 +38,7 @@ public:
 
 
 	//Sparse Autocorrelate
-	void Calculate_AC_UW_MR(Settings &Options, Settings::Interpolation IterpolMode);
+	void Calculate_AC_UW_MR(Settings &Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation);
 	
 };
 

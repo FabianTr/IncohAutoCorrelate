@@ -72,6 +72,8 @@ public:
 
 	void CreateSparseHitList(float Threshold);
 	void CreateSparseHitList(float Threshold, float PhotonSamplingStep);
+	void CreateSparseHitList(float Threshold, float PhotonSamplingStep, bool Par);
+
 
 	float CalculateMeanIntensity(bool FromSparse);
 

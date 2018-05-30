@@ -240,9 +240,11 @@ namespace RunIAC
 		return (unsigned int)dims[0];
 	}
 
-	void Run_AC_SM_Full(AC1D & Output, CreateSM_Settings SM_Settings, Settings & PrgSettings)
+	void Run_AC_SM_Full(AC1D & AC, CreateSM_Settings SM_Settings, Settings & PrgSettings)
 	{
 		ProfileTime Profiler;
+		ProfileTime Profiler_All;
+		Profiler_All.Tic();
 		std::cout << "Set up Detector.\n";
 		Detector Det;
 
@@ -268,7 +270,8 @@ namespace RunIAC
 
 
 		//Set up AC1D - Container
-		AC1D AC;
+		AC.Initialize(Det, SM_Settings.ArraySize);
+		//AC1D AC;
 
 		AC.Shape.Max_Q = (float)(sqrt(Det.Max_q[0] * Det.Max_q[0] + Det.Max_q[1] * Det.Max_q[1] + Det.Max_q[2] * Det.Max_q[2]));
 		AC.Shape.dq_per_Step = AC.Shape.Max_Q / ((float)(AC.Shape.Size - 1));
@@ -306,6 +309,9 @@ namespace RunIAC
 			for (unsigned int i = 0; i < StackSize; i++)
 			{
 				t_Int.LoadIntensityData_PSANA_StyleJungfr(PrgSettings.HitEvents[i].Filename, PrgSettings.HitEvents[i].Dataset, PrgSettings.HitEvents[i].Event);
+				//apply PixelMask
+				ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
+
 				ArrayOperators::DiscretizeToPhotons(t_Int.Intensity, SM_Settings.PhotonOffset, SM_Settings.PhotonStep, Det.DetectorSize[0] * Det.DetectorSize[1]);
 				ArrayOperators::ParAdd(Det.Intensity, t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
 				//Save Mean Int of exposure
@@ -315,18 +321,48 @@ namespace RunIAC
 			Profiler.Toc(true);
 		}
 
+		ArrayOperators::SafeArrayToFile(SM_Settings.Output_AV_Int_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::FileType::Binary);
+		std::cout << "Saved averaged Intensity as: " << SM_Settings.Output_AV_Int_Path << "\n";
 
-		//// Calculate C(q)
-		//PrgSettings.Echo("Calculate C(q) - AV");
-		//AC.Calculate_CQ(Det, PrgSettings, Settings::Interpolation::Linear);
+		// Calculate C(q)
+		PrgSettings.Echo("\nCalculate C(q) - AV:");
+		Profiler.Tic();
+		AC.Calculate_CQ(Det, PrgSettings, Settings::Interpolation::Linear);
+		Profiler.Toc(true);
 
-
+		ArrayOperators::SafeArrayToFile(SM_Settings.Output_CQ_Path, AC.CQ , AC.Shape.Size, ArrayOperators::FileType::Binary);
+		std::cout << "Saved angular averaged C(q) as: " << SM_Settings.Output_CQ_Path << "\n";
 
 		//Calculate AC_UW
-		AC.Calculate_AC_UW_MR(PrgSettings, Settings::Interpolation::Linear);
+		PrgSettings.Echo("\nCalculate AC uw - AAV:");
+		Profiler.Tic();
+		std::array<float, 2> t_Photonis;
+		t_Photonis[0] = SM_Settings.PhotonOffset;
+		t_Photonis[1] = SM_Settings.PhotonStep;
+		AC.Calculate_AC_UW_MR(PrgSettings,Det, Settings::Interpolation::Linear, t_Photonis);
+		Profiler.Toc(true);
+
+		ArrayOperators::SafeArrayToFile(SM_Settings.Output_ACUW_Path, AC.AC_UW, AC.Shape.Size, ArrayOperators::FileType::Binary);
+		std::cout << "Saved angular averaged unweighted AC as: " << SM_Settings.Output_ACUW_Path << "\n";
 
 		// Test at first
+		AC.AC = new double[AC.Shape.Size]; //probable Memoryleak, ... FIX!
+		for (unsigned int i = 0; i < AC.Shape.Size; i++)
+		{
+			AC.AC[i] = AC.AC_UW[i] / AC.CQ[i];
+		}
+
+		ArrayOperators::SafeArrayToFile(SM_Settings.Output_AC_Path, AC.AC, AC.Shape.Size, ArrayOperators::FileType::Binary);
+		std::cout << "Saved angular averaged AC as: " << SM_Settings.Output_AC_Path << "\n";
+
+		ArrayOperators::SafeArrayToFile(SM_Settings.Output_Q_Path, AC.Q, AC.Shape.Size, ArrayOperators::FileType::Binary);
+		std::cout << "Saved angular averaged Q as: " << SM_Settings.Output_Q_Path << "\n";
 
 
+
+		std::cout << "\n Whole angular averaged, single molecule evaluation performed within\n";
+		Profiler_All.Toc(true);
 	}
+
+
 }

@@ -574,6 +574,26 @@ void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
 	}
 }
 
+void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep, bool Par)
+{
+	CreateSparseHitList(Threshold);
+	if (Par)
+	{
+#pragma omp parallel for
+		for (unsigned int i = 0; i < SparseHitList.size(); i++)
+		{
+			SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
+		}
+	}
+	else
+	{
+		for (unsigned int i = 0; i < SparseHitList.size(); i++)
+		{
+			SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
+		}
+	}
+}
+
 
 float Detector::CalculateMeanIntensity(bool FromSparse)
 {

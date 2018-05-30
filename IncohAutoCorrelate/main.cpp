@@ -476,13 +476,129 @@ int main()
 		SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_139-xes.h5");
 		SM_Settings.H5Dataset.push_back("/mfxlr1716/run139/Jungfrau1M/calib/data");
 
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_140-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run140/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_141-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run141/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_142-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run142/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_143-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run143/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_146-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run146/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_147-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run147/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_159-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run159/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_160-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run160/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_161-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run161/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_162-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run162/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_163-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run163/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_164-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run164/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_165-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run165/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_166-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run166/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_167-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run167/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_168-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run168/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_169-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run169/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_203-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run203/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_204-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run204/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_205-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run205/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_206-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run206/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_207-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run207/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_208-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run208/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_209-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run209/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_253-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run253/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_255-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run255/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_256-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run256/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_257-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run257/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_258-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run258/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_263-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run263/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_264-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run264/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_265-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run265/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_266-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run266/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_267-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run267/Jungfrau1M/calib/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_268-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run268/Jungfrau1M/calib/data");
+
+
+
 		SM_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
 		SM_Settings.PixelMap_DataSet = "data/data";
 		SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
 
+		SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_avINT.bin";
+		SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_CQ.bin";
+		SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_ACuw.bin";
+		SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_AC.bin";
+		SM_Settings.Output_Q_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_Q.bin";
+
+		SM_Settings.ArraySize = 1000;
+
 		AC1D Results;
 
 		RunIAC::Run_AC_SM_Full(Results, SM_Settings, Options);
+
 
 	}
 	break;

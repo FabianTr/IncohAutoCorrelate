@@ -18,6 +18,14 @@ namespace ArrayOperators
 			Array[i] += Summand[i];
 		}
 	}
+	inline void ParAdd(double* Array, double* Summand, int Size)
+	{
+		#pragma omp parallel for
+		for (int i = 0; i < Size; i++)
+		{
+			Array[i] += Summand[i];
+		}
+	}
 	inline void ParAdd(float* Array, float* Summand, int Size, float Threshold)
 	{
 		#pragma omp parallel for
@@ -27,6 +35,7 @@ namespace ArrayOperators
 				Array[i] += Summand[i];
 		}
 	}
+
 	inline void ParMultiplyScalar(float* Array, float Factor, int Size)
 	{
 		#pragma omp parallel for
@@ -46,6 +55,22 @@ namespace ArrayOperators
 	inline void ParMultiplyElementwise(float* Array, int* Factor, unsigned int Size)
 	{
 		#pragma omp parallel for
+		for (int i = 0; i < Size; i++)
+		{
+			Array[i] = Array[i] * (float)Factor[i];
+		}
+	}
+
+	inline void MultiplyElementwise(float* Array, float* Factor, unsigned int Size)
+	{
+		for (int i = 0; i < Size; i++)
+		{
+			Array[i] = Array[i] * Factor[i];
+		}
+	}
+
+	inline void MultiplyElementwise(float* Array, int* Factor, unsigned int Size)
+	{
 		for (int i = 0; i < Size; i++)
 		{
 			Array[i] = Array[i] * (float)Factor[i];

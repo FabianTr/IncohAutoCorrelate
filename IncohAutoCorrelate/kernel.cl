@@ -437,18 +437,18 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 	unsigned int MaR_ScanAdd = ((ind*MapAndReduce) / (DetSize)) * ArraySize;
 
-	////Debug Bullshit
-	//if (ind == 0)//ind == 0
-	//{
-	//	printf("Kernel is alive\n");
-	//	printf("Detector Size: %d\n", DetSize);
-	//	printf("Interpolation mode: %d\n", InterpolMode);
-	//	printf("Mesh Size AB: %d\n", MeshSizeAB);
-	//	printf("Mesh Size C: %d\n", MeshSizeC);
-	//	printf("dq per Vox: %f\n", dqPerVox);
-	//	printf("Max q: %f\n", MaxQ);
-	//}
-	////END
+	//Debug Bullshit
+	if (ind == 0)//ind == 0
+	{
+		printf("Kernel is alive\n");
+		printf("Detector Size: %d\n", DetSize);
+		printf("Interpolation mode: %d\n", InterpolMode);
+		printf("ArraySize: %d\n", ArraySize);
+		printf("Multiplicator: %f\n", Multiplicator);
+		printf("MapAndReduce: %d\n", MapAndReduce);
+		printf("Max q: %f\n", MaxQ);
+	}
+	//END
 
 
 	//local Variables
@@ -485,16 +485,16 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 		k2[2] = KMap[2 + 3 * i];
 
 		q = sqrt((k1[0] - k2[0]) * (k1[0] - k2[0]) 
-		        + k1[1] - k2[1]) * (k1[1] - k2[1]
-				+ k1[2] - k2[2]) * (k1[2] - k2[2]);
+		        + (k1[1] - k2[1]) * (k1[1] - k2[1])
+				+ (k1[2] - k2[2]) * (k1[2] - k2[2]));
 
 
 
 
-		if (q > MaxQ)
-		{
-			continue;
-		}
+		//if (q > MaxQ)
+		//{
+		//	continue;
+		//}
 
 		q = q / dqPerVox;
 
@@ -516,7 +516,7 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 			sc1 = (unsigned int)(floor(q)) + MaR_ScanAdd;
 			sc2 = sc1 + 1;
 
-			double Sep = q - sc1; //separator
+			double Sep = q - (floor(q)); //separator
 
 			long ValConv1 = 0;
 			long ValConv2 = 0;

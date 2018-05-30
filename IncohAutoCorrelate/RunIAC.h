@@ -87,6 +87,12 @@ namespace RunIAC
 
 		std::string PixelMask_Path = "";//Binary
 
+		std::string Output_AV_Int_Path = "";//Binary
+		std::string Output_CQ_Path = "";//Binary
+		std::string Output_ACUW_Path = "";//Binary
+		std::string Output_AC_Path = "";//Binary
+		std::string Output_Q_Path = "";//Binary
+
 		float PhotonOffset = 3.2f;
 		float PhotonStep = 6.4f;
 		

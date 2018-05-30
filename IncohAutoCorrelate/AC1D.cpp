@@ -32,10 +32,10 @@ void AC1D::Initialize()
 	delete[] AC;
 	delete[] Q;
 
-	CQ = new double[Shape.Size];
-	AC_UW = new double[Shape.Size];
-	AC = new double[Shape.Size];
-	Q = new double[Shape.Size];
+	CQ = new double[Shape.Size]();
+	AC_UW = new double[Shape.Size]();
+	AC = new double[Shape.Size]();
+	Q = new double[Shape.Size]();
 
 	for (unsigned int i = 0; i < Shape.Size; i++)
 	{
@@ -78,8 +78,8 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	}
 	Multiplicator = Multiplicator * 100000;
 
-	int MapAndReduce_Factor = 10000; //Take care of Device Memory !!!!!!!!!
-	int TempArraySize = MapAndReduce_Factor * Shape.Size;
+	unsigned int MapAndReduce_Factor = 10000; //Take care of Device Memory !!!!!!!!!
+	unsigned int TempArraySize = MapAndReduce_Factor * Shape.Size;
 
 	double Params[7];
 	Params[0] = (double)(Det.DetectorSize[0] * Det.DetectorSize[1]);
@@ -99,7 +99,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	}
 	//END DEBUG BULLSHIT
 
-	uint64_t * TempArray = new uint64_t[TempArraySize];
+	uint64_t * TempArray = new uint64_t[TempArraySize]();
 
 	std::cout << "TempArraySize: " << TempArraySize << "\n";
 
@@ -107,6 +107,8 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 	Options.checkErr(err, "Setup CommandQueue in AC1D::Calculate_CQ() ");
 	cl::Event cl_event;
+
+
 
 	//Define Kernel Buffers
 	//Output
@@ -148,16 +150,17 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	//Free Device
 	Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
-	//convert to Double
+	//convert to Double and Reduce
 	delete[] CQ;
-	CQ = new double[Shape.Size];
+	CQ = new double[Shape.Size]();
 
 	int j = 0;
 	for (unsigned int i = 0; i < TempArraySize; i++)
 	{
 		if (j == Shape.Size)
 			j = 0;
-		CQ[j] += (double)TempArray[i] / Multiplicator;
+
+		CQ[j] += ((double)TempArray[i] / (double)Multiplicator);
 		j++;
 	}
 	//Free memory
@@ -165,20 +168,80 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 }
 
 
-std::mutex g_display_mutex;
-void Calculate_AC_UW_Mapped(Settings & Options, double * AC_M,unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode)
+std::mutex g_loadFile_mutex;
+std::mutex g_echo_mutex;
+void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, float MaxQ, float dqdx)
 {
-	std::thread::id this_id = std::this_thread::get_id();
+	//g_echo_mutex.lock();
+	//std::cout << "Thread from " << LowerBound <<" launched\n";
+	//g_echo_mutex.unlock();
 
-	g_display_mutex.lock();
-	std::cout << "thread ID:" << this_id <<"   " << Options.HitEvents[LowerBound].MeanIntensity << "\n";
-	g_display_mutex.unlock();
-	AC_M[0] = LowerBound;
-	AC_M[1] = UpperBound;
-	AC_M[2] = 3;
+	Detector Det(RefDet);
+	Det.Intensity = new float[1];
+
+	for (unsigned int i = LowerBound; i < UpperBound; i++)
+	{
+		//Load Intensity
+
+		g_loadFile_mutex.lock();
+		Det.LoadIntensityData_PSANA_StyleJungfr(Options.HitEvents[i].Filename, Options.HitEvents[i].Dataset, Options.HitEvents[i].Event);
+		g_loadFile_mutex.unlock();
+
+		ArrayOperators::MultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
+
+		//Create sparse List (and Photonize)
+		Det.CreateSparseHitList(Photonisation[0], Photonisation[1],false); //suppress OMP parallelization within Threadpool!
+		//iterate over all combinations
+		for (unsigned int j = 0; j < Det.SparseHitList.size(); j++)
+		{
+			for (unsigned int k = j; k < Det.SparseHitList.size(); k++)
+			{
+				if (k == j)
+					continue;
+
+				float q = sqrt(
+					(Det.SparseHitList[j][0] - Det.SparseHitList[k][0]) * (Det.SparseHitList[j][0] - Det.SparseHitList[k][0]) +
+					(Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) * (Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) +
+					(Det.SparseHitList[j][2] - Det.SparseHitList[k][2]) * (Det.SparseHitList[j][2] - Det.SparseHitList[k][2]) 
+					);
+
+				if (q > MaxQ)
+				{
+					continue;
+				}
+				q = q / dqdx;
+
+				if (IterpolMode == Settings::Interpolation::NearestNeighbour)
+				{
+					unsigned int sc;
+					sc = (unsigned int)(floor(q + 0.5));
+					AC_M[sc] += 2.0f * (Det.SparseHitList[j][3] * Det.SparseHitList[k][3]); //factor 2 because of both orientations (k = j; ...)
+				}
+				else if (IterpolMode == Settings::Interpolation::Linear)
+				{
+					unsigned int sc1, sc2;
+					sc1 = (unsigned int)(floor(q));
+					sc2 = sc1 + 1;
+
+					float Sep = q - sc1; //separator
+
+					float Val1 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3])*(1 - Sep));
+					float Val2 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3])*(Sep));
+
+					AC_M[sc1] += Val1;
+					AC_M[sc2] += Val2;
+				}
+			}
+		}
+
+	}
+
+	//Free in thread distributed Det memory:
+	delete[] Det.Intensity;
+
 }
 
-void AC1D::Calculate_AC_UW_MR(Settings & Options, Settings::Interpolation IterpolMode)
+void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation)
 {
 	const int Threads = 100; //set higher than expectred threads because of waitingtimes for read from file
 
@@ -214,21 +277,34 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Settings::Interpolation Iterpo
 	}
 
 
-	//Run AutoCorrelations (Mapped)
-
+	//Run AutoCorrelations (Map)
 	std::vector<std::thread> AC_Threads;
 	for (int i = 0; i < Threads; i++)
 	{
-		AC_Threads.push_back(std::thread(Calculate_AC_UW_Mapped, std::ref(Options), std::ref(AC_Map[i]), WorkerBounds[i][0], WorkerBounds[i][1], IterpolMode));
+		AC_Threads.push_back(std::thread(Calculate_AC_UW_Mapped,std::ref(Options), std::ref(RefDet), std::ref(AC_Map[i]), WorkerBounds[i][0], WorkerBounds[i][1], IterpolMode, Photonisation, Shape.Max_Q, Shape.dq_per_Step));
 	}
 
 	for (int i = 0; i < Threads; i++)
 	{
 		AC_Threads[i].join();
 	}
+	//ProfileTime profiler;
+	//std::cout << "launch Worker 0 testwise\n";
+	//profiler.Tic();
+	//Calculate_AC_UW_Mapped(std::ref(Options), std::ref(RefDet), std::ref(AC_Map[0]), WorkerBounds[0][0], WorkerBounds[0][1], IterpolMode, Photonisation, Shape.Max_Q, Shape.dq_per_Step);
+	//profiler.Toc(true);
+	//std::cout << "done\n";
+
+
+	//create AC_UW
+	delete[] AC_UW;
+	AC_UW = new double[Shape.Size]();
 
 	//Reduce
-	
+	for (int i = 0; i < Threads; i++)
+	{
+		ArrayOperators::ParAdd(AC_UW, AC_Map[i], Shape.Size);
+	}
 
 	//Free Memory
 	for (int i = 0; i < AC_Map.size(); i++)
