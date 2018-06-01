@@ -15,7 +15,7 @@ Crystal::~Crystal()
 {
 }
 
-std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Settings,  std::array<float, 9> & RotationMatrix)
+std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Settings,  std::array<float, 9> & RotationMatrix, bool UseGivenRotation)
 {
 	//Temporary Atom Positions
 	std::vector<std::array<double, 3>> At_temp;
@@ -95,6 +95,11 @@ std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Setting
 	return Ret;
 }
 
+std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Settings, std::array<float, 9>& RotationMatrix)
+{
+	return GetEmitters(Settings, RotationMatrix, false);
+}
+
 
 std::array<float, 9> Crystal::RotateVectors(std::vector<std::array<double, 3>> &Vectors, const double angle, std::array<double, 3> axis)
 {
@@ -140,6 +145,13 @@ std::array<float, 9> Crystal::RotateVectors(std::vector<std::array<double, 3>> &
 	}
 
 	return RotationMatrix;
+}
+
+std::array<float, 9> Crystal::RotateVectors(std::vector<std::array<double, 3>>& Vectors, std::array<float, 9> RotMatrix)
+{
+
+
+	return RotMatrix; // To Implement
 }
 
 inline double Crystal::Drand()

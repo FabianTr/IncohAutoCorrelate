@@ -10,7 +10,9 @@
 class Simulator
 {
 private:
-
+	inline double Drand();
+	std::uniform_real_distribution<double> rnd;
+	std::mt19937_64 mt;
 	void WriteIntensityToH5(Detector & Det, std::string Filename, std::string Dataset);
 
 public:

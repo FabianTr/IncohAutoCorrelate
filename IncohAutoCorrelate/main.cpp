@@ -473,8 +473,8 @@ int main()
 	{
 		RunIAC::CreateSM_Settings SM_Settings;
 
-		SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_139-xes.h5");
-		SM_Settings.H5Dataset.push_back("/mfxlr1716/run139/Jungfrau1M/calib/data");
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_139-xes.h5");
+		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run139/Jungfrau1M/calib/data");
 
 		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_140-xes.h5");
 		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run140/Jungfrau1M/calib/data");
@@ -582,18 +582,34 @@ int main()
 		//SM_Settings.H5Dataset.push_back("/mfxlr1716/run268/Jungfrau1M/calib/data");
 
 
+//Test (BED-Noise)
+
+
+		SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/SM_Noise_Sim/NoiseStack0.cxi");
+		SM_Settings.H5Dataset.push_back("/data");
+
+		SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/SM_Noise_Sim/NoiseStack1.cxi");
+		SM_Settings.H5Dataset.push_back("/data");
+
+		//SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/SM_Noise_Sim/NoiseStack2.cxi");
+		//SM_Settings.H5Dataset.push_back("/data");
+
+//
 
 		SM_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
 		SM_Settings.PixelMap_DataSet = "data/data";
-		SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
+	//	SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
 
-		SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_avINT.bin";
-		SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_CQ.bin";
-		SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_ACuw.bin";
-		SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_AC.bin";
-		SM_Settings.Output_Q_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/139_Q.bin";
+		SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Noise_avINT.bin";
+		SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Noise_CQ.bin";
+		SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Noise_ACuw.bin";
+		SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Noise_AC.bin";
+		SM_Settings.Output_Q_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Noise_Q.bin";
 
-		SM_Settings.ArraySize = 1000;
+
+
+		
+		SM_Settings.ArraySize = 1500;
 
 		AC1D Results;
 

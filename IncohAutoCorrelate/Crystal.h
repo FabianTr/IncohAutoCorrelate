@@ -22,7 +22,7 @@ public:
 	~Crystal();
 
 	static std::array<float, 9> RotateVectors(std::vector<std::array<double, 3>> &Vectors, const double angle, std::array<double, 3> axis);
-
+	static std::array<float, 9> RotateVectors(std::vector<std::array<double, 3>> &Vectors, std::array<float, 9> RotMatrix);
 
 	std::vector<std::array<double, 3>> AtomPositions; //Atom Positions of the whole structure //x_1,y_1,z_1, ..., x_n, y_n, z_
 	
@@ -42,7 +42,7 @@ public:
 	};
 
 	std::vector<Emitter> GetEmitters(EmittingCrystSettings Settings, std::array<float,9> & RotationMatrix);
-	
+	std::vector<Emitter> GetEmitters(EmittingCrystSettings Settings, std::array<float, 9> & RotationMatrix, bool UseGivenRotation); //needed because of possible modes > 1
 
 
 };

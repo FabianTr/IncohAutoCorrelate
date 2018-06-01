@@ -7,6 +7,10 @@
 
 
 
+inline double Simulator::Drand()
+{
+	return rnd(mt);
+}
 
 void Simulator::WriteIntensityToH5(Detector & Det, std::string Filename, std::string Dataset)
 {
@@ -20,7 +24,7 @@ void Simulator::WriteIntensityToH5(Detector & Det, std::string Filename, std::st
 	}
 }
 
-Simulator::Simulator()
+Simulator::Simulator() :mt(std::random_device{}())
 {
 }
 
@@ -143,11 +147,40 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 		double * Intensity = new double(Det.DetectorSize[0] * Det.DetectorSize[1]);
 		double * Params = new double[2]();
-		Params[0] = (double)NumEM; // number of 
+		Params[0] = (double)NumEM; // number of Emitters
+		
+		Params[1] = (double)SimSettings.PoissonSample; 
+
+		Params[2] = (double)SimSettings.SubSampling; //Subsampling is only possible if the orientation and size of a pixel is known! 
+		//Pixels are within the plane given by u and v. u and v also represents the orientation (their edges). Here it is assumed, that all pixels are orientated in parallel
+		Params[3] = SimSettings.PixelOrientationVectors[0]; //u1
+		Params[4] = SimSettings.PixelOrientationVectors[1]; //u2
+		Params[5] = SimSettings.PixelOrientationVectors[2]; //u3
+		Params[6] = SimSettings.PixelOrientationVectors[3]; //v1
+		Params[7] = SimSettings.PixelOrientationVectors[4]; //v2
+		Params[8] = SimSettings.PixelOrientationVectors[5]; //v3
+		//Also the pixel size is required, as the "PixelMap" only gives one coordinate, which we interprete as the center of the pixel 
+		// => SubSampling (SuSa) is therefore performed on a grid with the central spot given by the PixelMap.
+		// A SuSa = 1 for example means one Point on the Pixel center plus eight points lieing at the center +/- 0.33*Size in each dimension (1/3) lines
+		Params[9] = SimSettings.PixelSize[0]; // Size in u (Su) direction SuSa step is Su/(2*SuSa + 1)
+		Params[10] = SimSettings.PixelSize[1]; // Size in v (Sv) direction SuSa step is Sv/(2*SuSa + 1)
 
 
-		
-		
+		for (unsigned int ModeRun = 0; ModeRun < SimSettings.Modes; ModeRun++)
+		{
+			if (ModeRun > 0 )//Roll new Phases if ModeRun != 0 TODO: Implement new roll of random emitters for same rotation!
+			{
+				#pragma omp parallel for
+				for (unsigned int i = 0; i < EmitterList.size(); i++)
+				{
+					EmitterList[i].Phase = 2 * M_PI*Drand();
+				}
+			}
+
+
+
+
+		}
 
 
 		delete[] Params;

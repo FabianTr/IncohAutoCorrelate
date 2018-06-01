@@ -181,6 +181,17 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 	for (unsigned int i = LowerBound; i < UpperBound; i++)
 	{
+		//
+		if ((i- LowerBound) % 100 == 0 && i > LowerBound)
+		{
+			g_echo_mutex.lock();
+
+			std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " : " << i- LowerBound << "/" << (UpperBound - LowerBound) << std::endl;
+
+			g_echo_mutex.unlock();
+		}
+
+
 		//Load Intensity
 
 		g_loadFile_mutex.lock();
@@ -238,6 +249,12 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 	//Free in thread distributed Det memory:
 	delete[] Det.Intensity;
+
+
+		g_echo_mutex.lock();
+		std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " Finished." << std::endl;
+		g_echo_mutex.unlock();
+	
 
 }
 
