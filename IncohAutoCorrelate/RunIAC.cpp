@@ -308,7 +308,15 @@ namespace RunIAC
 			Profiler.Tic();
 			for (unsigned int i = 0; i < StackSize; i++)
 			{
-				t_Int.LoadIntensityData_PSANA_StyleJungfr(PrgSettings.HitEvents[i].Filename, PrgSettings.HitEvents[i].Dataset, PrgSettings.HitEvents[i].Event);
+				if (SM_Settings.JungfrDet)
+				{
+					t_Int.LoadIntensityData_PSANA_StyleJungfr(PrgSettings.HitEvents[i].Filename, PrgSettings.HitEvents[i].Dataset, PrgSettings.HitEvents[i].Event);
+				}
+				else
+				{
+					t_Int.GetSliceOutOfHDFCuboid(t_Int.Intensity, PrgSettings.HitEvents[i].Filename, PrgSettings.HitEvents[i].Dataset, PrgSettings.HitEvents[i].Event);
+				}
+				
 				//apply PixelMask
 				ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
 

@@ -97,7 +97,10 @@ namespace RunIAC
 		float PhotonStep = 6.4f;
 		
 		unsigned int ArraySize = 1000;
+
+		bool JungfrDet = true;
 	};
+
 
 	void Run_AC_SM_Full(AC1D & Output, CreateSM_Settings SM_Settings, Settings& PrgSettings);
 

@@ -28,7 +28,7 @@ private:
 	void Calc_PixelMapExtremeValues();
 
 
-	void GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_string DataSet, int SlicePosition);
+	
 
 	//k-Map Stuff
 
@@ -59,6 +59,7 @@ public:
 	void LoadIntensityData(Settings::HitEvent* Event);
 	void LoadIntensityData();
 	void LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_string DataSet, unsigned int Index);
+	void GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_string DataSet, int SlicePosition); // Load intensity directly out of hdf5 file
 
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold);
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, int LowerBound, int UpperBound);
