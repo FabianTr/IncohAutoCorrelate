@@ -11,5 +11,6 @@ public:
 
 	void Tic();
 	double Toc(bool print);
+	double Toc();
 };
 

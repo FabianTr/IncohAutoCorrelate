@@ -378,7 +378,7 @@ int main()
 
 	//1: AutoCorrelate
 
-	int RunMode = 5; 
+	int RunMode = 6; 
 	switch (RunMode)
 	{
 	case 1: //Autocorrelate Hb Jungfrau 3fs
@@ -609,7 +609,7 @@ int main()
 
 
 		
-		SM_Settings.ArraySize = 3000;
+		SM_Settings.ArraySize = 1500;
 
 		AC1D Results;
 
@@ -644,7 +644,7 @@ int main()
 
 		//
 
-		SM_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
+		SM_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J500.h5";
 		SM_Settings.PixelMap_DataSet = "data/data";
 		SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
 
@@ -795,20 +795,23 @@ int main()
 
 			//
 
-			SM_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
-			SM_Settings.PixelMap_DataSet = "data/data";
-		//	SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
+			SM_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Epix_rough.h5";
+			SM_Settings.PixelMap_DataSet = "geometry";
+			SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/ePix_mask1.bin";
 
-			SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block3_HR_avINT.bin";
-			SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block3_HR_CQ.bin";
-			SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block3_HR_ACuw.bin";
-			SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block3_HR_AC.bin";
-			SM_Settings.Output_Q_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block3_HR_Q.bin";
+			SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block2_ePix_avINT.bin";
+			SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block2_ePix_CQ.bin";
+			SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block2_ePix_ACuw.bin";
+			SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block2_ePix_AC.bin";
+			SM_Settings.Output_Q_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/Block2_ePix_Q.bin";
 
+			//Epix ADU differ from Jungfrau!! (needs maybe refinement)
+			SM_Settings.PhotonOffset = 50;
+			SM_Settings.PhotonStep = 100;
+			//
 
-
-
-			SM_Settings.ArraySize = 1500;
+			SM_Settings.ArraySize = 750;
+			
 
 			AC1D Results;
 

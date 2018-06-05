@@ -139,14 +139,14 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		double * EM = new double(4 * NumEM);
 		for (unsigned int i = 0; i < NumEM; i++)
 		{
-			EM[0] = EmitterList[i].Position[0];
-			EM[1] = EmitterList[i].Position[1];
-			EM[2] = EmitterList[i].Position[2];
-			EM[3] = EmitterList[i].Phase;
+			EM[i + 0] = EmitterList[i].Position[0];
+			EM[i + 1] = EmitterList[i].Position[1];
+			EM[i + 2] = EmitterList[i].Position[2];
+			EM[i + 3] = EmitterList[i].Phase;
 		}
 
 		double * Intensity = new double(Det.DetectorSize[0] * Det.DetectorSize[1]);
-		double * Params = new double[2]();
+		double * Params = new double[11]();
 		Params[0] = (double)NumEM; // number of Emitters
 		
 		Params[1] = (double)SimSettings.PoissonSample; 
@@ -168,14 +168,39 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 		for (unsigned int ModeRun = 0; ModeRun < SimSettings.Modes; ModeRun++)
 		{
-			if (ModeRun > 0 )//Roll new Phases if ModeRun != 0 TODO: Implement new roll of random emitters for same rotation!
+			double * t_Intensity = new double(Det.DetectorSize[0] * Det.DetectorSize[1]);
+			if (ModeRun > 0 )//Roll new Phases if ModeRun != 0 (and keep rotation matrix)
 			{
-				#pragma omp parallel for
-				for (unsigned int i = 0; i < EmitterList.size(); i++)
+				delete[] EM;
+				EmitterList.clear();
+				EmitterList = EmitterCrystal.GetEmitters(SimSettings.CrystSettings, RotMat, true);
+
+				NumEM = EmitterList.size();
+				Params[0] = (double)NumEM;
+
+				double * EM = new double(4 * NumEM);
+				for (unsigned int i = 0; i < NumEM; i++)
 				{
-					EmitterList[i].Phase = 2 * M_PI*Drand();
+					EM[i + 0] = EmitterList[i].Position[0];
+					EM[i + 1] = EmitterList[i].Position[1];
+					EM[i + 2] = EmitterList[i].Position[2];
+					EM[i + 3] = EmitterList[i].Phase;
 				}
+
 			}
+
+			//obtain Device
+			cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
+
+			//Setup Queue
+			cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
+			Options.checkErr(err, "Setup CommandQueue in Simulator::Simulate() ");
+			cl::Event cl_event;
+
+			//Output 
+			size_t IntSize = sizeof(double) * Det.DetectorSize[0] * Det.DetectorSize[1];
+			cl::Buffer CL_Intensity(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, IntSize, t_Intensity, &err);
+			//Input
 
 
 

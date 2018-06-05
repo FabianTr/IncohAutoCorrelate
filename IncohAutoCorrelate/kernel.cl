@@ -532,3 +532,13 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 	}//while ((i = (i + 1) % N) != n);
 }
+
+
+
+__kernel void SimulateCrystal(__global const float *PixelMap,
+	__global const float *EmitterList,
+	__global const double *Params,
+	__global double *Intensity)
+{
+
+}

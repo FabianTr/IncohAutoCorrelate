@@ -36,7 +36,7 @@ std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Setting
 	}
 
 
-	if (Settings.RandOrientation)
+	if (Settings.RandOrientation && !UseGivenRotation)
 	{
 		//Roll Rotation
 		std::array<double, 3> V;
@@ -60,6 +60,10 @@ std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Setting
 		{
 			RotationMatrix[i] = tRM[i];
 		}
+	}
+	else if (UseGivenRotation)
+	{
+		RotateVectors(At_temp, RotationMatrix);
 	}
 	else
 	{
@@ -149,9 +153,17 @@ std::array<float, 9> Crystal::RotateVectors(std::vector<std::array<double, 3>> &
 
 std::array<float, 9> Crystal::RotateVectors(std::vector<std::array<double, 3>>& Vectors, std::array<float, 9> RotMatrix)
 {
+#pragma omp parallel for
+	for (int i = 0; i < (int)Vectors.size(); i++)
+	{
+		std::array<double, 3> V = Vectors[i]; // copy one vector
+		//Rotate
+		Vectors[i][0] = RotMatrix[0] * V[0] + RotMatrix[1] * V[1] + RotMatrix[2] * V[2];
+		Vectors[i][1] = RotMatrix[3] * V[0] + RotMatrix[4] * V[1] + RotMatrix[5] * V[2];
+		Vectors[i][2] = RotMatrix[6] * V[0] + RotMatrix[7] * V[1] + RotMatrix[8] * V[2];
+	}
 
-
-	return RotMatrix; // To Implement
+	return RotMatrix; 
 }
 
 inline double Crystal::Drand()

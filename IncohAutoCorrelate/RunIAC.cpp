@@ -354,7 +354,7 @@ namespace RunIAC
 		std::cout << "Saved angular averaged unweighted AC as: " << SM_Settings.Output_ACUW_Path << "\n";
 
 		// Test at first
-		AC.AC = new double[AC.Shape.Size]; //probable Memoryleak, ... FIX!
+		AC.AC = new double[AC.Shape.Size](); //probable Memoryleak, ... FIX!
 		for (unsigned int i = 0; i < AC.Shape.Size; i++)
 		{
 			AC.AC[i] = AC.AC_UW[i] / AC.CQ[i];
@@ -362,6 +362,16 @@ namespace RunIAC
 
 		ArrayOperators::SafeArrayToFile(SM_Settings.Output_AC_Path, AC.AC, AC.Shape.Size, ArrayOperators::FileType::Binary);
 		std::cout << "Saved angular averaged AC as: " << SM_Settings.Output_AC_Path << "\n";
+
+
+		//Q axis
+		AC.Q = new double[AC.Shape.Size](); //probable Memoryleak, ... FIX!
+		for (int i = 0; i < AC.Shape.Size; i++)
+		{
+			double step = AC.Shape.Max_Q / ((double)(AC.Shape.Size - 1));
+			AC.Q[i] = i * step / 1.94; // 1.94 is the wavelength for a 6.4keV photon
+		}
+
 
 		ArrayOperators::SafeArrayToFile(SM_Settings.Output_Q_Path, AC.Q, AC.Shape.Size, ArrayOperators::FileType::Binary);
 		std::cout << "Saved angular averaged Q as: " << SM_Settings.Output_Q_Path << "\n";

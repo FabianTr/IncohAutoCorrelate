@@ -26,3 +26,8 @@ double ProfileTime::Toc(bool print)
 	return (double)interv.count()/1000;
 
 }
+
+double ProfileTime::Toc()
+{
+	return Toc(true);
+}

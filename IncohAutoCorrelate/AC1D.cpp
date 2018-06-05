@@ -5,6 +5,7 @@
 #include "ProfileTime.h"
 #include <mutex>
 #include <functional>
+#include <unordered_map>
 
 AC1D::AC1D()
 {
@@ -168,8 +169,9 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 }
 
 
-std::mutex g_loadFile_mutex;
+// std::mutex g_loadFile_mutex;
 std::mutex g_echo_mutex;
+std::unordered_map<std::string, std::mutex> H5Mutex;
 void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, float MaxQ, float dqdx)
 {
 	//g_echo_mutex.lock();
@@ -181,22 +183,23 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 	for (unsigned int i = LowerBound; i < UpperBound; i++)
 	{
-		//
-		if ((i- LowerBound) % 100 == 0 && i > LowerBound)
-		{
-			g_echo_mutex.lock();
-
-			std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " : " << i- LowerBound << "/" << (UpperBound - LowerBound) << std::endl;
-
-			g_echo_mutex.unlock();
-		}
+		////
+		//if ((i- LowerBound) % 100 == 0 && i > LowerBound)
+		//{
+		//	g_echo_mutex.lock();
+		//	std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " : " << i- LowerBound << "/" << (UpperBound - LowerBound) << std::endl;
+		//	g_echo_mutex.unlock();
+		//}
 
 
 		//Load Intensity
 
-		g_loadFile_mutex.lock();
+	//	g_loadFile_mutex.lock();
+
+		H5Mutex[Options.HitEvents[i].Filename].lock();
 		Det.LoadIntensityData_PSANA_StyleJungfr(Options.HitEvents[i].Filename, Options.HitEvents[i].Dataset, Options.HitEvents[i].Event);
-		g_loadFile_mutex.unlock();
+		H5Mutex[Options.HitEvents[i].Filename].unlock();
+	//	g_loadFile_mutex.unlock();
 
 		ArrayOperators::MultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
@@ -260,7 +263,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation)
 {
-	const int Threads = 100; //set higher than expectred threads because of waitingtimes for read from file
+	const int Threads = 400; //set higher than expectred threads because of waitingtimes for read from file
 
 	if (Options.HitEvents.size() <= 0)
 	{
