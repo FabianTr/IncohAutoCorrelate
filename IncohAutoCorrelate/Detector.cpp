@@ -103,7 +103,73 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 		std::cerr << "ERROR: Intensity size does not match pixle-map size.\n";
 		throw;
 	}
-	//data = new float[dims[2] * dims[1]];
+	data = new float[dims[2] * dims[1]];
+
+	//Get Subset 
+	hsize_t offset[3], count[3], stride[3], block[3];
+	hsize_t dimsm[3];
+
+	offset[0] = (SlicePosition);
+	offset[1] = 0;
+	offset[2] = 0;
+
+	count[0] = 1;
+	count[1] = DetectorSize[0];
+	count[2] = DetectorSize[1];
+
+	block[0] = 1;
+	block[1] = 1;
+	block[2] = 1;
+
+	stride[0] = 1;
+	stride[1] = 1;
+	stride[2] = 1;
+
+	dimsm[0] = 1;
+	dimsm[1] = DetectorSize[0];
+	dimsm[2] = DetectorSize[1];
+
+	H5::DataSpace mspace(3, dimsm, NULL);
+	DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
+
+	dataset.read(data, H5::PredType::NATIVE_FLOAT, mspace, DS);
+
+
+	//DetectorEvent->SerialNumber
+
+
+
+	file.close();
+
+}
+
+void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_string DataSet, int SlicePosition)
+{
+	H5::H5File file(Path, H5F_ACC_RDONLY);
+	H5::DataSet dataset = file.openDataSet(DataSet);
+
+	if (dataset.getTypeClass() != H5T_FLOAT)
+	{
+		std::cerr << "ERROR: Intensity data is not stored as floating point numbers.\n";
+		throw;
+	}
+	H5::DataSpace DS = dataset.getSpace();
+	//std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
+
+	if (DS.getSimpleExtentNdims() != 3) //check if shape is [3][nx][ny] or [ny][nx][3]
+	{
+		std::cerr << "ERROR: Intensity data dimension is not 3 => shape is not (N, nx, ny)\n";
+		throw;
+	}
+	hsize_t dims[3];
+	DS.getSimpleExtentDims(dims, NULL);
+	//	std::cout << "Intensity data shape: " << dims[0] << " x " << dims[1] << " x " << dims[2] << "\n";
+
+	if (dims[2] != DetectorSize[1] || dims[1] != DetectorSize[0])
+	{
+		std::cerr << "ERROR: Intensity size does not match pixle-map size.\n";
+		throw;
+	}
 
 	//Get Subset 
 	hsize_t offset[3], count[3], stride[3], block[3];

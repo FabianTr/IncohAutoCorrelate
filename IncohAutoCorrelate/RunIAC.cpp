@@ -314,7 +314,9 @@ namespace RunIAC
 				}
 				else
 				{
-					t_Int.GetSliceOutOfHDFCuboid(t_Int.Intensity, PrgSettings.HitEvents[i].Filename, PrgSettings.HitEvents[i].Dataset, PrgSettings.HitEvents[i].Event);
+					t_Int.Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]];
+					//that solutions is not elegant => improve readabillity and code coherence!!
+					t_Int.LoadIntensityData_EPIX(t_Int.Intensity, PrgSettings.HitEvents[i].Filename, PrgSettings.HitEvents[i].Dataset, PrgSettings.HitEvents[i].Event);
 				}
 				
 				//apply PixelMask
@@ -324,6 +326,11 @@ namespace RunIAC
 				ArrayOperators::ParAdd(Det.Intensity, t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
 				//Save Mean Int of exposure
 				PrgSettings.HitEvents[i].MeanIntensity = (ArrayOperators::Sum(t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]) / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1])));
+				if (!SM_Settings.JungfrDet)
+				{
+					delete[] t_Int.Intensity;
+				}
+			
 			}
 			ArrayOperators::MultiplyScalar(Det.Intensity, (1.0 / ((float)StackSize)), Det.DetectorSize[0] * Det.DetectorSize[1]);
 			Profiler.Toc(true);
