@@ -151,6 +151,7 @@ void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_stri
 	if (dataset.getTypeClass() != H5T_FLOAT)
 	{
 		std::cerr << "ERROR: Intensity data is not stored as floating point numbers.\n";
+		std::cerr << "    -> in Detector::LoadIntensityData_EPIX()\n";
 		throw;
 	}
 	H5::DataSpace DS = dataset.getSpace();
@@ -159,6 +160,7 @@ void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_stri
 	if (DS.getSimpleExtentNdims() != 3) //check if shape is [3][nx][ny] or [ny][nx][3]
 	{
 		std::cerr << "ERROR: Intensity data dimension is not 3 => shape is not (N, nx, ny)\n";
+		std::cerr << "    -> in Detector::LoadIntensityData_EPIX()\n";
 		throw;
 	}
 	hsize_t dims[3];
@@ -168,6 +170,7 @@ void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_stri
 	if (dims[2] != DetectorSize[1] || dims[1] != DetectorSize[0])
 	{
 		std::cerr << "ERROR: Intensity size does not match pixle-map size.\n";
+		std::cerr << "    -> in Detector::LoadIntensityData_EPIX()\n";
 		throw;
 	}
 

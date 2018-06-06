@@ -38,7 +38,7 @@ public:
 
 
 	//Sparse Autocorrelate
-	void Calculate_AC_UW_MR(Settings &Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation);
+	void Calculate_AC_UW_MR(Settings &Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, bool JungfrauDet);
 	
 };
 

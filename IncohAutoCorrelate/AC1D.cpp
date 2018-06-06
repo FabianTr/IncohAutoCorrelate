@@ -172,14 +172,21 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 std::mutex g_loadFile_mutex;
 std::mutex g_echo_mutex;
 //std::unordered_map<std::string, std::mutex> H5Mutex;
-void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, float MaxQ, float dqdx)
+void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, float MaxQ, float dqdx, bool JungfrauDet)
 {
 	//g_echo_mutex.lock();
 	//std::cout << "Thread from " << LowerBound <<" launched\n";
 	//g_echo_mutex.unlock();
 
 	Detector Det(RefDet);
-	Det.Intensity = new float[1];
+	if (JungfrauDet)
+	{
+		Det.Intensity = new float[1];
+	}
+	else
+	{
+		Det.Intensity = new float[Det.DetectorSize[0]* Det.DetectorSize[1]];
+	}
 
 	for (unsigned int i = LowerBound; i < UpperBound; i++)
 	{
@@ -193,12 +200,15 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 
 		//Load Intensity
-
 		g_loadFile_mutex.lock();
-
-		//H5Mutex[Options.HitEvents[i].Dataset].lock();
-		Det.LoadIntensityData_PSANA_StyleJungfr(Options.HitEvents[i].Filename, Options.HitEvents[i].Dataset, Options.HitEvents[i].Event);
-		//H5Mutex[Options.HitEvents[i].Dataset].unlock();
+		if (JungfrauDet)
+		{
+			Det.LoadIntensityData_PSANA_StyleJungfr(Options.HitEvents[i].Filename, Options.HitEvents[i].Dataset, Options.HitEvents[i].Event);
+		}
+		else
+		{
+			Det.LoadIntensityData_EPIX(Det.Intensity, Options.HitEvents[i].Filename, Options.HitEvents[i].Dataset, Options.HitEvents[i].Event);
+		}
 		g_loadFile_mutex.unlock();
 
 		ArrayOperators::MultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
@@ -254,14 +264,14 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	delete[] Det.Intensity;
 
 
-		g_echo_mutex.lock();
-		std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " Finished." << std::endl;
-		g_echo_mutex.unlock();
+	g_echo_mutex.lock();
+	std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " Finished." << std::endl;
+	g_echo_mutex.unlock();
 	
 
 }
 
-void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation)
+void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation, bool JungfrauDet)
 {
 	const int Threads = 200; //set higher than expectred threads because of waitingtimes for read from file
 
@@ -301,7 +311,7 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 	std::vector<std::thread> AC_Threads;
 	for (int i = 0; i < Threads; i++)
 	{
-		AC_Threads.push_back(std::thread(Calculate_AC_UW_Mapped,std::ref(Options), std::ref(RefDet), std::ref(AC_Map[i]), WorkerBounds[i][0], WorkerBounds[i][1], IterpolMode, Photonisation, Shape.Max_Q, Shape.dq_per_Step));
+		AC_Threads.push_back(std::thread(Calculate_AC_UW_Mapped,std::ref(Options), std::ref(RefDet), std::ref(AC_Map[i]), WorkerBounds[i][0], WorkerBounds[i][1], IterpolMode, Photonisation, Shape.Max_Q, Shape.dq_per_Step, JungfrauDet));
 	}
 
 	for (int i = 0; i < Threads; i++)

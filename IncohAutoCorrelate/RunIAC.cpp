@@ -349,12 +349,13 @@ namespace RunIAC
 		std::cout << "Saved angular averaged C(q) as: " << SM_Settings.Output_CQ_Path << "\n";
 
 		//Calculate AC_UW
+
 		PrgSettings.Echo("\nCalculate AC uw - AAV:");
 		Profiler.Tic();
 		std::array<float, 2> t_Photonis;
 		t_Photonis[0] = SM_Settings.PhotonOffset;
 		t_Photonis[1] = SM_Settings.PhotonStep;
-		AC.Calculate_AC_UW_MR(PrgSettings,Det, Settings::Interpolation::Linear, t_Photonis);
+		AC.Calculate_AC_UW_MR(PrgSettings,Det, Settings::Interpolation::Linear, t_Photonis, SM_Settings.JungfrDet);
 		Profiler.Toc(true);
 
 		ArrayOperators::SafeArrayToFile(SM_Settings.Output_ACUW_Path, AC.AC_UW, AC.Shape.Size, ArrayOperators::FileType::Binary);
