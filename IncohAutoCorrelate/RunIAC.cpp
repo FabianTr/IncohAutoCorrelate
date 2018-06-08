@@ -389,6 +389,7 @@ namespace RunIAC
 
 
 		//Q axis
+		delete[] AC.Q;
 		AC.Q = new double[AC.Shape.Size](); //probable Memoryleak, ... FIX!
 		for (int i = 0; i < AC.Shape.Size; i++)
 		{
@@ -406,5 +407,23 @@ namespace RunIAC
 		Profiler_All.Toc(true);
 	}
 
+	//General
+	void Load_and_average_Intensities(Settings &Options, Detector &Det, float PhotonThreshold, float PhotonStep, std::string XML_Filename, std::string AvInt_Filename)
+	{
+		ProfileTime profiler;
+		Options.Echo("Load and average intensities (all)");
+		profiler.Tic();
+		Det.LoadAndAverageIntensity(Options.HitEvents, PhotonThreshold, PhotonStep, true);
 
+		//Det.LoadAndAverageIntensity(Options.HitEvents, PhotonThreshold, PhotonStep);
+		
+		profiler.Toc(true);
+		std::cout << "done.\n";
+
+		Options.Echo("Save EventList as XML");
+		Options.SafeHitEventListToFile(XML_Filename);
+		Options.Echo("Save averaged Intensity");
+		ArrayOperators::SafeArrayToFile(AvInt_Filename, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::FileType::Binary);
+
+	}
 }

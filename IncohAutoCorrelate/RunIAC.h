@@ -104,9 +104,12 @@ namespace RunIAC
 
 	void Run_AC_SM_Full(AC1D & Output, CreateSM_Settings SM_Settings, Settings& PrgSettings);
 
-	
+	//General
+	void Load_and_average_Intensities(Settings &Options, Detector &Det, float PhotonThreshold, float PhotonStep, std::string XML_Filename, std::string AvInt_Filename);
 
 
 	//Helpers
 	unsigned int GetH5StackSize(std::string Filename, std::string Dataset);
+
+	
 }

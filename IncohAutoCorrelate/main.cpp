@@ -35,8 +35,8 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 
 	ProfileTime profiler;
 
-	 // Get Sparse C(q)  --- TEST
-		//Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_JF.xml");
+	// Get Sparse C(q)  --- TEST
+	   //Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_JF.xml");
 
 	Det.Intensity = new float[1024 * 1024];
 
@@ -45,13 +45,13 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//apply Pixelmask
 	ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, 1024 * 1024);
 
-	
 
-	float Min=0, Max=0, Mean=0;
+
+	float Min = 0, Max = 0, Mean = 0;
 
 	ArrayOperators::Min_Max_Mean_Value(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], Min, Max, Mean);
 
-	std::cout << "Min: " << Min << "    Max: " << Max << "    Mean: " << Mean<<"\n";
+	std::cout << "Min: " << Min << "    Max: " << Max << "    Mean: " << Mean << "\n";
 
 	std::cout << "Size of long: " << sizeof(uint64_t) << "\n";
 
@@ -64,7 +64,7 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	Multiplicator = Multiplicator * 100000;
 	std::cout << "Multiplicator: " << Multiplicator << "\n";
 
-	
+
 	//return;
 
 	//for (int i = 0; i < 50; i++)
@@ -77,16 +77,16 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 	//}
 
 	ACMesh smallCQMesh;
-	smallCQMesh.CreateSmallMesh_CofQ_ForDetector(Det, MeshSize,QZoom);
+	smallCQMesh.CreateSmallMesh_CofQ_ForDetector(Det, MeshSize, QZoom);
 
 
 	std::cout << "MAX VOXEL OCC: " << 2 * smallCQMesh.Shape.Max_Q / smallCQMesh.Shape.dq_per_Voxel << "\n";
 
-	
+
 	Detector::AutoCorrFlags flags;
 	flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
 
-	
+
 
 
 	std::cout << "Calc C(q) (small)\n";
@@ -176,7 +176,7 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 	for (int i = 0; i < Options.HitEvents.size(); i++) // Options.HitEvents.size()
 	{
-		if (i%50 == 0)
+		if (i % 50 == 0)
 			std::cout << i << "/" << Options.HitEvents.size() << std::endl;
 		Det.LoadIntensityData(&Options.HitEvents[i]);
 		ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, 1024 * 1024);
@@ -195,15 +195,15 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 		Detector::AutoCorrFlags flags;
 		flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-		Det.AutoCorrelateSparseList(BigMesh, flags,true);
+		Det.AutoCorrelateSparseList(BigMesh, flags, true);
 
 	}
 
 	profiler.Toc(true);
 
-	
+
 	double* ACMesh = new double[BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C]();
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (int i = 0; i < BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C; i++)
 	{
 		ACMesh[i] = Options.IntToFloat(BigMesh.Mesh[i]);
@@ -269,8 +269,8 @@ void CombineStuff()
 
 	std::cout << "\n Apply C(q) ...\n";
 
-	#pragma omp parallel for
-	for (int i = 0; i <size; i++)
+#pragma omp parallel for
+	for (int i = 0; i < size; i++)
 	{
 		if (CQ[i] <= 0)
 			AC_Final[i] = 0;
@@ -285,7 +285,7 @@ void CombineStuff()
 }
 
 
-void Simulate(Settings & Options, std::string PixelMap_Path )
+void Simulate(Settings & Options, std::string PixelMap_Path)
 {
 	//Custom Settings
 	//Crystal Size (in Unitcells) 
@@ -295,7 +295,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path )
 	CrystalSize[2] = 50;
 	//
 	Simulator::SimulationSettings SimSettings;
-	
+
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
@@ -311,7 +311,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path )
 	SimSettings.CrystSettings.Isotropie = 1.0f;
 	SimSettings.CrystSettings.RandOrientation = true;
 
-	
+
 
 	//End Settings
 	//Prepare crystal (here Hb)
@@ -334,7 +334,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path )
 	UnitCell.push_back(t_pos);
 	t_pos = { 2.097 / 10000.0, 11.532 / 10000.0, 34.460 / 10000.0 }; //convert anström to microns
 	UnitCell.push_back(t_pos);
-	
+
 
 	Crystal Cryst(LatticeVector, CrystalSize, UnitCell);
 
@@ -345,7 +345,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path )
 
 	Simulator Sim;
 	Simulator::SimulationOutput Sim_Output;
-	
+
 	Sim.Simulate(Cryst, Sim_Det, SimSettings, Sim_Output, Options);
 
 
@@ -362,7 +362,7 @@ int main()
 	//omp_set_max_active_levels(2);
 
 
-	
+
 
 	ProfileTime profiler;
 	Settings Options;
@@ -378,7 +378,7 @@ int main()
 
 
 
-	int N_autorun = 16;
+	int N_autorun = 1;
 
 	for (int i_autorun = 1; i_autorun <= N_autorun; i_autorun++)
 	{
@@ -387,7 +387,7 @@ int main()
 
 		//1: AutoCorrelate
 
-		int RunMode = 1;
+		int RunMode = 2;
 		switch (RunMode)
 		{
 		case 1: //Autocorrelate Hb Jungfrau 3fs
@@ -416,7 +416,7 @@ int main()
 
 					CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF.bin";
 					//CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF_Seg" + std::to_string(i_autorun) + ".bin";
-					
+
 					CQ_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
 					CQ_Settings.PixelMap_DataSet = "data/data";
 
@@ -485,11 +485,115 @@ int main()
 				std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z8.bin \n";
 
 				delete[] FinalAC;
-				
+
 
 				std::cout << "\n\n Finished in ";
 				profiler.Toc(true);
-				
+
+			}
+			break;
+		case 2: //Autocorrelate Hb ePix 3fs
+			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode\n******************************\n";
+			{
+				const bool HitsFromXml = false; //otherwise from stream
+
+
+				if (HitsFromXml)
+				{
+					Options.Echo("Load Events from XML");
+					Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_ePix.xml");
+				}
+				else
+				{
+					Options.Echo("Load Streamfile");
+					Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/3fs_JF.stream", "entry_1/instrument_1/detector_3/detector_corrected/data", false);
+					Detector t_Det;
+					t_Det.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Epix_rough.h5", "geometry");
+					RunIAC::Load_and_average_Intensities(Options, t_Det, 50.0f, 100.0f, "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_ePix.xml", "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_ePix.bin");
+
+				}
+
+				//Further Settings
+
+				RunIAC::CreateCQ_Settings CQ_Settings;
+				RunIAC::CreateAC_Settings AC_Settings;
+				{
+					CQ_Settings.AC_Merge_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+					CQ_Settings.AC_Small_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+
+					CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_ePix.bin";
+
+					CQ_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Epix_rough.h5";
+					CQ_Settings.PixelMap_DataSet = "geometry";
+
+
+
+					CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/ePix_mask1.bin";
+
+
+
+					CQ_Settings.echo = true;
+
+					CQ_Settings.MeshSize = 701;
+					CQ_Settings.QZoom = 1.0f;
+
+					CQ_Settings.SaveSmall_CQ = false;
+					CQ_Settings.SaveBig_CQ = true;
+
+
+					CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_Cq_703-Z1_Big.bin";
+					//CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+
+					//ac shared settings
+					AC_Settings.AC_FirstMap_Flags = CQ_Settings.AC_Small_Flags;
+					AC_Settings.AC_SecondMap_Flags = CQ_Settings.AC_Merge_Flags;
+					AC_Settings.MeshSize = CQ_Settings.MeshSize;
+					AC_Settings.QZoom = CQ_Settings.QZoom;
+					AC_Settings.PixelMap_Path = CQ_Settings.PixelMap_Path;
+					AC_Settings.PixelMap_DataSet = CQ_Settings.PixelMap_DataSet;
+					AC_Settings.PixelMask_Path = CQ_Settings.PixelMask_Path;
+
+					//ac further settings
+					AC_Settings.SaveBig_AC = true;
+					AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_AC_UW_703-Z1_Big.bin";
+					
+
+					AC_Settings.DoubleMap = true;
+					AC_Settings.echo = true;
+					AC_Settings.PhotonOffset = 3.2f;
+					AC_Settings.PhotonStep = 6.4f;
+				}
+
+				//
+
+				ACMesh CQ;
+				ACMesh AC;
+
+				profiler.Tic();
+
+				Options.Echo("Launch threads");
+
+				//RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options,0,1000);
+				//RunIAC::Run_AC_UW(AC, AC_Settings, Options,0,1000);
+
+				RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
+				RunIAC::Run_AC_UW(AC, AC_Settings, Options);
+
+				Options.Echo("Merge Stuff");
+
+				double * FinalAC = new double[CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB];
+
+				RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
+
+				ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_AC_Final_703-Z1.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
+				std::cout << "Saved as: " << "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_AC_Final_703-Z1.bin" << " \n";
+
+				delete[] FinalAC;
+
+
+				std::cout << "\n\n Finished in ";
+				profiler.Toc(true);
+
 			}
 			break;
 		case 5: //Autocorrelate Single Molecule Jungfrau 120mm
@@ -641,17 +745,17 @@ int main()
 
 				//SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
 
-				
+
 				{//auto adapt Panel
 					//std::string MaskPath = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg";
 					SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
-					
+
 					SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_avINT.bin";
-					SM_Settings.Output_CQ_Path =     "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_CQ.bin";
-					SM_Settings.Output_ACUW_Path =   "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_ACuw.bin";
-					SM_Settings.Output_AC_Path =     "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) +  "_AC.bin";
+					SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_CQ.bin";
+					SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_ACuw.bin";
+					SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_AC.bin";
 				}//auto adapt Panel
-					
+
 
 				//SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg1.bin";
 				//SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block3_Pan1_avINT.bin";
