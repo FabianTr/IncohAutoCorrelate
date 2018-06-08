@@ -4,6 +4,7 @@
 
 #include "Simulator.h"
 #include "ProfileTime.h"
+#include "ArrayOperators.h"
 
 
 
@@ -42,7 +43,6 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 	Output.Intensities.reserve(N);
 	Output.HitEvents.clear();
 	Output.HitEvents.reserve(N);
-
 
 	//
 	if (SimSettings.AutoPixelOrientation) //Guess PixelOrientation under assumption that all pixel are of same size and orientations are always parallel
@@ -117,9 +117,12 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		std::this_thread::sleep_for(std::chrono::microseconds(Options.ThreadSleepForOCLDev));
 	}
 
+	Profiler.Tic();
 	//Start Loop
 	for (unsigned int i = 0; i < N; i++)
 	{
+
+
 		Settings::HitEvent curr_Event;
 		std::vector<float> curr_Intensity;
 		curr_Intensity.resize(Det.DetectorSize[0] * Det.DetectorSize[1]);
@@ -131,85 +134,157 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		EmitterList = EmitterCrystal.GetEmitters(SimSettings.CrystSettings, RotMat);
 		unsigned int NumEM = EmitterList.size();
 
-		for (int i = 0; i < 9; i++)//Store Rotation Matrix of current Crystal
+		for (int j = 0; j < 9; j++)//Store Rotation Matrix of current Crystal
 		{
-			curr_Event.RotMatrix[i] = RotMat[i];
+			curr_Event.RotMatrix[j] = RotMat[j];
 		}
 
-		double * EM = new double(4 * NumEM);
-		for (unsigned int i = 0; i < NumEM; i++)
+		double * EM = new double[4 * NumEM];
+		for (unsigned int j = 0; j < NumEM; j++)
 		{
-			EM[i + 0] = EmitterList[i].Position[0];
-			EM[i + 1] = EmitterList[i].Position[1];
-			EM[i + 2] = EmitterList[i].Position[2];
-			EM[i + 3] = EmitterList[i].Phase;
+			EM[j + 0] = EmitterList[j].Position[0];
+			EM[j + 1] = EmitterList[j].Position[1];
+			EM[j + 2] = EmitterList[j].Position[2];
+			EM[j + 3] = EmitterList[j].Phase;
 		}
 
-		double * Intensity = new double(Det.DetectorSize[0] * Det.DetectorSize[1]);
-		double * Params = new double[11]();
+		//Calculate steps for u and v SuSa: each pixel is divided in each direction by (2 * SuSa + 1) stripes => total of (2*SuSa + 1)^2 
+		//Subpixel. The pixel size is Su analog Sv with the vectors u_Step & v_Step.
+		//Fist step is to normalize the vectors to unity, then multyply by PixelSize and finally divide by (2 * SuSa + 1).
+		double t_Norm = 0;
+		//normalize N*u
+		t_Norm = 1.0 / sqrt(SimSettings.PixelOrientationVectors[0] * SimSettings.PixelOrientationVectors[0] + SimSettings.PixelOrientationVectors[1] * SimSettings.PixelOrientationVectors[1] + SimSettings.PixelOrientationVectors[2] * SimSettings.PixelOrientationVectors[2]);
+		//N' = (N*Su) / (2*SuSa + 1)
+		t_Norm = (t_Norm / ((double)(2 * SimSettings.SubSampling + 1)))*SimSettings.PixelSize[0];
+		double u_Step[3]; 
+		u_Step[0] = SimSettings.PixelOrientationVectors[0] * t_Norm;
+		u_Step[1] = SimSettings.PixelOrientationVectors[1] * t_Norm;
+		u_Step[2] = SimSettings.PixelOrientationVectors[2] * t_Norm;
+		//analog for v:
+		t_Norm = 1.0 / sqrt(SimSettings.PixelOrientationVectors[3] * SimSettings.PixelOrientationVectors[3] + SimSettings.PixelOrientationVectors[4] * SimSettings.PixelOrientationVectors[4] + SimSettings.PixelOrientationVectors[5] * SimSettings.PixelOrientationVectors[5]);
+		t_Norm = (t_Norm / ((double)(2 * SimSettings.SubSampling + 1)))*SimSettings.PixelSize[1];
+		double v_Step[3];
+		v_Step[0] = SimSettings.PixelOrientationVectors[3] * t_Norm;
+		v_Step[1] = SimSettings.PixelOrientationVectors[4] * t_Norm;
+		v_Step[2] = SimSettings.PixelOrientationVectors[5] * t_Norm;
+
+
+		double * Intensity = new double[Det.DetectorSize[0] * Det.DetectorSize[1]]();
+		double * Params = new double[10]();
 		Params[0] = (double)NumEM; // number of Emitters
 		
 		Params[1] = (double)SimSettings.PoissonSample; 
 
 		Params[2] = (double)SimSettings.SubSampling; //Subsampling is only possible if the orientation and size of a pixel is known! 
 		//Pixels are within the plane given by u and v. u and v also represents the orientation (their edges). Here it is assumed, that all pixels are orientated in parallel
-		Params[3] = SimSettings.PixelOrientationVectors[0]; //u1
-		Params[4] = SimSettings.PixelOrientationVectors[1]; //u2
-		Params[5] = SimSettings.PixelOrientationVectors[2]; //u3
-		Params[6] = SimSettings.PixelOrientationVectors[3]; //v1
-		Params[7] = SimSettings.PixelOrientationVectors[4]; //v2
-		Params[8] = SimSettings.PixelOrientationVectors[5]; //v3
-		//Also the pixel size is required, as the "PixelMap" only gives one coordinate, which we interprete as the center of the pixel 
-		// => SubSampling (SuSa) is therefore performed on a grid with the central spot given by the PixelMap.
-		// A SuSa = 1 for example means one Point on the Pixel center plus eight points lieing at the center +/- 0.33*Size in each dimension (1/3) lines
-		Params[9] = SimSettings.PixelSize[0]; // Size in u (Su) direction SuSa step is Su/(2*SuSa + 1)
-		Params[10] = SimSettings.PixelSize[1]; // Size in v (Sv) direction SuSa step is Sv/(2*SuSa + 1)
+		
+		Params[3] = u_Step[0]; //u1 
+		Params[4] = u_Step[1]; //u2
+		Params[5] = u_Step[2]; //u3
+		Params[6] = v_Step[0]; //v1
+		Params[7] = v_Step[1]; //v2
+		Params[8] = v_Step[2]; //v3
+		
+		Params[9] = SimSettings.Wavelength;//Wavelength (needed to calculate k)
 
 
 		for (unsigned int ModeRun = 0; ModeRun < SimSettings.Modes; ModeRun++)
 		{
-			double * t_Intensity = new double(Det.DetectorSize[0] * Det.DetectorSize[1]);
+			double * t_Intensity = new double[Det.DetectorSize[0] * Det.DetectorSize[1]]();
 			if (ModeRun > 0 )//Roll new Phases if ModeRun != 0 (and keep rotation matrix)
 			{
-				delete[] EM;
 				EmitterList.clear();
 				EmitterList = EmitterCrystal.GetEmitters(SimSettings.CrystSettings, RotMat, true);
 
 				NumEM = EmitterList.size();
 				Params[0] = (double)NumEM;
 
-				double * EM = new double(4 * NumEM);
-				for (unsigned int i = 0; i < NumEM; i++)
+				EM = new double[4 * NumEM];
+				for (unsigned int j = 0; j < NumEM; j++)
 				{
-					EM[i + 0] = EmitterList[i].Position[0];
-					EM[i + 1] = EmitterList[i].Position[1];
-					EM[i + 2] = EmitterList[i].Position[2];
-					EM[i + 3] = EmitterList[i].Phase;
+					EM[j + 0] = EmitterList[j].Position[0];
+					EM[j + 1] = EmitterList[j].Position[1];
+					EM[j + 2] = EmitterList[j].Position[2];
+					EM[j + 3] = EmitterList[j].Phase;
 				}
 
 			}
-
 			//obtain Device
 			cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
-
 			//Setup Queue
 			cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 			Options.checkErr(err, "Setup CommandQueue in Simulator::Simulate() ");
 			cl::Event cl_event;
+			
 
 			//Output 
 			size_t IntSize = sizeof(double) * Det.DetectorSize[0] * Det.DetectorSize[1];
 			cl::Buffer CL_Intensity(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, IntSize, t_Intensity, &err);
 			//Input
+			size_t PixMapsize = sizeof(float) * 3 * Det.DetectorSize[0] * Det.DetectorSize[1];
+			cl::Buffer CL_PixMap(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, PixMapsize, Det.PixelMap, &err);
+			size_t EMsize = sizeof(double) * 4 * NumEM;
+			cl::Buffer CL_EM(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, EMsize, EM, &err);
+			cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
+
+			
+			//Setup Kernel
+			cl::Kernel kernel(Options.CL_Program, "SimulateCrystal", &err);
+			Options.checkErr(err, "Setup AutoCorr_CQ in Simulator::Simulate() ");
+
+			//Set Arguments
+			kernel.setArg(0, CL_PixMap);
+			kernel.setArg(1, CL_EM);
+			kernel.setArg(2, CL_Params);
+			kernel.setArg(3, CL_Intensity);
+			const size_t &global_size = Det.DetectorSize[0] * Det.DetectorSize[1];
+
+			//launch Kernel
+
+			err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
+
+			Options.checkErr(err, "Launch Kernel in Simulator::Simulate()");
+			cl_event.wait();
+
+
+			//Read Results
+			err = queue.enqueueReadBuffer(CL_Intensity, CL_TRUE, 0, IntSize, t_Intensity);
+			Options.checkErr(err, "OpenCL kernel, launched in Simulator::Simulate()");
 
 
 
 
+			//add up intensity (incoherent for mode simulation)
+			ArrayOperators::ParAdd(Intensity, t_Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+
+			//free memory of temps
+			delete[] t_Intensity;
+			delete[] EM;
 		}
 
+		//PostProcess Photones TODO: Think about it and implement
 
+		//Push back patern Intensity to Output Vector
+		for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
+		{//convert Intensity of pattern to float
+			curr_Intensity[j] = (float)Intensity[j];
+		}
+		Output.Intensities.push_back(curr_Intensity);
+
+		//Push back Event
+			//RotMatrix is already stored in curr_Event
+		curr_Event.SerialNumber = i;
+		//TODO create further Event entries
+		Output.HitEvents.push_back(curr_Event);
+
+
+
+		//print status
+		if ((i+1) % (N / 100) == 0)
+		{
+			std::cout << "Pattern " << (i+1) << "/" << N << " ^= " << ((i+1) * 100 / N) << "\% \t in: " << Profiler.Toc(false) << "s\n";
+		}
 		delete[] Params;
-		delete[] EM;
 		delete[] Intensity;
 	}
 

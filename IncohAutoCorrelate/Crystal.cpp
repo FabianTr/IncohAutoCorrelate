@@ -94,6 +94,7 @@ std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Setting
 		EM.Position[2] = At_temp[i][2];
 		if (Settings.Incoherent)
 			EM.Phase = (Drand() * 2 * M_PIl);
+		Ret[i]=EM;
 	}
 
 	return Ret;

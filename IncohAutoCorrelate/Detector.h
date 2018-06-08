@@ -103,11 +103,11 @@ public:
 	//Intensity
 	float* Intensity = nullptr; // Content of Detector
 
-	int* PixelMask = NULL; //Binarymask to mask bad Pixel
+	int* PixelMask = nullptr; //Binarymask to mask bad Pixel
 	//Pixelmap Stuff
-	float* PixelMap = NULL;    // Pixelmap with vitually three dimensions [n_y][n_x][3]
+	float* PixelMap = nullptr;    // Pixelmap with vitually three dimensions [n_y][n_x][3]
 	//k-map
-	float* kMap = NULL;// k-Map with vitually three dimensions [n_y][n_x][3]
+	float* kMap = nullptr;// k-Map with vitually three dimensions [n_y][n_x][3]
 	float Max_k[3];
 	float Min_k[3];// to estimate required Q Volume
 	float Max_q[3];

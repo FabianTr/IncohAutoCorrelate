@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include <array>
 #include <string>
+
 #include "H5Cpp.h"
+
 #include "ArrayOperators.h"
 #include <thread>         
 #include <chrono> 
@@ -18,15 +20,23 @@
 
 Detector::Detector()
 {
+	if (Intensity == nullptr)
+		Intensity = new float[1];
+	if (PixelMask == nullptr)
+		PixelMask = new int[1];
+	if (PixelMap == nullptr)
+		PixelMap = new float[1];
+	if (kMap == nullptr)
+		kMap = new float[1];
 }
 
 
 Detector::~Detector()
 {
-	//delete[] Intensity;
-	//delete[] PixelMask;
-	//delete[] PixelMap;
-	//delete[] kMap;
+	delete[] Intensity;
+	delete[] PixelMask;
+	delete[] PixelMap;
+	delete[] kMap;
 }
 
 
@@ -87,6 +97,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 		throw;
 	}
 	H5::DataSpace DS = dataset.getSpace();
+	
 	//std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
 
 	if (DS.getSimpleExtentNdims() != 3) //check if shape is [3][nx][ny] or [ny][nx][3]
@@ -103,7 +114,9 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 		std::cerr << "ERROR: Intensity size does not match pixle-map size.\n";
 		throw;
 	}
-	data = new float[dims[2] * dims[1]];
+
+
+	//data = new float[dims[2] * dims[1]];
 
 	//Get Subset 
 	hsize_t offset[3], count[3], stride[3], block[3];
@@ -132,15 +145,23 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	H5::DataSpace mspace(3, dimsm, NULL);
 	DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
 
-	dataset.read(data, H5::PredType::NATIVE_FLOAT, mspace, DS);
+	H5::PredType type = H5::PredType::NATIVE_FLOAT;
+	dataset.read(data, type, mspace, DS);
 
 
 	//DetectorEvent->SerialNumber
 
+	DS.close();
+	dataset.close();
+	mspace.close();
+
+
+	
+	//dataset.vlenReclaim(type.getId(), DS.getId(), mspace.getId(), data);
+
 
 
 	file.close();
-
 }
 
 void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_string DataSet, int SlicePosition)
@@ -205,6 +226,9 @@ void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_stri
 
 
 	//DetectorEvent->SerialNumber
+	DS.close();
+	dataset.close();
+	mspace.close();
 
 
 
@@ -215,7 +239,7 @@ void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_stri
 //k-Map
 void Detector::Calc_kMap()
 {
-	delete kMap;
+	delete[] kMap;
 	kMap = new float[3 * DetectorSize[0] * DetectorSize[1]];
 
 	Max_k[0] = -100.0f;
@@ -325,7 +349,7 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 			throw;
 		}
 
-		delete PixelMap;
+		delete[] PixelMap;
 		PixelMap = new float[dims[0] * (int)dims[1] * (int)dims[2]];
 
 
@@ -490,8 +514,8 @@ void Detector::LoadIntensityData()
 	H5std_string Path = DetectorEvent->Filename;
 	H5std_string DataSet = DetectorEvent->Dataset;
 
-	if (Intensity != NULL)
-		delete[] Intensity;
+	//if (Intensity != NULL)
+	delete[] Intensity;
 
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]];
 	GetSliceOutOfHDFCuboid(Intensity, Path, DataSet, DetectorEvent->Event);
@@ -564,6 +588,12 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 	offset[1] = 1;
 	DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
 	dataset.read(SubDet2, H5::PredType::NATIVE_FLOAT, mspace, DS);
+	
+	
+	DS.close();
+	dataset.close();
+	mspace.close();
+
 	file.close();
 
 
@@ -610,27 +640,6 @@ void Detector::CreateSparseHitList(float Threshold)
 	}
 
 	Checklist.SparseHitList = true;
-	//for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
-	//{
-	//	for (unsigned int i_x = 0; i_x < DetectorSize[0]; i_x++)
-	//	{
-	//		if (Intensity[i_x + DetectorSize[0] * i_y] >= Threshold)
-	//		{
-	//			std::array< float, 4> TmpEntry;
-
-	//			TmpEntry[0] = GetkVal(0, i_x, i_y);
-	//			TmpEntry[1] = GetkVal(1, i_x, i_y);
-	//			TmpEntry[2] = GetkVal(2, i_x, i_y);
-	//			TmpEntry[3] = Intensity[i_x + DetectorSize[0] * i_y];
-	//			TmpSparseVec[i_y].Vec.push_back(TmpEntry);
-	//		}
-	//	}
-	//}
-
-	//for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
-	//{
-	//	SparseHitList.insert(SparseHitList.end(), TmpSparseVec[i_y].Vec.begin(), TmpSparseVec[i_y].Vec.end());
-	//}
 }
 
 void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)

@@ -71,8 +71,8 @@ namespace RunIAC
 	void Run_AC_UW(ACMesh& AC, CreateAC_Settings AC_Settings, Settings& PrgSettings, unsigned int LowerBound, unsigned int UpperBound);
 
 
-	void Merge_ACandCQ(double *& Output, ACMesh AC, ACMesh CQ, Settings & PrgSettings);
-	void Merge_ACandCQ(double *& Output, double * AC, ACMesh CQ, Settings & PrgSettings);
+	void Merge_ACandCQ(double *& Output, ACMesh & AC, ACMesh & CQ, Settings & PrgSettings);
+	void Merge_ACandCQ(double *& Output, double * AC, ACMesh & CQ, Settings & PrgSettings);
 
 
 	//Single Molecule

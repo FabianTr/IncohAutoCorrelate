@@ -13,8 +13,8 @@ public:
 	ACMesh();
 	~ACMesh();
 
-	double* CQMesh = NULL;
-	unsigned int* Mesh = NULL; // "virt" 3DArray [a,b,z] dimensions are not the same as Detector Geometry dimensions 
+	double* CQMesh = nullptr;
+	unsigned int* Mesh = nullptr; // "virt" 3DArray [a,b,z] dimensions are not the same as Detector Geometry dimensions 
 
 
 	struct MeshShape { 
@@ -32,17 +32,17 @@ public:
 
 	MeshShape Shape;
 //Functions
-	void CreateSmallMeshForDetector(Detector Det, int PerpSize);
-	void CreateSmallMeshForDetector(Detector Det, int PerpSize, float q_Zoom);
+	void CreateSmallMeshForDetector(Detector & Det, int PerpSize);
+	void CreateSmallMeshForDetector(Detector & Det, int PerpSize, float q_Zoom);
 
-	void CreateBigMeshForDetector(Detector Det, int EdgeSize);
-	void CreateBigMeshForDetector(Detector Det, int EdgeSize, float q_Zoom);
+	void CreateBigMeshForDetector(Detector & Det, int EdgeSize);
+	void CreateBigMeshForDetector(Detector & Det, int EdgeSize, float q_Zoom);
 
-	void CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize);
-	void CreateBigMesh_CofQ_ForDetector(Detector Det, int EdgeSize, float q_Zoom);
+	void CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize);
+	void CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize, float q_Zoom);
 
-	void CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize);
-	void CreateSmallMesh_CofQ_ForDetector(Detector Det, int PerpSize, float q_Zoom);
+	void CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize);
+	void CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, float q_Zoom);
 
 	void Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode);
 	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode );

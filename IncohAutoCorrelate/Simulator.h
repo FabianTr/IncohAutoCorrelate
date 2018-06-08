@@ -38,6 +38,7 @@ public:
 		double PixelOrientationVectors[6]; // ignored if (AutoPixelOrientation), otherwise in format [x1,x2,x3,y1,y2,y3]
 		double PixelSize[2]; // ignored if(AutoPixelSize)
 
+		double Wavelength = 1.94; //needs to be in the same unit as the emitter positions => Crystal recom.: use A
 		Crystal::EmittingCrystSettings CrystSettings; //Settings for emitting Crystal
 	};
 

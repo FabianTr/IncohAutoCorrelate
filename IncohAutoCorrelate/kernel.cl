@@ -2,7 +2,7 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
-
+__constant double PI = 3.1415926535897932;
 
 // Atomic add of floats or double
 // Adapted from:
@@ -263,9 +263,9 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 
 		//Map to Mesh
 		unsigned int fs, ms, ss;//fast-scan-, medium-scan-, slow-scan
-		fs = (unsigned int) (floor(q1[Aind] + 0.5) + MeshCenterAB);
-		ms = (unsigned int) (floor(q1[Bind] + 0.5) + MeshCenterAB);
-		ss = (unsigned int) (floor(q1[Cind] + 0.5) + MeshCenterC);
+		fs = (unsigned int)(floor(q1[Aind] + 0.5) + MeshCenterAB);
+		ms = (unsigned int)(floor(q1[Bind] + 0.5) + MeshCenterAB);
+		ss = (unsigned int)(floor(q1[Cind] + 0.5) + MeshCenterC);
 		atomic_add(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), ValConv);
 
 
@@ -278,7 +278,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		//}
 
 		//atomic_add_float(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), Val);
-		
+
 
 
 
@@ -382,9 +382,9 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 		Val_in = Val_in * Multiplicator;
 		unsigned long Val_out = (unsigned long)Val_in;
 
-		
 
-		
+
+
 		if (InterpolMode == 0) //Nearest Neighbour
 		{
 			//get new scans
@@ -478,15 +478,15 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 			continue;
 		}
 
-		
+
 
 		k2[0] = KMap[0 + 3 * i];
 		k2[1] = KMap[1 + 3 * i];
 		k2[2] = KMap[2 + 3 * i];
 
-		q = sqrt((k1[0] - k2[0]) * (k1[0] - k2[0]) 
-		        + (k1[1] - k2[1]) * (k1[1] - k2[1])
-				+ (k1[2] - k2[2]) * (k1[2] - k2[2]));
+		q = sqrt((k1[0] - k2[0]) * (k1[0] - k2[0])
+			+ (k1[1] - k2[1]) * (k1[1] - k2[1])
+			+ (k1[2] - k2[2]) * (k1[2] - k2[2]));
 
 
 
@@ -520,7 +520,7 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 			long ValConv1 = 0;
 			long ValConv2 = 0;
-			ValConv1 = (long)(Val*(1-Sep)*Multiplicator);
+			ValConv1 = (long)(Val*(1 - Sep)*Multiplicator);
 			ValConv2 = (long)(Val*(Sep)*Multiplicator);
 
 			atomic_add(&(CQ[sc1]), ValConv1);
@@ -540,5 +540,64 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 	__global const double *Params,
 	__global double *Intensity)
 {
+	unsigned int ind = get_global_id(0);
+
+	//Get Parameter
+	unsigned int NumEM = (unsigned int)Params[0]; //number of emitters
+	unsigned int SuSa = (unsigned int)Params[2];; //Subsampling
+
+	double u_Step[3]; //u direction (fs)
+	u_Step[0] = Params[3];
+	u_Step[2] = Params[4];
+	u_Step[3] = Params[5];
+	double v_Step[3]; //v direction (ss)
+	v_Step[0] = Params[6];
+	v_Step[2] = Params[7];
+	v_Step[3] = Params[8];
+	//
+	double Wavelength = Params[9];
+
+	double PixelCentPos[3];
+	PixelCentPos[0] = PixelMap[3 * ind + 0];
+	PixelCentPos[1] = PixelMap[3 * ind + 1];
+	PixelCentPos[2] = PixelMap[3 * ind + 2];
+
+	Intensity[ind] = 0; //intensity (our output)
+
+	for (unsigned int v = -SuSa; v <= SuSa; v++) //subsampling in u direction (ss)
+	{
+		for (unsigned int u = -SuSa; u <= SuSa; u++) //subsampling in v direction (fs)
+		{
+			double realPsi = 0;
+			double imagPsi = 0;
+			for (unsigned int i = 0; i < NumEM; i++)
+			{
+				//Calculate k
+				double Curr_Pos[3];
+				Curr_Pos[0] = PixelCentPos[0] + (v * v_Step[0]) + (u * v_Step[0]);
+				Curr_Pos[1] = PixelCentPos[1] + (v * v_Step[1]) + (u * v_Step[1]);
+				Curr_Pos[2] = PixelCentPos[2] + (v * v_Step[2]) + (u * v_Step[2]);
+				//calculate k
+				double k[3];
+				double Norm_k = 1.0 / sqrt(Curr_Pos[0] * Curr_Pos[0] + Curr_Pos[1] * Curr_Pos[1] + Curr_Pos[2] * Curr_Pos[2]);
+				Norm_k *= ((2.0 * PI) / Wavelength); //Norm_k converts the position vector into the according k vector.
+				k[0] = Curr_Pos[0] * Norm_k;
+				k[1] = Curr_Pos[1] * Norm_k;
+				k[2] = Curr_Pos[2] * Norm_k;
+
+				double arg = 0; //argument for exponent (here split in real(cos) and imag(sin) part). Psi = exp^(i arg) 
+				arg += k[0] * ((double)EmitterList[4 * i + 0]);
+				arg += k[1] * ((double)EmitterList[4 * i + 1]);
+				arg += k[2] * ((double)EmitterList[4 * i + 2]);
+				arg += ((double)EmitterList[4 * i + 3]); //Phase
+
+				realPsi += cos(arg);
+				imagPsi += sin(arg);
+			}
+			Intensity[ind] += ((realPsi * realPsi) + (imagPsi * imagPsi));
+		}
+	}
+	Intensity[ind] = Intensity[ind] / ((2 * SuSa + 1)*(2 * SuSa + 1));
+	//Do Poisson sampling on cpu (need to know integrated intensity first, there is no way to calculate it from here)
 
 }

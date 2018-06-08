@@ -343,4 +343,3 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 	}
 }
 
-

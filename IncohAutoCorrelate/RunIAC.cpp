@@ -114,6 +114,7 @@ namespace RunIAC
 
 		profiler.Tic();
 		Detector Det;
+
 		if (AC_Settings.echo)
 			std::cout << AC_Settings.ThreadName << ": Set up detector ...\n";
 
@@ -122,6 +123,7 @@ namespace RunIAC
 		//Create k-Map
 		Det.Calc_kMap();
 		//Load Pixelmask
+		delete[] Det.PixelMask;
 		Det.PixelMask = new int[Det.DetectorSize[0] * Det.DetectorSize[1]]();
 		if (AC_Settings.PixelMask_Path != "")
 		{
@@ -145,6 +147,9 @@ namespace RunIAC
 		if (AC_Settings.echo)
 			std::cout << AC_Settings.ThreadName << ": Start dense autocorrelating (small Mesh) ...\n";
 
+
+
+		//Det.LoadIntensityData(&PrgSettings.HitEvents[0]);
 		for (int i = LowerBound; i < UpperBound; i++)
 		{
 			if (i % AC_Settings.StatusEcho == 0 && AC_Settings.echo)
@@ -195,7 +200,7 @@ namespace RunIAC
 		//end of function
 	}
 
-	void Merge_ACandCQ(double *& Output, ACMesh AC, ACMesh CQ, Settings & PrgSettings)
+	void Merge_ACandCQ(double *& Output, ACMesh & AC, ACMesh & CQ, Settings & PrgSettings)
 	{
 		double* ACMesh = new double[AC.Shape.Size_AB*AC.Shape.Size_AB*AC.Shape.Size_C]();
 		#pragma omp parallel for
@@ -208,7 +213,7 @@ namespace RunIAC
 
 		delete[] ACMesh;
 	}
-	void Merge_ACandCQ(double *& Output, double * AC, ACMesh CQ, Settings & PrgSettings)
+	void Merge_ACandCQ(double *& Output, double * AC, ACMesh & CQ, Settings & PrgSettings)
 	{
 		unsigned int Size = CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_C;
 
@@ -257,6 +262,17 @@ namespace RunIAC
 		if (SM_Settings.PixelMask_Path != "")
 		{
 			ArrayOperators::LoadArrayFromFile<int>(SM_Settings.PixelMask_Path, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
+			//for (int i = 0; i < 200; i++)
+			//{
+			//	for (int j = 0; j < 200; j++)
+			//	{
+			//		std::cout << Det.PixelMask[100 * i + j] ;
+			//	}
+			//	std::cout << "\n";
+			//}
+
+			//int w;
+			//std::cin >> w;
 		}
 		else
 		{
