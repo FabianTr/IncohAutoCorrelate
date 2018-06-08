@@ -469,11 +469,11 @@ int main()
 
 				Options.Echo("Launch threads");
 
-				RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options,0,1000);
-				RunIAC::Run_AC_UW(AC, AC_Settings, Options,0,1000);
+				//RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options,0,1000);
+				//RunIAC::Run_AC_UW(AC, AC_Settings, Options,0,1000);
 
-				//RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
-				//RunIAC::Run_AC_UW(AC, AC_Settings, Options);
+				RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
+				RunIAC::Run_AC_UW(AC, AC_Settings, Options);
 
 				Options.Echo("Merge Stuff");
 

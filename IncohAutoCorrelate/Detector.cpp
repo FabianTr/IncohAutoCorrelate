@@ -115,9 +115,6 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 		throw;
 	}
 
-
-	//data = new float[dims[2] * dims[1]];
-
 	//Get Subset 
 	hsize_t offset[3], count[3], stride[3], block[3];
 	hsize_t dimsm[3];
@@ -397,10 +394,6 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 		}
 		Checklist.PixelMap = true;
 		file.close();
-		//for (int t =0; t < 100; t++)
-		//{
-		//	std::cout << PixelMap[t]<< "\n";
-		//}
 
 	}
 }
@@ -433,12 +426,13 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		return;
 	}
 	int* IntensityPhotonDiscr = NULL;
-	Intensity = new float[DetectorSize[1] * DetectorSize[0]];
+	delete[] Intensity;
+	Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
 	{	
 		float* tmpIntensity = new float[DetectorSize[1] * DetectorSize[0]]();
 		if (PhotonSamplingStep > 0)
 			IntensityPhotonDiscr = new int[DetectorSize[1] * DetectorSize[0]]();
-		Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
+
 		//std::cout << " \n ";
 		for (int i = LowerBound; i < UpperBound; i++)//get  slides
 		{
@@ -865,6 +859,9 @@ void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::ve
 	//Free Device
 	Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
+	//Free Memory
+	delete[] Rot_and_Weight;
+
 	// Mirrow and Postprocess Data:
 	std::cerr << "\nTO IMPLEMENT IN Detector::AutoCorrelate_CofQ()\n\n";
 }
@@ -989,6 +986,8 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 	{
 		SmallMesh.CQMesh[i] = (double)TempMesh[i] / Multiplicator;
 	}
+
+	//Free Memory
 	delete[] TempMesh;
 
 
@@ -1062,15 +1061,6 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	Multiplicator = Multiplicator / OOM;
 	Multiplicator *= 1e16;
 
-	//uint64_t * TempSmallMesh = new uint64_t[SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_C];
-
-	//#pragma omp parallel for
-	//for (unsigned int i = 0; i < SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_C; i++)
-	//{
-	//	TempSmallMesh[i] = (uint64_t)(SmallMesh.CQMesh[i]* Multiplicator);
-	//}
-	
-	//uint64_t * TempBigMesh_half = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB+1)/2)]();
 	uint64_t * TempBigMesh = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB *SmallMesh.Shape.Size_AB]();
 
 
@@ -1174,44 +1164,13 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		//DoubleBigMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
 		BigMesh.CQMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
 	}
+	
 
-//	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_half.bin", DoubleBigMesh_half, SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2), ArrayOperators::FileType::Binary);
-//	std::cout << "\nSaved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_Cq_1001_Big_half.bin \n";
+//Free memory
+	delete[] Rot_and_Weight;
+	delete[] TempBigMesh;
 
-
-	////Mirrow half Mesh to full Mesh and convert to double
-
-	//int shift = (BigMesh.Shape.Size_AB - 1) / 2;
-	//#pragma omp parallel for
-	//for ( int ss = 0; ss < (BigMesh.Shape.Size_AB + 1)/2; ss++)
-	//{
-	//	for (int ms = 0; ms < BigMesh.Shape.Size_AB; ms++)
-	//	{
-	//		for (int fs = 0; fs < BigMesh.Shape.Size_AB; fs++)
-	//		{
-	//			//convert to double
-	//			double Val = ((double)TempBigMesh_half[fs + ms * BigMesh.Shape.Size_AB + ss * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB])/(Multiplicator); 
-
-
-
-	//			//positive z
-	//			BigMesh.CQMesh[fs + ms * BigMesh.Shape.Size_AB + (ss + shift) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
-	//			
-	//			
-	//			
-	//			//negative
-	//			if (ss != 0)//prevent double fill on ss == 0
-	//			{
-	//				int fs_P, ms_P, ss_P;
-	//				ss_P = shift - ss;
-	//				fs_P = 2 * shift - fs;
-	//				ms_P = 2 * shift - ms;
-	//				BigMesh.CQMesh[fs_P + ms_P * BigMesh.Shape.Size_AB + ss_P * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] = Val;
-	//			}
-
-	//		}
-	//	}
-	//}
+	
 
 
 

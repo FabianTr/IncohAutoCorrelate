@@ -64,7 +64,7 @@ void ACMesh::CreateSmallMeshForDetector(Detector & Det, int PerpSize, float q_Zo
 	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2));// * sqrt(2.00001) //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
 
 
-	delete Mesh;
+	delete[] Mesh;
 	Mesh = new unsigned int[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 	Checklist.SmallMesh = true;
 }
@@ -102,7 +102,6 @@ void ACMesh::CreateBigMeshForDetector(Detector & Det, int EdgeSize, float q_Zoom
 
 
 	delete[] Mesh;
-
 	Mesh = new unsigned int[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 	Checklist.BigMesh = true;
 }
@@ -138,7 +137,7 @@ void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize, float 
 	Shape.Max_Q = MaxQ;
 	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1) / 2) - 2); //Calculate Voxel Size (the last -2 takes care of zero padding)
 
-	delete CQMesh;
+	delete[] CQMesh;
 	CQMesh = new double[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 	Checklist.CofQBigMesh = true;
 }
@@ -200,7 +199,7 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 	Shape.Max_Q = MaxQ;
 	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2));//* sqrt(2.00001) //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
 	
-	delete CQMesh;
+	delete[] CQMesh;
 	CQMesh = new double[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 
 	Checklist.CofQSmallMesh = true;
