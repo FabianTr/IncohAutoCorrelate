@@ -96,6 +96,8 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 		std::cerr << "ERROR: Intensity data is not stored as floating point numbers.\n";
 		throw;
 	}
+	//std::cout << "DataSize: " << dataset.getFloatType().getSize() << "\n";
+
 	H5::DataSpace DS = dataset.getSpace();
 	
 	//std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
@@ -328,12 +330,20 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 		std::cout << "DataSize: " << dataset.getFloatType().getSize() << "\n";
 		std::cout << "float: " << sizeof(float) << "\n";
 
+		//if (dataset.getFloatType().getSize() != sizeof(float))
+		//{
+		//	std::cerr << "ERROR: Pixelmap format is not float\n";
+		//	std::cerr << "    -> in Detector::LoadPixelMap()\n";
+		//	throw;
+		//}
+
 		H5::DataSpace DS = dataset.getSpace();
 		std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
 
 		if (DS.getSimpleExtentNdims() != 3) //check if shape is [3][nx][ny] or [ny][nx][3]
 		{
 			std::cerr << "ERROR: PixelMap dimension is not 3 => shape is not (3, nx, ny) or (ny, nx, 3)\n";
+			std::cerr << "    -> in Detector::LoadPixelMap()\n";
 			throw;
 		}
 		hsize_t dims[3];
@@ -398,6 +408,26 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 	}
 }
 
+void Detector::LoadPixelMask(std::string Path)
+{
+	PixelMask = new int[DetectorSize[0] * DetectorSize[1]]();
+	if (Path != "")
+	{
+		ArrayOperators::LoadArrayFromFile<int>(Path, PixelMask, DetectorSize[0] * DetectorSize[1]);
+	}
+	else
+	{
+		// No Pixelmask given => set every entry to one
+#pragma omp parallel for
+		for (int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
+		{
+			PixelMask[i] = 1;
+		}
+	}
+
+	Checklist.PixelMask = true;
+}
+
 void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, int LowerBound, int UpperBound)
 {
 	LoadAndAverageIntensity(Events, Threshold, -1.0f, LowerBound, UpperBound);
@@ -434,12 +464,18 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 			IntensityPhotonDiscr = new int[DetectorSize[1] * DetectorSize[0]]();
 
 		//std::cout << " \n ";
+		int t_prog = -1; //for progress indicator only
 		for (int i = LowerBound; i < UpperBound; i++)//get  slides
 		{
-			//printf("\r%d/%d", i, UpperBound);
-			//fflush(stdout);
+			if ( (((i - LowerBound) * 100) / (UpperBound - LowerBound - 1)) > t_prog)
+			{
+				std::cout << "Load and Average: " << ((i - LowerBound) * 100) / (UpperBound - LowerBound - 1) << "%\n";
+				t_prog ++;
+			}
 
 			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
+
+
 			if (PixelMask)
 			{
 				//TODO IMPLEMENT Checklist for PixelMask and a LoadPixelmask() method
@@ -451,7 +487,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 				ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //add with threshold
 				
 				//update Event
-				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / (DetectorSize[1] * DetectorSize[0]);
+				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float)(DetectorSize[1] * DetectorSize[0]));
 
 			}
 			else// Photon discretising
@@ -508,11 +544,15 @@ void Detector::LoadIntensityData()
 	H5std_string Path = DetectorEvent->Filename;
 	H5std_string DataSet = DetectorEvent->Dataset;
 
+
+//	std::cerr << Intensity  << " " << *(reinterpret_cast<size_t*>(Intensity-2)) << "  "<< 4 * DetectorSize[1] * DetectorSize[0]<< std::endl;
 	//if (Intensity != NULL)
 	delete[] Intensity;
 
-	Intensity = new float[DetectorSize[1] * DetectorSize[0]];
+	Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
+
 	GetSliceOutOfHDFCuboid(Intensity, Path, DataSet, DetectorEvent->Event);
+
 }
 
 void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_string DataSet, unsigned int Index)
@@ -891,7 +931,7 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 
 	//Setup temporary Mesh (uint64_t*)
 
-	uint64_t * TempMesh = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB *  SmallMesh.Shape.Size_C];
+	uint64_t * TempMesh = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB *  SmallMesh.Shape.Size_C]();
 
 	float Min_I = 0, Max_I = 0, Mean_I = 0;
 	ArrayOperators::Min_Max_Mean_Value(Intensity, DetectorSize[0] * DetectorSize[1], Min_I, Max_I, Mean_I);
@@ -931,64 +971,64 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 	//Setup Queue
 	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 	Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelate_CofQ_SmallMesh() ");
-	cl::Event cl_event;
+cl::Event cl_event;
 
 
-	
-
-	//profiler stuff
-	ProfileTime Profiler;
-	//
-	size_t ACsize = sizeof(uint64_t) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
-
-	cl::Buffer CL_CQ_Small(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize,TempMesh, &err);
-	//Input:
-	size_t Intsize = sizeof(float) * DetectorSize[0] * DetectorSize[1];
-	cl::Buffer CL_Intensity(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Intsize, Intensity, &err);
-	size_t KMapsize = sizeof(float) * 3 * DetectorSize[0] * DetectorSize[1];
-	cl::Buffer CL_kMap(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, KMapsize, kMap, &err);
-	cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
 
 
-	//Setup Kernel
-	cl::Kernel kernel(Options.CL_Program, "AutoCorr_CQ_small", &err);
-	Options.checkErr(err, "Setup AutoCorr_CQ in Detector::AutoCorrelate_CofQ_SmallMesh() ");
+//profiler stuff
+ProfileTime Profiler;
+//
+size_t ACsize = sizeof(uint64_t) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
 
-	//Set Arguments
-	kernel.setArg(0, CL_Intensity);
-	kernel.setArg(1, CL_kMap);
-	kernel.setArg(2, CL_Params);
-	kernel.setArg(3, CL_CQ_Small);
-	const size_t &global_size = DetectorSize[0] * DetectorSize[1];
-	
-	//launch Kernel
-	Options.Echo("Launch kernel ... \n");
-
-	Profiler.Tic();
-	
-	err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
-
-	Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelate_CofQ_SmallMesh() ");
-	cl_event.wait();
-	Options.Echo("C(q)-small kernel finished in");
-	Profiler.Toc(true);
-
-	err = queue.enqueueReadBuffer(CL_CQ_Small, CL_TRUE, 0, ACsize, TempMesh);
-	Options.checkErr(err, "OpenCL kernel, launched in Detector::AutoCorrelate_CofQ_SmallMesh() ");
-
-	//Free Device
-	Options.OCL_FreeDevice(OpenCLDeviceNumber);
+cl::Buffer CL_CQ_Small(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempMesh, &err);
+//Input:
+size_t Intsize = sizeof(float) * DetectorSize[0] * DetectorSize[1];
+cl::Buffer CL_Intensity(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Intsize, Intensity, &err);
+size_t KMapsize = sizeof(float) * 3 * DetectorSize[0] * DetectorSize[1];
+cl::Buffer CL_kMap(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, KMapsize, kMap, &err);
+cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
 
 
-	//convert to Double
-	#pragma omp parallel for
-	for (unsigned int i = 0; i <  SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_C; i++)
-	{
-		SmallMesh.CQMesh[i] = (double)TempMesh[i] / Multiplicator;
-	}
+//Setup Kernel
+cl::Kernel kernel(Options.CL_Program, "AutoCorr_CQ_small", &err);
+Options.checkErr(err, "Setup AutoCorr_CQ in Detector::AutoCorrelate_CofQ_SmallMesh() ");
 
-	//Free Memory
-	delete[] TempMesh;
+//Set Arguments
+kernel.setArg(0, CL_Intensity);
+kernel.setArg(1, CL_kMap);
+kernel.setArg(2, CL_Params);
+kernel.setArg(3, CL_CQ_Small);
+const size_t &global_size = DetectorSize[0] * DetectorSize[1];
+
+//launch Kernel
+Options.Echo("Launch kernel ... \n");
+
+Profiler.Tic();
+
+err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
+
+Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelate_CofQ_SmallMesh() ");
+cl_event.wait();
+Options.Echo("C(q)-small kernel finished in");
+Profiler.Toc(true);
+
+err = queue.enqueueReadBuffer(CL_CQ_Small, CL_TRUE, 0, ACsize, TempMesh);
+Options.checkErr(err, "OpenCL kernel, launched in Detector::AutoCorrelate_CofQ_SmallMesh() ");
+
+//Free Device
+Options.OCL_FreeDevice(OpenCLDeviceNumber);
+
+
+//convert to Double
+#pragma omp parallel for
+for (unsigned int i = 0; i < SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_C; i++)
+{
+	SmallMesh.CQMesh[i] = (double)TempMesh[i] / Multiplicator;
+}
+
+//Free Memory
+delete[] TempMesh;
 
 
 }
@@ -1026,14 +1066,36 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		Rot_and_Weight[ind + 6] = Events[i].RotMatrix[6];
 		Rot_and_Weight[ind + 7] = Events[i].RotMatrix[7];
 		Rot_and_Weight[ind + 8] = Events[i].RotMatrix[8];
+
+
+		if (fabs((Events[i].RotMatrix[0] * Events[i].RotMatrix[0] + Events[i].RotMatrix[3] * Events[i].RotMatrix[3] + Events[i].RotMatrix[6] * Events[i].RotMatrix[6]) - 1.0) > 0.00001 ||
+			fabs((Events[i].RotMatrix[1] * Events[i].RotMatrix[1] + Events[i].RotMatrix[4] * Events[i].RotMatrix[4] + Events[i].RotMatrix[7] * Events[i].RotMatrix[7]) - 1.0) > 0.00001 ||
+			fabs((Events[i].RotMatrix[2] * Events[i].RotMatrix[2] + Events[i].RotMatrix[5] * Events[i].RotMatrix[5] + Events[i].RotMatrix[8] * Events[i].RotMatrix[8]) - 1.0) > 0.00001)
+			{
+			std::cout << "Invalid rotation matrix: \n";
+				for (int M = 0; M < 9; M++)
+				{
+					std::cout << Events[i].RotMatrix[M] << "\t ";
+					if ((M + 1) % 3 == 0)
+						std::cout << "\n";
+				}
+				std::cout << "=>\n"
+					<< Events[i].RotMatrix[0] * Events[i].RotMatrix[0] + Events[i].RotMatrix[3] * Events[i].RotMatrix[3] + Events[i].RotMatrix[6] * Events[i].RotMatrix[6]
+					<< " \t " <<
+					Events[i].RotMatrix[1] * Events[i].RotMatrix[1] + Events[i].RotMatrix[4] * Events[i].RotMatrix[4] + Events[i].RotMatrix[7] * Events[i].RotMatrix[7]
+					<< " \t " <<
+					Events[i].RotMatrix[2] * Events[i].RotMatrix[2] + Events[i].RotMatrix[5] * Events[i].RotMatrix[5] + Events[i].RotMatrix[8] * Events[i].RotMatrix[8]
+					<< "\n";
+			}
+
+
 		//weight (mean intensity)
 		Rot_and_Weight[ind + 9] = Events[i].MeanIntensity*Events[i].MeanIntensity;
 
 		if (Events[i].MeanIntensity>MaxWeight)
 			MaxWeight = Events[i].MeanIntensity*Events[i].MeanIntensity;
 
-
-
+		
 		//if (i < 20)
 		//{
 		//	std::cout << Rot_and_Weight[ind + 0] << "   " << Rot_and_Weight[ind + 1] << "   " << Rot_and_Weight[ind + 2] << "\n";
@@ -1045,6 +1107,33 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 
 		ind += 10;
 	}
+	//Debug Stuff
+	{
+		//int j = 14;
+		//std::cout << j << " : ";
+		//for (int n = 0; n < 10; n++)
+		//{
+		//	std::cout << Rot_and_Weight[n + 10 * j] << "    ";
+		//}
+		//std::cout << "\n";
+
+		// j = 15;
+		//std::cout << j << " : ";
+		//for (int n = 0; n < 10; n++)
+		//{
+		//	std::cout << Rot_and_Weight[n + 10 * j] << "    ";
+		//}
+		//std::cout << "\n";
+
+		// j = 38;
+		//std::cout << j << " : ";
+		//for (int n = 0; n < 10; n++)
+		//{
+		//	std::cout << Rot_and_Weight[n + 10 * j] << "    ";
+		//}
+		//std::cout << "\n";
+	}
+	
 
 	std::cout << "Max weight: " << MaxWeight << "\n";
 
@@ -1084,7 +1173,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		std::cout << Params[i] << "\n";
 	}
 	std::cout << "**************\n";
-
+	
 
 	//reserve OpenCL Device
 	int OpenCLDeviceNumber = -1;
@@ -1098,19 +1187,17 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	//obtain Device
 	cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
 
-
-
+	
 	//Setup Queue
 	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 	Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelate_CofQ_SmallMesh() ");
 	cl::Event cl_event;
 
-
-
+		
 
 	//profiler stuff
 	ProfileTime Profiler;
-
+	
 	// KernelBuffer
 	//size_t ACsize = sizeof(uint64_t) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2);
 	size_t ACsize = sizeof(uint64_t) * (SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB );
@@ -1123,6 +1210,8 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
 
 
+	std::cout << "Memory needed by kernel: " << (((double)(ACsize+ACsizeSmall+RotWeightSize+ sizeof(Params))) / (1024.0*1024.0*1024.0)) << "Gb\n";
+
 	//Setup Kernel
 	cl::Kernel kernel(Options.CL_Program, "Merge_CQ", &err);
 	Options.checkErr(err, "Setup AutoCorr_CQ in Detector::AutoCorrelate_CofQ_SmallMesh() ");
@@ -1134,7 +1223,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	kernel.setArg(3, CL_CQ);
 	const size_t &global_size = SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
 
-
+	
 
 	//launch Kernel
 	Options.Echo("Launch kernel (Merge C(q)) ... \n");

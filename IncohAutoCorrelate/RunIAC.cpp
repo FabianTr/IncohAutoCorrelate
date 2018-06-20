@@ -47,7 +47,7 @@ namespace RunIAC
 		}
 
 		//load integrated/averaged intensity
-		Det.Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]];
+		Det.Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
 		ArrayOperators::LoadArrayFromFile(CQ_Settings.AVIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
 		//apply Pixelmask
 		ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
@@ -86,7 +86,6 @@ namespace RunIAC
 				std::cout << CQ_Settings.ThreadName << ": Big C(q) saved as: " << CQ_Settings.BigCQ_Path << "\n";
 		}
 
-
 		if (CQ_Settings.echo)
 		{
 			std::cout << CQ_Settings.ThreadName << ": C(q) createt in ";
@@ -95,7 +94,6 @@ namespace RunIAC
 
 			std::cout << CQ_Settings.ThreadName << ": Finished.\n";
 		}
-
 
 	}
 
@@ -157,9 +155,8 @@ namespace RunIAC
 
 
 			Det.LoadIntensityData(&PrgSettings.HitEvents[i]);
-			ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, 1024 * 1024);
+			ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
 			Det.CreateSparseHitList(AC_Settings.PhotonOffset, AC_Settings.PhotonStep);
-			
 			Det.AutoCorrelateSparseList(AC, AC_Settings.AC_FirstMap_Flags, AC_Settings.DoubleMap);
 		}
 

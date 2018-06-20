@@ -8,7 +8,7 @@
 namespace ArrayOperators
 {
 	//inline void ParAdd(float* Array, float* Summand, int Size);
-
+	
 	//par functions
 	inline void ParAdd(float* Array, float* Summand, int Size)
 	{
@@ -44,6 +44,14 @@ namespace ArrayOperators
 			Array[i] *= Factor;
 		}
 	}
+	inline void ParMultiplyScalar(double* Array, double Factor, int Size)
+	{
+#pragma omp parallel for
+		for (int i = 0; i < Size; i++)
+		{
+			Array[i] *= Factor;
+		}
+	}
 	inline void ParMultiplyElementwise(float* Array, float* Factor, unsigned int Size)
 	{
 		#pragma omp parallel for
@@ -68,7 +76,6 @@ namespace ArrayOperators
 			Array[i] = Array[i] * Factor[i];
 		}
 	}
-
 	inline void MultiplyElementwise(float* Array, int* Factor, unsigned int Size)
 	{
 		for (int i = 0; i < Size; i++)
@@ -117,8 +124,18 @@ namespace ArrayOperators
 	}
 
 
+
+
+
 	//serialfunctions
 	inline void MultiplyScalar(float* Array, float Factor, int Size)
+	{
+		for (int i = 0; i < Size; i++)
+		{
+			Array[i] *= Factor;
+		}
+	}
+	inline void MultiplyScalar(double* Array, double Factor, int Size)
 	{
 		for (int i = 0; i < Size; i++)
 		{
@@ -155,6 +172,10 @@ namespace ArrayOperators
 		return sum;
 	}
 
+	inline unsigned int PoissonSample(double val)
+	{
+
+	}
 
 	//Functions for File and storage Stuff
 	enum FileType{Binary=1, HDF5=2};

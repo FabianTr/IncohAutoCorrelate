@@ -217,9 +217,9 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 }
 
 
-void CombineStuff()
+void CombineStuff(std::string Fr_AC_UW, std::string Fr_CQ, std::string Fw_AC, int size)
 {
-	int size = 503 * 503 * 503;
+	//int size = 503 * 503 * 503;
 
 	double * CQ = new double[size]();
 
@@ -236,36 +236,11 @@ void CombineStuff()
 	std::cout << "\n\n\n*************************\n";
 
 	std::cout << "\n Load C(q)\n";
-	ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503_Big.bin", CQ, size);
-
-	//std::cout << "\n Load AC1: 0 - 20k\n";
-	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_0-20k.bin", AC1, 1003 * 1003 * 1003);
-
-	//std::cout << "Load AC2: 20 - 40k\n";
-	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_20k-40k.bin", AC2, 1003 * 1003 * 1003);
-
-	//std::cout << "Load AC3: 40 - 60k\n";
-	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_40k-60k.bin", AC3, 1003 * 1003 * 1003);
-
-	//std::cout << "Load AC4: 60 - 80k\n";
-	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_60k-80k.bin", AC4, 1003 * 1003 * 1003);
-
-	//std::cout << "Load AC2: 80 - 96k\n";
-	//ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_UW_80k-96k.bin", AC5, 1003 * 1003 * 1003);
-
-
-
-	//std::cout << "\n Combine ACs\n";
-
-	//#pragma omp parallel for
-	//for (int i = 0; i < 1003*1003*1003; i++)
-	//{
-	//	AC[i] = AC1[i] + AC2[i] + AC3[i] + AC4[i] + AC5[i];
-	//}
+	ArrayOperators::LoadArrayFromFile(Fr_CQ, CQ, size);
 
 
 	std::cout << "\n Load AC ...\n";
-	ArrayOperators::LoadArrayFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503.bin", AC, size);
+	ArrayOperators::LoadArrayFromFile(Fr_AC_UW, AC, size);
 
 	std::cout << "\n Apply C(q) ...\n";
 
@@ -279,8 +254,8 @@ void CombineStuff()
 	}
 
 
-	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_503.bin", AC_Final, size, ArrayOperators::FileType::Binary);
-	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/TEST_AC_Final_503.bin \n";
+	ArrayOperators::SafeArrayToFile(Fw_AC, AC_Final, size, ArrayOperators::FileType::Binary);
+	std::cout << "Saved as: "<< Fw_AC << "\n";
 
 }
 
@@ -324,7 +299,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 			LatticeVector[i][j] = Options.MReference(i, j) / 1000.0; //convert nanometer to microns (same unit as Pixel-map)
 		}
 	}
-	std::vector<std::array<double, 3>> UnitCell; //Hardcode UC for Hb (1gzx)
+	std::vector<std::array<double, 3>> UnitCell; //Hardcode unitcell for Hb (1gzx)
 	std::array<double, 3> t_pos;
 	t_pos = { 15.817 / 10000.0, 16.279 / 10000.0, 14.682 / 10000.0 }; //convert anström to microns
 	UnitCell.push_back(t_pos);
@@ -347,6 +322,10 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	Simulator::SimulationOutput Sim_Output;
 
 	Sim.Simulate(Cryst, Sim_Det, SimSettings, Sim_Output, Options);
+
+
+	//ToImplement: save results
+
 
 
 }
@@ -387,11 +366,19 @@ int main()
 
 		//1: AutoCorrelate
 
-		int RunMode = 2;
+		int RunMode = 10;
 		switch (RunMode)
 		{
+		case 0: //Combine ACuw and C(q)
+		{
+			std::string Cq_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+			std::string ACuw_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+			std::string AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+			CombineStuff(ACuw_Path, Cq_Path, AC_Path, 503 * 503 * 503);
+		}
+			break;
 		case 1: //Autocorrelate Hb Jungfrau 3fs
-			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode\n******************************\n";
+			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for Jungfrau\n******************************\n";
 			{
 				const bool HitsFromXml = true; //otherwise from stream
 
@@ -430,7 +417,7 @@ int main()
 					CQ_Settings.echo = true;
 
 					CQ_Settings.MeshSize = 501;
-					CQ_Settings.QZoom = 4.0f;
+					CQ_Settings.QZoom = 1.0f;
 
 					CQ_Settings.SaveSmall_CQ = false;
 					CQ_Settings.SaveBig_CQ = true;
@@ -481,8 +468,8 @@ int main()
 
 				RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
 
-				ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z8.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
-				std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z8.bin \n";
+				ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg"+ std::to_string(i_autorun) +".bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
+				std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin \n";
 
 				delete[] FinalAC;
 
@@ -493,9 +480,9 @@ int main()
 			}
 			break;
 		case 2: //Autocorrelate Hb ePix 3fs
-			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode\n******************************\n";
+			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for ePix\n******************************\n";
 			{
-				const bool HitsFromXml = false; //otherwise from stream
+				const bool HitsFromXml = true; //otherwise from stream
 
 
 				if (HitsFromXml)
@@ -508,6 +495,7 @@ int main()
 					Options.Echo("Load Streamfile");
 					Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/3fs_JF.stream", "entry_1/instrument_1/detector_3/detector_corrected/data", false);
 					Detector t_Det;
+					t_Det.LoadPixelMask("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/ePix_mask1.bin");
 					t_Det.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Epix_rough.h5", "geometry");
 					RunIAC::Load_and_average_Intensities(Options, t_Det, 50.0f, 100.0f, "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_ePix.xml", "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_ePix.bin");
 
@@ -534,15 +522,15 @@ int main()
 
 					CQ_Settings.echo = true;
 
-					CQ_Settings.MeshSize = 701;
+					CQ_Settings.MeshSize = 701;//701
 					CQ_Settings.QZoom = 1.0f;
 
-					CQ_Settings.SaveSmall_CQ = false;
+					CQ_Settings.SaveSmall_CQ = true;
 					CQ_Settings.SaveBig_CQ = true;
 
-
+					CQ_Settings.SmallCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_Cq_703-Z1_Small.bin";
 					CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_Cq_703-Z1_Big.bin";
-					//CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+					
 
 					//ac shared settings
 					AC_Settings.AC_FirstMap_Flags = CQ_Settings.AC_Small_Flags;
@@ -560,8 +548,8 @@ int main()
 
 					AC_Settings.DoubleMap = true;
 					AC_Settings.echo = true;
-					AC_Settings.PhotonOffset = 3.2f;
-					AC_Settings.PhotonStep = 6.4f;
+					AC_Settings.PhotonOffset = 50.0f;
+					AC_Settings.PhotonStep = 100.0f;
 				}
 
 				//
@@ -826,7 +814,7 @@ int main()
 			break;
 
 		case 7: //Autocorrelate Single Molecule Epix 300mm
-			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for single molecule EPIX\n******************************\n";
+			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for single molecule ePix\n******************************\n";
 			{
 				RunIAC::CreateSM_Settings SM_Settings;
 
@@ -1078,7 +1066,7 @@ int main()
 	//AutoCorrelateEvents(Options, TestDet);
 
 
-	//CombineStuff();
+
 
 	///*std::cout << "Program ended\n";
 	//std::cin >> end;*/

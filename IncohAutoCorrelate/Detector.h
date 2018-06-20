@@ -42,7 +42,7 @@ private:
 
 	enum DataType { NONE = -1, INT = 1, LONG = 2, FLOAT = 3, DOUBLE = 4 };
 
-	struct DetChecklist { bool SparseHitList = false; bool Event = false; bool PixelMap = false; bool KMap = false; };
+	struct DetChecklist { bool SparseHitList = false; bool Event = false; bool PixelMap = false; bool KMap = false; bool PixelMask = false; };
 	
 
 public:
@@ -55,6 +55,8 @@ public:
 	void Calc_kMap();
 
 	void LoadPixelMap(H5std_string Path, H5std_string DataSet);
+
+	void LoadPixelMask(std::string Path);
 	
 	void LoadIntensityData(Settings::HitEvent* Event);
 	void LoadIntensityData();

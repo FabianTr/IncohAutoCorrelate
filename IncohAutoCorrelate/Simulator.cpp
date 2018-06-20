@@ -262,7 +262,30 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 			delete[] EM;
 		}
 
-		//PostProcess Photones TODO: Think about it and implement
+		//PostProcess 
+
+		//Rescale for expected number of photons
+		double ExpNumOfPhotones = double(SimSettings.AveragePhotonesPerEmitterOnDetector * SimSettings.CrystSettings.FlYield * EmitterCrystal.AtomPositions.size());
+		double IntegratedIntensity = 0;
+		for (unsigned int l = 0; l < Det.DetectorSize[0]* Det.DetectorSize[1]; l++)
+		{
+			IntegratedIntensity += Intensity[l];
+		}
+		double t_IntFactor = ExpNumOfPhotones / IntegratedIntensity;
+		ArrayOperators::ParMultiplyScalar(Intensity, t_IntFactor, Det.DetectorSize[0] * Det.DetectorSize[1]);
+
+		//TODO: Poisson Sample
+		if (SimSettings.PoissonSample)
+		{
+
+		}
+
+
+		//TODO: add noise
+
+		//TODO: Multiply with Photon value
+
+
 
 		//Push back patern Intensity to Output Vector
 		for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
@@ -271,10 +294,17 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		}
 		Output.Intensities.push_back(curr_Intensity);
 
-		//Push back Event
+		//Event Data
+		{
 			//RotMatrix is already stored in curr_Event
-		curr_Event.SerialNumber = i;
-		//TODO create further Event entries
+			curr_Event.SerialNumber = i;
+			curr_Event.Event = i;
+			curr_Event.Filename = SimSettings.Filename_Intensity;
+			curr_Event.Dataset = SimSettings.Dataset;
+			
+		}
+
+
 		Output.HitEvents.push_back(curr_Event);
 
 
@@ -290,4 +320,10 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 	//free OpenCL Device
 	Options.OCL_FreeDevice(OpenCLDeviceNumber);
+
+
+	//ToImplement Save stuff
+
+
+
 }

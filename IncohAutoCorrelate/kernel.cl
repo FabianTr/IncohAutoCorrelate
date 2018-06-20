@@ -178,16 +178,16 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 
 
 	////Debug Bullshit
-	//if (ind == 0)//ind == 0
-	//{
-	//	printf("Kernel is alive\n");
-	//	printf("Detector Size: %d\n", DetSize);
-	//	printf("Interpolation mode: %d\n", InterpolMode);
-	//	printf("Mesh Size AB: %d\n", MeshSizeAB);
-	//	printf("Mesh Size C: %d\n", MeshSizeC);
-	//	printf("dq per Vox: %f\n", dqPerVox);
-	//	printf("Max q: %f\n", MaxQ);
-	//}
+	if (ind == 0)//ind == 0
+	{
+		printf("Kernel is alive\n");
+		printf("Detector Size: %d\n", DetSize);
+		printf("Aind: %d\n", Aind);
+		printf("Bind: %d\n", Bind);
+		printf("Cind: %d\n", Cind);
+		//printf("dq per Vox: %f\n", dqPerVox);
+		//printf("Max q: %f\n", MaxQ);
+	}
 	////END
 
 
@@ -201,7 +201,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 	k1[2] = KMap[2 + 3 * ind];
 
 	float q1[3];
-	float q2[3];
+	
 
 	int MeshCenterAB = (MeshSizeAB - 1) / 2;
 	int MeshCenterC = (MeshSizeC - 1) / 2;
@@ -255,34 +255,19 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		q1[1] = q1[1] / dqPerVox;
 		q1[2] = q1[2] / dqPerVox;
 
-		//q2[0] = q2[0] / dqPerVox;
-		//q2[1] = q2[1] / dqPerVox;
-		//q2[2] = q2[2] / dqPerVox;
-
-
 
 		//Map to Mesh
-		unsigned int fs, ms, ss;//fast-scan-, medium-scan-, slow-scan
+		unsigned int fs, ms, ss;//fast-scan, medium-scan, slow-scan
 		fs = (unsigned int)(floor(q1[Aind] + 0.5) + MeshCenterAB);
 		ms = (unsigned int)(floor(q1[Bind] + 0.5) + MeshCenterAB);
 		ss = (unsigned int)(floor(q1[Cind] + 0.5) + MeshCenterC);
 		atomic_add(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), ValConv);
 
-
-		//CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB*MeshSizeAB] += Val;
-
-		//if (fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB > MeshSizeAB*MeshSizeAB*MeshSizeC)
-		//{
-		//	printf("q: %f, %f, %f ; Q = %f \n", q1[0], q1[1], q1[2], sqrt(q1[0] * q1[0] + q1[1] * q1[1] + q1[2] * q1[2]));
-		//	printf("scans: %d, %d, %d \n",fs,ms,ss);
-		//}
-
-		//atomic_add_float(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), Val);
-
-
-
-
-	}//while ((i = (i + 1) % N) != n);
+		if (ss < 0 || ms < 0 || fs < 0 || ss >= MeshSizeC || ms >= MeshSizeAB || fs >= MeshSizeAB)//Use only the half space to safe memory (positive q_z only)
+		{
+			printf("ME: scans:%d, %d, %d   q: %f, %f, %f\n", ss, ms, fs, q1[0], q1[1], q1[2]);
+		}
+	}
 }
 
 
@@ -322,10 +307,6 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 	unsigned int ListSize = (unsigned int)Params[8];
 
 
-
-
-
-
 	//Debug Bullshit
 	if (ind == 0)//ind == 0
 	{
@@ -338,10 +319,6 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 		printf("Listsize: %d\n", ListSize);
 	}
 	//END
-
-
-
-	//*************
 
 
 	float q_in[3];
@@ -373,13 +350,12 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 		//weight entry and transform to int64
 		double Val_in = (double)smallMesh[ind];
 
-		if (Val_in == 0)
+		if (Val_in < 1e-37f)
 		{
 			continue;
 		}
 
-		Val_in = Val_in * RW[10 * i + 9];
-		Val_in = Val_in * Multiplicator;
+		Val_in = Val_in * Multiplicator * (double)RW[10 * i + 9];
 		unsigned long Val_out = (unsigned long)Val_in;
 
 
@@ -389,15 +365,17 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 		{
 			//get new scans
 			int fs = 0, ms = 0, ss = 0;
-			fs = (unsigned int)(floor(q_out[0] + 0.5) + smallMeshCenterAB);
-			ms = (unsigned int)(floor(q_out[1] + 0.5) + smallMeshCenterAB);
-			ss = (unsigned int)(floor(q_out[2] + 0.5) + smallMeshCenterAB);//ss = (unsigned int)(floor(q_out[2] + 0.5);
+			fs = (int)(floor(q_out[0] + 0.5) + smallMeshCenterAB);
+			ms = (int)(floor(q_out[1] + 0.5) + smallMeshCenterAB);
+			ss = (int)(floor(q_out[2] + 0.5) + smallMeshCenterAB);//ss = (unsigned int)(floor(q_out[2] + 0.5);
 
 
-			//if (ss < 0)//Use only the half space to safe memory (positive q_z only)
-			//{
+			if (ss < 0 || ms < 0 || fs < 0 || ss >= smallMeshSize_AB || ms >= smallMeshSize_AB || fs >= smallMeshSize_AB)
+			{
+				printf("ME. Scan: %d, %d, %d; q: %f, %f, %f; ind: %d; Scan in: %d, %d, %d;   qin: %f, %f, %f; i:%d;\n", ss, ms, fs, q_out[0], q_out[1], q_out[2], ind, ss_in, ms_in, fs_in, q_in[0], q_in[1], q_in[2], i);
+			
 			//	continue;
-			//}
+			}
 
 			//if(fs >= smallMeshSize_AB || ms >= smallMeshSize_AB || ss >= )
 

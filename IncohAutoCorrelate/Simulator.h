@@ -32,6 +32,7 @@ public:
 
 		bool PoissonSample = true; //apply Poisson distribution to obtain discrete Photons
 		float Value_per_Photon = 6.4f; //factor to be applied (after Poisson sampling)
+		float ADUNoise = 0.0f; //additional white noise in +/- Value_per_Photon
 
 		bool AutoPixelOrientation = true; //if true guesses orientation from Pixel-map
 		bool AutoPixelSize = true; //if true guesses size from Pixel-map
@@ -40,6 +41,12 @@ public:
 
 		double Wavelength = 1.94; //needs to be in the same unit as the emitter positions => Crystal recom.: use A
 		Crystal::EmittingCrystSettings CrystSettings; //Settings for emitting Crystal
+
+		//output stuff
+		bool SaveResults = false;
+		std::string Dataset = "data/data";
+		std::string Filename_Intensity = "";
+		std::string Filename_XML = "";
 	};
 
 	struct SimulationOutput
