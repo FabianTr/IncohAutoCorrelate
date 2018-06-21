@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <array>
 #include <string>
+#include <algorithm>
 
 #include "H5Cpp.h"
 
@@ -29,6 +30,27 @@ Detector::Detector()
 	if (kMap == nullptr)
 		kMap = new float[1];
 }
+
+Detector::Detector(const Detector &RefDet):Detector(RefDet)
+{
+	PixelMap = new float[DetectorSize[0] + DetectorSize[1] * 3];
+	std::copy(RefDet.PixelMap, RefDet.PixelMap + DetectorSize[0] + DetectorSize[1] * 3, PixelMap);
+
+	kMap = new float[DetectorSize[0] + DetectorSize[1] * 3];
+	std::copy(RefDet.kMap, RefDet.kMap + DetectorSize[0] + DetectorSize[1] * 3, kMap);
+
+	PixelMask = new int[DetectorSize[0] + DetectorSize[1]];
+	std::copy(RefDet.PixelMask, RefDet.PixelMask + DetectorSize[0] + DetectorSize[1], PixelMask);
+
+	Intensity = new float[DetectorSize[0] + DetectorSize[1]];
+	std::copy(RefDet.Intensity, RefDet.Intensity + DetectorSize[0] + DetectorSize[1], Intensity);
+
+	//for (unsigned int i = 0; i < DetectorSize[0]+ DetectorSize[1]*3; i++)
+	//{
+	//	PixelMap[i] = RefDet.PixelMap[i];
+	//}
+}
+
 
 
 Detector::~Detector()
@@ -102,7 +124,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	
 	//std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
 
-	if (DS.getSimpleExtentNdims() != 3) //check if shape is [3][nx][ny] or [ny][nx][3]
+	if (DS.getSimpleExtentNdims() != 3) //check if shape is [nE][nx][ny] or [ny][nx][nE]  nE =^ Number of Slices(Events)
 	{
 		std::cerr << "ERROR: Intensity data dimension is not 3 => shape is not (N, nx, ny)\n";
 		throw;
@@ -111,7 +133,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	DS.getSimpleExtentDims(dims, NULL);
 //	std::cout << "Intensity data shape: " << dims[0] << " x " << dims[1] << " x " << dims[2] << "\n";
 
-	if (dims[2] != DetectorSize[1] || dims[1] != DetectorSize[0])
+	if ( dims[1] != DetectorSize[0] || dims[2] != DetectorSize[1] )
 	{
 		std::cerr << "ERROR: Intensity size does not match pixle-map size.\n";
 		throw;
@@ -316,7 +338,7 @@ void Detector::Calc_kMap()
 
 void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 {
-
+	bool swaped = true; //swap fs and ss
 #pragma omp critical
 	{
 		H5::H5File file(Path, H5F_ACC_RDONLY);
@@ -360,7 +382,7 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 		PixelMap = new float[dims[0] * (int)dims[1] * (int)dims[2]];
 
 
-		if (dims[2] == 3)//[ny][nx][3]
+		if (dims[2] == 3)//[ny][nx][3] //TODO: Check wether this is a possible and reasonable case
 		{
 			DetectorSize[0] = (int)dims[1];//ss
 			DetectorSize[1] = (int)dims[0];//fs
@@ -368,10 +390,10 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 			H5::DataSpace mspace(3, dims);
 			dataset.read(PixelMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
 		}
-		else// [3][nx][ny] 
+		else// [3][nx][ny] //To be considerd as standeart
 		{
-			DetectorSize[0] = (int)dims[1];//ss
-			DetectorSize[1] = (int)dims[2];//fs
+			DetectorSize[0] = (int)dims[1];//ss   y'
+			DetectorSize[1] = (int)dims[2];//fs   x'
 
 			float* TmpPixleMap = new float[dims[0] * dims[1] * dims[2]];
 			H5::DataSpace mspace(3, dims);
@@ -379,10 +401,28 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 
 			float Pmax[3] = { -99999999, -99999999, -99999999 };
 			float Pmin[3] = { 99999999, 99999999, 99999999 };
-
-			for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
+			if (!swaped)//[ny][nx][3]
 			{
-				for (unsigned int i_x = 0; i_x < dims[1]; i_x++)
+				for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
+				{
+					for (unsigned int i_x = 0; i_x < dims[1]; i_x++)
+					{
+						for (unsigned int i_d = 0; i_d < 3; i_d++)
+						{
+						PixelMap[i_d + 3 * i_x + 3 * dims[1] * i_y] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] > Pmax[i_d])
+							Pmax[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] < Pmin[i_d])
+							Pmin[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+						}
+					}
+				}
+			}
+		else//[nx][ny][3]
+		{ 
+			for (unsigned int i_y = 0; i_y < dims[1]; i_y++)
+			{
+				for (unsigned int i_x = 0; i_x < dims[2]; i_x++)
 				{
 					for (unsigned int i_d = 0; i_d < 3; i_d++)
 					{
@@ -394,7 +434,7 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 					}
 				}
 			}
-
+		}
 
 			std::cout << "PixMap_max = [" << Pmax[0] << "; " << Pmax[1] << "; " << Pmax[2] << "]\n";
 			std::cout << "PixMap_min = [" << Pmin[0] << "; " << Pmin[1] << "; " << Pmin[2] << "]\n";

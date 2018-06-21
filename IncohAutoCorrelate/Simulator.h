@@ -44,7 +44,7 @@ public:
 
 		//output stuff
 		bool SaveResults = false;
-		std::string Dataset = "data/data";
+		std::string Dataset = "data";
 		std::string Filename_Intensity = "";
 		std::string Filename_XML = "";
 	};
@@ -53,9 +53,12 @@ public:
 	{
 		std::vector<Settings::HitEvent> HitEvents;
 		std::vector<std::vector<float>> Intensities;
+
+		unsigned int DetectorSize[2] = { 0, 0 };
 	};
 
 	void Simulate(Crystal EmitterCrystal,Detector &Det, SimulationSettings SimSettings, SimulationOutput & Output, Settings & Options); //Detector needs a PixleMap
 
+	void SaveSimulationOutput(SimulationOutput &Output, std::string HDF5_Path, std::string XML_Path);
 };
 

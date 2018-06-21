@@ -179,6 +179,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	//g_echo_mutex.unlock();
 
 	Detector Det(RefDet);
+
 	if (JungfrauDet)
 	{
 		Det.Intensity = new float[1];

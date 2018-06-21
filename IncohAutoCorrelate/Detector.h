@@ -49,6 +49,7 @@ public:
 	struct AutoCorrFlags { Settings::Interpolation InterpolationMode; };
 	DetChecklist Checklist;
 	Detector();
+	Detector(const Detector &RefDet);
 	~Detector();
 
 //Functions
@@ -103,7 +104,7 @@ public:
 	unsigned int DetectorSize[2]; // Number of Pixels in n_y (0) and n_x (1) dimension: [n_y][n_x] => DetectorSize[0] ^= slow-scan; DetectorSize[1] ^= fast-scan
 
 	//Intensity
-	float* Intensity = nullptr; // Content of Detector
+	float* Intensity = nullptr; // Content of Detector [n_y][n_x]
 
 	int* PixelMask = nullptr; //Binarymask to mask bad Pixel
 	//Pixelmap Stuff

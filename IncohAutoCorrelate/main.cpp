@@ -286,6 +286,8 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	SimSettings.CrystSettings.Isotropie = 1.0f;
 	SimSettings.CrystSettings.RandOrientation = true;
 
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/IntensityStack_TEST.h5";
+	SimSettings.Dataset = "data";
 
 
 	//End Settings
@@ -324,7 +326,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	Sim.Simulate(Cryst, Sim_Det, SimSettings, Sim_Output, Options);
 
 
-	//ToImplement: save results
+
 
 
 
@@ -341,8 +343,6 @@ int main()
 	//omp_set_max_active_levels(2);
 
 
-
-
 	ProfileTime profiler;
 	Settings Options;
 	Options.echo = true;
@@ -355,9 +355,12 @@ int main()
 	//Hb reference-unit-cell in nm
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
-
+	bool Panelwise = false;
+	int RunMode = 6;//6;
 
 	int N_autorun = 1;
+	if (Panelwise)
+		N_autorun = 16;
 
 	for (int i_autorun = 1; i_autorun <= N_autorun; i_autorun++)
 	{
@@ -366,7 +369,7 @@ int main()
 
 		//1: AutoCorrelate
 
-		int RunMode = 10;
+		
 		switch (RunMode)
 		{
 		case 0: //Combine ACuw and C(q)
@@ -409,22 +412,22 @@ int main()
 
 
 
-					//CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
-					CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
+					CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
+					//CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
 
 
 
 					CQ_Settings.echo = true;
 
 					CQ_Settings.MeshSize = 501;
-					CQ_Settings.QZoom = 1.0f;
+					CQ_Settings.QZoom = 2.0f;
 
 					CQ_Settings.SaveSmall_CQ = false;
 					CQ_Settings.SaveBig_CQ = true;
 
 
-					//CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z8_Big.bin";
-					CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+					CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z2_Big.bin";
+					//CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
 
 					//ac shared settings
 					AC_Settings.AC_FirstMap_Flags = CQ_Settings.AC_Small_Flags;
@@ -437,8 +440,8 @@ int main()
 
 					//ac further settings
 					AC_Settings.SaveBig_AC = true;
-					//AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z8_Big.bin";
-					AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+					AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z2_Big.bin";
+					//AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
 
 
 					AC_Settings.DoubleMap = true;
@@ -468,8 +471,11 @@ int main()
 
 				RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
 
-				ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg"+ std::to_string(i_autorun) +".bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
-				std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin \n";
+				ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z2.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
+				std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z2.bin \n";
+
+				//ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
+				//std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin \n";
 
 				delete[] FinalAC;
 
@@ -528,8 +534,8 @@ int main()
 					CQ_Settings.SaveSmall_CQ = true;
 					CQ_Settings.SaveBig_CQ = true;
 
-					CQ_Settings.SmallCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_Cq_703-Z1_Small.bin";
-					CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_Cq_703-Z1_Big.bin";
+					CQ_Settings.SmallCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_Cq_703-Z1_Small.bin";
+					CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_Cq_703-Z1_Big.bin";
 					
 
 					//ac shared settings
@@ -543,7 +549,7 @@ int main()
 
 					//ac further settings
 					AC_Settings.SaveBig_AC = true;
-					AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_AC_UW_703-Z1_Big.bin";
+					AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_AC_UW_703-Z1_Big.bin";
 					
 
 					AC_Settings.DoubleMap = true;
@@ -566,6 +572,7 @@ int main()
 
 				RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
 				RunIAC::Run_AC_UW(AC, AC_Settings, Options);
+				
 
 				Options.Echo("Merge Stuff");
 
@@ -573,8 +580,8 @@ int main()
 
 				RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
 
-				ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_AC_Final_703-Z1.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
-				std::cout << "Saved as: " << "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_AC_Final_703-Z1.bin" << " \n";
+				ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_AC_Final_703-Z1.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
+				std::cout << "Saved as: " << "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_AC_Final_703-Z1.bin" << " \n";
 
 				delete[] FinalAC;
 
@@ -589,9 +596,9 @@ int main()
 			{
 				RunIAC::CreateSM_Settings SM_Settings;
 
-				bool Block1 = true;
+				bool Block1 = false;
 				bool Block2 = false;
-				bool Block3 = false;
+				bool Block3 = true;
 				bool BlockNoise = false;
 
 				if (Block1)
@@ -734,6 +741,7 @@ int main()
 				//SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
 
 
+				if (Panelwise)
 				{//auto adapt Panel
 					//std::string MaskPath = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg";
 					SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
@@ -742,6 +750,14 @@ int main()
 					SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_CQ.bin";
 					SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_ACuw.bin";
 					SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_AC.bin";
+				}//auto adapt Panel
+				if (!Panelwise)
+				{
+					SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
+					SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block3_avINT.bin";
+					SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block3_CQ.bin";
+					SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block3_ACuw.bin";
+					SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan3_AC.bin";
 				}//auto adapt Panel
 
 
@@ -755,7 +771,7 @@ int main()
 
 
 
-				SM_Settings.ArraySize = 1500;
+				SM_Settings.ArraySize = 1200;
 
 				AC1D Results;
 

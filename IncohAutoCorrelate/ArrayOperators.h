@@ -4,10 +4,53 @@
 #include <fstream>
 #include <string>
 #include <math.h>
+#include <random> 
+
+namespace 
+{
+    std::mt19937_64 mt(std::random_device{}());
+	std::uniform_real_distribution<double> rnd;
+}
 
 namespace ArrayOperators
 {
-	//inline void ParAdd(float* Array, float* Summand, int Size);
+	// Scalar functions
+	inline double Drand()
+	{
+		return rnd(mt);
+	}
+	inline unsigned int ScalarPoissonSampling(double mean)
+	{
+		double ret = 0;
+		//Poisson random number for small means 
+		//Inversion by sequential search
+		if (mean < 25)
+		{
+			int i = 0;
+			double p, q, r;
+			r = exp(-mean);
+			p = r;
+			q = Drand();
+			while (p < q) {
+				i++;
+				r *= mean / i;
+				p += r;
+			}
+			ret = i;
+		}
+		else
+			// Gaussian number by Box-Muller method for large means
+		{
+			double u = 1 - Drand();
+			double v = 1 - Drand();
+			ret = (mean + sqrt(mean)*sqrt(-2. * log(u)) * cos(2. * M_PI * v));
+			if (ret < 0)
+				ret = 0;
+		}
+
+		return (unsigned int)ret;
+	}
+
 	
 	//par functions
 	inline void ParAdd(float* Array, float* Summand, int Size)
@@ -123,8 +166,22 @@ namespace ArrayOperators
 		MeanValue = (float)t_mean;
 	}
 
-
-
+	inline void ParPoissonSampling(double* Array, unsigned int Size)
+	{
+		#pragma omp parallel for
+		for (unsigned int i = 0; i < Size; i++)
+		{
+			Array[i] = (double)ScalarPoissonSampling(Array[i]);
+		}
+	}
+	inline void ParAddWhiteNoise(double* Array,double level, unsigned int Size) //Noise is +/- level (spread: 2x level, mean = 0, StAbw ~= 0.577 level)
+	{
+		#pragma omp parallel for
+		for (unsigned int i = 0; i < Size; i++)
+		{
+			Array[i] = Array[i] + ((2*Drand()-1)*level);
+		}
+	}
 
 
 	//serialfunctions
@@ -172,10 +229,9 @@ namespace ArrayOperators
 		return sum;
 	}
 
-	inline unsigned int PoissonSample(double val)
-	{
+	
 
-	}
+
 
 	//Functions for File and storage Stuff
 	enum FileType{Binary=1, HDF5=2};

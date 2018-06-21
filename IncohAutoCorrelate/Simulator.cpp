@@ -1,10 +1,12 @@
 #include <hdf5.h>
 #include <iostream>
 #include <thread>
+#include "H5Cpp.h"
 
 #include "Simulator.h"
 #include "ProfileTime.h"
 #include "ArrayOperators.h"
+
 
 
 
@@ -38,11 +40,25 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 {
 	ProfileTime Profiler;
 
+	//Check requirements
+	if (!Det.Checklist.PixelMap)
+	{
+		std::cerr << "ERROR: Detector needs a PixelMap (use Detector::LoadPixelMask())\n";
+		std::cerr << "   -> in Simulator::Simulate()\n";
+		throw;
+	}
+
+	//
+
+
 	unsigned int N = SimSettings.NumberOfSimulations;
 	Output.Intensities.clear();
 	Output.Intensities.reserve(N);
 	Output.HitEvents.clear();
 	Output.HitEvents.reserve(N);
+
+	Output.DetectorSize[0] = Det.DetectorSize[0];
+	Output.DetectorSize[1] = Det.DetectorSize[1];
 
 	//
 	if (SimSettings.AutoPixelOrientation) //Guess PixelOrientation under assumption that all pixel are of same size and orientations are always parallel
@@ -268,26 +284,29 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		double ExpNumOfPhotones = double(SimSettings.AveragePhotonesPerEmitterOnDetector * SimSettings.CrystSettings.FlYield * EmitterCrystal.AtomPositions.size());
 		double IntegratedIntensity = 0;
 		for (unsigned int l = 0; l < Det.DetectorSize[0]* Det.DetectorSize[1]; l++)
-		{
+		{ //Reminder: don't even think about to parallelize this!
 			IntegratedIntensity += Intensity[l];
 		}
 		double t_IntFactor = ExpNumOfPhotones / IntegratedIntensity;
 		ArrayOperators::ParMultiplyScalar(Intensity, t_IntFactor, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
-		//TODO: Poisson Sample
+		//Poisson Sample (if required)
 		if (SimSettings.PoissonSample)
 		{
-
+			ArrayOperators::ParPoissonSampling(Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
 		}
 
+		//Add noise (if required)
+		if (SimSettings.ADUNoise != 0)
+		{
+			ArrayOperators::ParAddWhiteNoise(Intensity, (double)SimSettings.ADUNoise, Det.DetectorSize[0] * Det.DetectorSize[1]);
+		}
 
-		//TODO: add noise
-
-		//TODO: Multiply with Photon value
-
+		//Multiply with Photon value
+		ArrayOperators::MultiplyScalar(Intensity, (double)SimSettings.Value_per_Photon, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
 
-		//Push back patern Intensity to Output Vector
+		//Push back pattern Intensity to Output Vector
 		for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
 		{//convert Intensity of pattern to float
 			curr_Intensity[j] = (float)Intensity[j];
@@ -322,8 +341,45 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 	Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
 
-	//ToImplement Save stuff
+	// Save stuff
+	SaveSimulationOutput(Output, SimSettings.Filename_Intensity, SimSettings.Filename_XML); //implement xml stuff
 
-
-
+		
 }
+
+void Simulator::SaveSimulationOutput(SimulationOutput & Output, std::string HDF5_Path, std::string XML_Path)
+{
+	H5::H5File file(HDF5_Path, H5F_ACC_TRUNC); //H5F_ACC_TRUNC => overwerite or create if not existing
+
+	hsize_t dims[3];
+	dims[0] = Output.Intensities.size();
+	dims[1] = Output.DetectorSize[0];
+	dims[2] = Output.DetectorSize[1];
+	H5::DataSpace dataspace(3, dims);
+
+	//Annotation: uses only constant Dataset name (Output.HitEvents[0].Dataset), not the most beautiful solution, maybe improve! 
+	H5::DataSet dataset = file.createDataSet(Output.HitEvents[0].Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
+
+	hsize_t start[3] = {0, 0, 0};  // Start of hyperslab, offset
+	hsize_t stride[3] = {1, 1, 1}; // Stride of hyperslab
+	hsize_t count[3] = {1, 1, 1};  // Block count
+	hsize_t block[3] = {1, dims[1], dims[2]}; // Block sizes
+
+
+	H5::DataSpace mspace(3, block);
+	for (unsigned int i = 0; i < Output.Intensities.size(); i++)
+	{
+		start[0] = i;
+		dataspace.selectHyperslab(H5S_SELECT_SET, count, start, stride, block);
+		dataset.write(Output.Intensities[i].data(), H5::PredType::NATIVE_FLOAT, mspace, dataspace);
+	}
+
+	mspace.close();
+	dataspace.close();
+	dataset.close();
+	file.close();
+
+
+	//Save XML File
+}
+

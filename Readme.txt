@@ -23,9 +23,8 @@ ACMesh:
 
 
 *****
-	C(q)-creation Profiling at Tesla K20 (per exposure):
-		-LinInterpol: ~ 54min
-		-NearesNeigh: ~ 12min 
+Data Structure:
+
 
 
 

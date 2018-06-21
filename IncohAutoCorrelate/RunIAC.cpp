@@ -317,7 +317,7 @@ namespace RunIAC
 		Det.Intensity = new float[Det.DetectorSize[0]* Det.DetectorSize[1]]();
 		{
 			Detector t_Int(Det);
-			t_Int.Intensity = nullptr; // otherwise it deletes pointer of Det in LoadIntensityData_PSANA_StyleJungfr ...
+			t_Int.Intensity = new float[1]; // otherwise it deletes pointer of Det in LoadIntensityData_PSANA_StyleJungfr ...
 			Profiler.Tic();
 			for (unsigned int i = 0; i < StackSize; i++)
 			{
@@ -375,7 +375,8 @@ namespace RunIAC
 		std::cout << "Saved angular averaged unweighted AC as: " << SM_Settings.Output_ACUW_Path << "\n";
 
 		// Test at first
-		AC.AC = new double[AC.Shape.Size](); //probable Memoryleak, ... FIX!
+		delete[] AC.AC;
+		AC.AC = new double[AC.Shape.Size](); 
 		for (unsigned int i = 0; i < AC.Shape.Size; i++)
 		{
 			AC.AC[i] = AC.AC_UW[i] / AC.CQ[i];
@@ -387,7 +388,7 @@ namespace RunIAC
 
 		//Q axis
 		delete[] AC.Q;
-		AC.Q = new double[AC.Shape.Size](); //probable Memoryleak, ... FIX!
+		AC.Q = new double[AC.Shape.Size](); 
 		for (int i = 0; i < AC.Shape.Size; i++)
 		{
 			double step = AC.Shape.Max_Q / ((double)(AC.Shape.Size - 1));
