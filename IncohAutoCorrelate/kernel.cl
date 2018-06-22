@@ -514,7 +514,7 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 
 __kernel void SimulateCrystal(__global const float *PixelMap,
-	__global const float *EmitterList,
+	__global const double *EmitterList,
 	__global const double *Params,
 	__global double *Intensity)
 {
@@ -522,29 +522,45 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 
 	//Get Parameter
 	unsigned int NumEM = (unsigned int)Params[0]; //number of emitters
-	unsigned int SuSa = (unsigned int)Params[2];; //Subsampling
+	int SuSa = (unsigned int)Params[2]; //Subsampling
 
 	double u_Step[3]; //u direction (fs)
 	u_Step[0] = Params[3];
-	u_Step[2] = Params[4];
-	u_Step[3] = Params[5];
+	u_Step[1] = Params[4];
+	u_Step[2] = Params[5];
 	double v_Step[3]; //v direction (ss)
 	v_Step[0] = Params[6];
-	v_Step[2] = Params[7];
-	v_Step[3] = Params[8];
+	v_Step[1] = Params[7];
+	v_Step[2] = Params[8];
 	//
 	double Wavelength = Params[9];
+
+
+	////Debug Bullshit
+	//if (ind == 0)
+	//{
+	//	printf("\n******************\nKernel:\n");
+	//	printf("NumEM: %f -> %d\n", Params[0], NumEM);
+	//	printf("PoissonSample: %f \n", Params[1]);
+	//	printf("SuSa: %f -> %d\n", Params[2], SuSa);
+	//	printf("u-Step: (%f, %f, %f) \n", u_Step[0], u_Step[1], u_Step[2]);
+	//	printf("v-Step: (%f, %f, %f) \n", v_Step[0], v_Step[1], v_Step[2]);
+	//	printf("Wavelength: %f \n", Params[9]);
+	//	printf("******************\n\n");
+	//}
+	////
+
 
 	double PixelCentPos[3];
 	PixelCentPos[0] = PixelMap[3 * ind + 0];
 	PixelCentPos[1] = PixelMap[3 * ind + 1];
 	PixelCentPos[2] = PixelMap[3 * ind + 2];
 
-	Intensity[ind] = 0; //intensity (our output)
+	Intensity[ind] = 0.0; //intensity (our output)
 
-	for (unsigned int v = -SuSa; v <= SuSa; v++) //subsampling in u direction (ss)
+	for (int v = -SuSa; v <= SuSa; v++) //subsampling in u direction (ss)
 	{
-		for (unsigned int u = -SuSa; u <= SuSa; u++) //subsampling in v direction (fs)
+		for (int u = -SuSa; u <= SuSa; u++) //subsampling in v direction (fs)
 		{
 			double realPsi = 0;
 			double imagPsi = 0;
@@ -571,11 +587,30 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 
 				realPsi += cos(arg);
 				imagPsi += sin(arg);
+
+				////Debug Bullshit
+				//if (ind == 0)
+				//{
+				//	//printf("k = (%f, %f, %f), phi = %f\n",k[0],k[1],k[2], EmitterList[4 * i + 3]);
+				//	double fak = 1;
+				//	printf("i: %d :: r = (%f, %f, %f\n)",i, EmitterList[4 * i + 0]*fak, EmitterList[4 * i + 1]*fak, EmitterList[4 * i + 2]*fak);
+				//	printf("normK: %f\t realPsi: %f;\t  imagPsi: %f;\t  arg:%f  \n", Norm_k, realPsi, imagPsi, arg);
+				//}
+				////
 			}
-			Intensity[ind] += ((realPsi * realPsi) + (imagPsi * imagPsi));
+			Intensity[ind] += sqrt((realPsi * realPsi) + (imagPsi * imagPsi));
+
+			////Debug Bullshit
+			//if (ind == 0)
+			//{
+			//	printf("Int: %f; u: %d; v:%d  \n", Intensity[ind],u,v);
+			//}
+			////
+
 		}
 	}
-	Intensity[ind] = Intensity[ind] / ((2 * SuSa + 1)*(2 * SuSa + 1));
-	//Do Poisson sampling on cpu (need to know integrated intensity first, there is no way to calculate it from here)
+
+	Intensity[ind] = Intensity[ind] / ((double)((2 * SuSa + 1)*(2 * SuSa + 1)));
+	//Do Poisson sampling on cpu (need to know integrated intensity first, there is no way to calculate it here (need all threads to be finished))
 
 }

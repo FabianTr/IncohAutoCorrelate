@@ -42,14 +42,15 @@ private:
 
 	enum DataType { NONE = -1, INT = 1, LONG = 2, FLOAT = 3, DOUBLE = 4 };
 
-	struct DetChecklist { bool SparseHitList = false; bool Event = false; bool PixelMap = false; bool KMap = false; bool PixelMask = false; };
+	struct DetChecklist { bool SparseHitList = false; bool Event = false; bool PixelMap = false; bool KMap = false; bool PixelMask = false; bool Intensity = false;
+	};
 	
 
 public:
 	struct AutoCorrFlags { Settings::Interpolation InterpolationMode; };
 	DetChecklist Checklist;
 	Detector();
-	Detector(const Detector &RefDet);
+	Detector(const Detector &RefDet, bool DeepCopy);
 	~Detector();
 
 //Functions

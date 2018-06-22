@@ -3,6 +3,12 @@
 #include <iostream>
 #include "H5Cpp.h"
 
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/foreach.hpp>
+#include <set>
+
 namespace ArrayOperators
 {
 	void SafeArrayToFile(char * Filename, double* Array,unsigned int Size, FileType Type)

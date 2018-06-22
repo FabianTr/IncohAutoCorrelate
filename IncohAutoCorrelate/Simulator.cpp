@@ -6,6 +6,7 @@
 #include "Simulator.h"
 #include "ProfileTime.h"
 #include "ArrayOperators.h"
+#include "Settings.h"
 
 
 
@@ -119,8 +120,8 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 	std::cout << "Pixel Orientation a: " << SimSettings.PixelOrientationVectors[0] << ", " << SimSettings.PixelOrientationVectors[1] << ", " << SimSettings.PixelOrientationVectors[2] << "\n";
 	std::cout << "Pixel Orientation b: " << SimSettings.PixelOrientationVectors[3] << ", " << SimSettings.PixelOrientationVectors[4] << ", " << SimSettings.PixelOrientationVectors[5] << "\n";
 
-	std::cout << "Pixel Size a: " << SimSettings.PixelSize[0] << "\n";
-	std::cout << "Pixel Size b: " << SimSettings.PixelSize[1] << "\n";
+	std::cout << "Pixel Size (a x b): " << SimSettings.PixelSize[0] <<" x " << SimSettings.PixelSize[1]<<"\n";
+	
 	//
 
 
@@ -158,10 +159,11 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		double * EM = new double[4 * NumEM];
 		for (unsigned int j = 0; j < NumEM; j++)
 		{
-			EM[j + 0] = EmitterList[j].Position[0];
-			EM[j + 1] = EmitterList[j].Position[1];
-			EM[j + 2] = EmitterList[j].Position[2];
-			EM[j + 3] = EmitterList[j].Phase;
+			EM[4 * j + 0] = EmitterList[j].Position[0];
+			EM[4 * j + 1] = EmitterList[j].Position[1];
+			EM[4 * j + 2] = EmitterList[j].Position[2];
+			EM[4 * j + 3] = EmitterList[j].Phase;
+			//std::cout << "r = (" << EM[j + 0] << ", " << EM[j + 1] << ", " << EM[j + 2] << ") \t phi = " << EM[j + 3] << "\n";
 		}
 
 		//Calculate steps for u and v SuSa: each pixel is divided in each direction by (2 * SuSa + 1) stripes => total of (2*SuSa + 1)^2 
@@ -186,7 +188,7 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 
 		double * Intensity = new double[Det.DetectorSize[0] * Det.DetectorSize[1]]();
-		double * Params = new double[10]();
+		double Params[10];
 		Params[0] = (double)NumEM; // number of Emitters
 		
 		Params[1] = (double)SimSettings.PoissonSample; 
@@ -203,6 +205,8 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		
 		Params[9] = SimSettings.Wavelength;//Wavelength (needed to calculate k)
 
+		
+
 
 		for (unsigned int ModeRun = 0; ModeRun < SimSettings.Modes; ModeRun++)
 		{
@@ -218,13 +222,17 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 				EM = new double[4 * NumEM];
 				for (unsigned int j = 0; j < NumEM; j++)
 				{
-					EM[j + 0] = EmitterList[j].Position[0];
-					EM[j + 1] = EmitterList[j].Position[1];
-					EM[j + 2] = EmitterList[j].Position[2];
-					EM[j + 3] = EmitterList[j].Phase;
+					EM[4 * j + 0] = EmitterList[j].Position[0];
+					EM[4 * j + 1] = EmitterList[j].Position[1];
+					EM[4 * j + 2] = EmitterList[j].Position[2];
+					EM[4 * j + 3] = EmitterList[j].Phase;
 				}
 
 			}
+
+
+		//	std::cout << "Number of Emitter: " << NumEM << "\n";
+
 			//obtain Device
 			cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
 			//Setup Queue
@@ -263,15 +271,25 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 			cl_event.wait();
 
 
+
 			//Read Results
 			err = queue.enqueueReadBuffer(CL_Intensity, CL_TRUE, 0, IntSize, t_Intensity);
 			Options.checkErr(err, "OpenCL kernel, launched in Simulator::Simulate()");
 
 
-
-
 			//add up intensity (incoherent for mode simulation)
 			ArrayOperators::ParAdd(Intensity, t_Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+
+
+			////Debug
+			//double sumInt = 0;
+			//sumInt = ArrayOperators::Sum(Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+			//std::cout << "SumInt: " << sumInt << ";    tIntSum: " << ArrayOperators::Sum(t_Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]) << "\n";
+			//sumInt = 0;
+
+			////
+
+
 
 			//free memory of temps
 			delete[] t_Intensity;
@@ -279,6 +297,8 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		}
 
 		//PostProcess 
+
+
 
 		//Rescale for expected number of photons
 		double ExpNumOfPhotones = double(SimSettings.AveragePhotonesPerEmitterOnDetector * SimSettings.CrystSettings.FlYield * EmitterCrystal.AtomPositions.size());
@@ -306,6 +326,9 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		ArrayOperators::MultiplyScalar(Intensity, (double)SimSettings.Value_per_Photon, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
 
+
+
+
 		//Push back pattern Intensity to Output Vector
 		for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
 		{//convert Intensity of pattern to float
@@ -320,7 +343,15 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 			curr_Event.Event = i;
 			curr_Event.Filename = SimSettings.Filename_Intensity;
 			curr_Event.Dataset = SimSettings.Dataset;
-			
+
+			//Calculate Mean value and Photon count
+			double mean = 0;
+			int PhotonCount = 0;
+			mean = ArrayOperators::Sum(Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+			PhotonCount = (int)floor((mean / ((double)SimSettings.Value_per_Photon)) + 0.5);
+			mean = mean / ((double)(Det.DetectorSize[0] * Det.DetectorSize[1]));
+			curr_Event.MeanIntensity = (float)mean;
+			curr_Event.PhotonCount = PhotonCount;
 		}
 
 
@@ -329,11 +360,23 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 
 		//print status
-		if ((i+1) % (N / 100) == 0)
-		{
-			std::cout << "Pattern " << (i+1) << "/" << N << " ^= " << ((i+1) * 100 / N) << "\% \t in: " << Profiler.Toc(false) << "s\n";
+
+		if (N >= 100) {
+			if ((i + 1) % (N / 100) == 0)
+			{
+				std::cout << "Pattern " << (i + 1) << "/" << N << " ^= " << ((i + 1) * 100 / N) << "\% \t in: " << Profiler.Toc(false) << "s\n";
+				std::cout << "Current Intensity: " << ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1])
+					<< " =^ " << (int)(ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1]) / SimSettings.Value_per_Photon)
+					<< " Photons\n";
+			}
 		}
-		delete[] Params;
+		else
+		{
+			std::cout << "Pattern " << (i + 1) << "/" << N << " ^= " << ((i + 1) * 100 / N) << "\% \t in: " << Profiler.Toc(false) << "s\n";
+			std::cout << "Current Intensity: " << ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1])
+				<< " =^ " << (int)(ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1]) / SimSettings.Value_per_Photon)
+				<< " Photons\n";
+		}
 		delete[] Intensity;
 	}
 
@@ -342,7 +385,7 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 
 	// Save stuff
-	SaveSimulationOutput(Output, SimSettings.Filename_Intensity, SimSettings.Filename_XML); //implement xml stuff
+	SaveSimulationOutput(Output, SimSettings.Filename_Intensity, SimSettings.Filename_XML);
 
 		
 }
@@ -381,5 +424,10 @@ void Simulator::SaveSimulationOutput(SimulationOutput & Output, std::string HDF5
 
 
 	//Save XML File
+
+	Settings tmp_Options;
+	tmp_Options.SafeHitEventListToFile(XML_Path, Output.HitEvents);
+
+
 }
 

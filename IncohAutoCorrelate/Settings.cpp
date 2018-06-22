@@ -11,6 +11,8 @@
 #include <boost/foreach.hpp>
 #include <set>
 
+#include "ArrayOperators.h"
+
 
 Settings::Settings()
 {
@@ -341,35 +343,71 @@ void Settings::SafeHitEventListToFile(char * Filename)
 }
 void Settings::SafeHitEventListToFile(std::string Filename)
 {
+	SafeHitEventListToFile(Filename, HitEvents);
+	////HitEventList is stored in xml format
+	//using boost::property_tree::ptree;
+	//ptree pt;
+
+	//pt.put("root.Info.Size", HitEvents.size());
+	//for (unsigned int i = 0; i < HitEvents.size(); i++)
+	//{
+	//	std::string path = "root.content.";
+	//	path = path + std::to_string(i);
+
+	//	pt.put(path + ".Filename", HitEvents[i].Filename);
+	//	pt.put(path + ".Dataset", HitEvents[i].Dataset);
+	//	pt.put(path + ".Event", HitEvents[i].Event);
+	//	pt.put(path + ".SerialNumber", HitEvents[i].SerialNumber);
+	//	pt.put(path + ".MeanIntensity", HitEvents[i].MeanIntensity);
+	//	pt.put(path + ".PhotonCount", HitEvents[i].PhotonCount);
+
+	//	pt.put(path + ".R0", HitEvents[i].RotMatrix[0]);
+	//	pt.put(path + ".R1", HitEvents[i].RotMatrix[1]);
+	//	pt.put(path + ".R2", HitEvents[i].RotMatrix[2]);
+	//	pt.put(path + ".R3", HitEvents[i].RotMatrix[3]);
+	//	pt.put(path + ".R4", HitEvents[i].RotMatrix[4]);
+	//	pt.put(path + ".R5", HitEvents[i].RotMatrix[5]);
+	//	pt.put(path + ".R6", HitEvents[i].RotMatrix[6]);
+	//	pt.put(path + ".R7", HitEvents[i].RotMatrix[7]);
+	//	pt.put(path + ".R8", HitEvents[i].RotMatrix[8]);
+	//}
+	//boost::property_tree::write_xml(Filename, pt);
+}
+void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList)
+{
+
 	//HitEventList is stored in xml format
 	using boost::property_tree::ptree;
 	ptree pt;
 
-	pt.put("root.Info.Size", HitEvents.size());
-	for (unsigned int i = 0; i < HitEvents.size(); i++)
+	pt.put("root.Info.Size", HitEventList.size());
+	for (unsigned int i = 0; i < HitEventList.size(); i++)
 	{
 		std::string path = "root.content.";
 		path = path + std::to_string(i);
 
-		pt.put(path + ".Filename", HitEvents[i].Filename);
-		pt.put(path + ".Dataset", HitEvents[i].Dataset);
-		pt.put(path + ".Event", HitEvents[i].Event);
-		pt.put(path + ".SerialNumber", HitEvents[i].SerialNumber);
-		pt.put(path + ".MeanIntensity", HitEvents[i].MeanIntensity);
-		pt.put(path + ".PhotonCount", HitEvents[i].PhotonCount);
+		pt.put(path + ".Filename", HitEventList[i].Filename);
+		pt.put(path + ".Dataset", HitEventList[i].Dataset);
+		pt.put(path + ".Event", HitEventList[i].Event);
+		pt.put(path + ".SerialNumber", HitEventList[i].SerialNumber);
+		pt.put(path + ".MeanIntensity", HitEventList[i].MeanIntensity);
+		pt.put(path + ".PhotonCount", HitEventList[i].PhotonCount);
 
-		pt.put(path + ".R0", HitEvents[i].RotMatrix[0]);
-		pt.put(path + ".R1", HitEvents[i].RotMatrix[1]);
-		pt.put(path + ".R2", HitEvents[i].RotMatrix[2]);
-		pt.put(path + ".R3", HitEvents[i].RotMatrix[3]);
-		pt.put(path + ".R4", HitEvents[i].RotMatrix[4]);
-		pt.put(path + ".R5", HitEvents[i].RotMatrix[5]);
-		pt.put(path + ".R6", HitEvents[i].RotMatrix[6]);
-		pt.put(path + ".R7", HitEvents[i].RotMatrix[7]);
-		pt.put(path + ".R8", HitEvents[i].RotMatrix[8]);
+		pt.put(path + ".R0", HitEventList[i].RotMatrix[0]);
+		pt.put(path + ".R1", HitEventList[i].RotMatrix[1]);
+		pt.put(path + ".R2", HitEventList[i].RotMatrix[2]);
+		pt.put(path + ".R3", HitEventList[i].RotMatrix[3]);
+		pt.put(path + ".R4", HitEventList[i].RotMatrix[4]);
+		pt.put(path + ".R5", HitEventList[i].RotMatrix[5]);
+		pt.put(path + ".R6", HitEventList[i].RotMatrix[6]);
+		pt.put(path + ".R7", HitEventList[i].RotMatrix[7]);
+		pt.put(path + ".R8", HitEventList[i].RotMatrix[8]);
 	}
 	boost::property_tree::write_xml(Filename, pt);
 }
+
+
+
 void Settings::LoadHitEventListFromFile(char * Filename)
 {
 	using boost::property_tree::ptree;

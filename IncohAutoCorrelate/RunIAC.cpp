@@ -316,7 +316,8 @@ namespace RunIAC
 		std::cout << "Average intensity\n";
 		Det.Intensity = new float[Det.DetectorSize[0]* Det.DetectorSize[1]]();
 		{
-			Detector t_Int(Det);
+			Detector t_Int(Det, true);
+			delete[] t_Int.Intensity;
 			t_Int.Intensity = new float[1]; // otherwise it deletes pointer of Det in LoadIntensityData_PSANA_StyleJungfr ...
 			Profiler.Tic();
 			for (unsigned int i = 0; i < StackSize; i++)
@@ -343,7 +344,7 @@ namespace RunIAC
 				{
 					delete[] t_Int.Intensity;
 				}
-			
+		
 			}
 			ArrayOperators::MultiplyScalar(Det.Intensity, (1.0 / ((float)StackSize)), Det.DetectorSize[0] * Det.DetectorSize[1]);
 			Profiler.Toc(true);

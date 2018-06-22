@@ -265,28 +265,33 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	//Custom Settings
 	//Crystal Size (in Unitcells) 
 	unsigned int CrystalSize[3];
-	CrystalSize[0] = 50;
-	CrystalSize[1] = 50;
-	CrystalSize[2] = 50;
+	CrystalSize[0] = 70;
+	CrystalSize[1] = 70;
+	CrystalSize[2] = 70;
 	//
 	Simulator::SimulationSettings SimSettings;
 
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 100;
+	SimSettings.NumberOfSimulations = 5;
 
 	SimSettings.Modes = 2;
-	SimSettings.AveragePhotonesPerEmitterOnDetector = 1.0f;
+	SimSettings.AveragePhotonesPerEmitterOnDetector = 1000.0f;
 	SimSettings.PoissonSample = true;
-	SimSettings.SubSampling = 100;
+	SimSettings.SubSampling = 0;
 
-	SimSettings.CrystSettings.FlYield = 1.0f;
+	//SimSettings.Wavelength
+
+	SimSettings.Value_per_Photon = 1.0;
+
+	SimSettings.CrystSettings.FlYield = 0.1f;
 	SimSettings.CrystSettings.Incoherent = true;
 	SimSettings.CrystSettings.Isotropie = 1.0f;
 	SimSettings.CrystSettings.RandOrientation = true;
 
 	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/IntensityStack_TEST.h5";
+	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/IntensityStack_TEST.xml";
 	SimSettings.Dataset = "data";
 
 
@@ -298,19 +303,29 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			LatticeVector[i][j] = Options.MReference(i, j) / 1000.0; //convert nanometer to microns (same unit as Pixel-map)
+			LatticeVector[i][j] = Options.MReference(i, j); 
+			//LatticeVector[i][j] = Options.MReference(i, j) / 1000.0; //convert nanometer to microns (same unit as Pixel-map)
 		}
 	}
 	std::vector<std::array<double, 3>> UnitCell; //Hardcode unitcell for Hb (1gzx)
 	std::array<double, 3> t_pos;
-	t_pos = { 15.817 / 10000.0, 16.279 / 10000.0, 14.682 / 10000.0 }; //convert anström to microns
+	t_pos = { 15.817 , 16.279 , 14.682  }; 
 	UnitCell.push_back(t_pos);
-	t_pos = { -10.262 / 10000.0, -4.051 / 10000.0, -0.010 / 10000.0 }; //convert anström to microns
+	t_pos = { -10.262 / 10000.0, -4.051 , -0.010  };
 	UnitCell.push_back(t_pos);
-	t_pos = { 6.437 / 10000.0, -16.819 / 10000.0, 12.649 / 10000.0 }; //convert anström to microns
+	t_pos = { 6.437 , -16.819 , 12.649  }; 
 	UnitCell.push_back(t_pos);
-	t_pos = { 2.097 / 10000.0, 11.532 / 10000.0, 34.460 / 10000.0 }; //convert anström to microns
+	t_pos = { 2.097 , 11.532 , 34.460  }; 
 	UnitCell.push_back(t_pos);
+
+	//t_pos = { 15.817 / 10000.0, 16.279 / 10000.0, 14.682 / 10000.0 }; //convert anström to microns
+	//UnitCell.push_back(t_pos);
+	//t_pos = { -10.262 / 10000.0, -4.051 / 10000.0, -0.010 / 10000.0 }; //convert anström to microns
+	//UnitCell.push_back(t_pos);
+	//t_pos = { 6.437 / 10000.0, -16.819 / 10000.0, 12.649 / 10000.0 }; //convert anström to microns
+	//UnitCell.push_back(t_pos);
+	//t_pos = { 2.097 / 10000.0, 11.532 / 10000.0, 34.460 / 10000.0 }; //convert anström to microns
+	//UnitCell.push_back(t_pos);
 
 
 	Crystal Cryst(LatticeVector, CrystalSize, UnitCell);
@@ -324,10 +339,6 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	Simulator::SimulationOutput Sim_Output;
 
 	Sim.Simulate(Cryst, Sim_Det, SimSettings, Sim_Output, Options);
-
-
-
-
 
 
 }
@@ -356,7 +367,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 2;//6;
+	int RunMode = 5;//6;
 
 	int N_autorun = 1;
 	if (Panelwise)

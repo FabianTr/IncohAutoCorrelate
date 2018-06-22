@@ -62,6 +62,7 @@ public:
 	std::vector<HitEvent> HitEvents;
 	void SafeHitEventListToFile(char* Filename);
 	void SafeHitEventListToFile(std::string Filename);
+	void SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList);
 	void LoadHitEventListFromFile(char* Filename);
 
 

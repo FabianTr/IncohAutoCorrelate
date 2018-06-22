@@ -6,6 +6,8 @@
 #include <math.h>
 #include <random> 
 
+#include "Settings.h"
+
 namespace 
 {
     std::mt19937_64 mt(std::random_device{}());
@@ -228,6 +230,15 @@ namespace ArrayOperators
 		}
 		return sum;
 	}
+	inline double Sum(double* Array, int Size)
+	{
+		double sum = 0;
+		for (int i = 0; i <Size; i++)
+		{
+			sum += Array[i];
+		}
+		return sum;
+	}
 
 	
 
@@ -242,6 +253,7 @@ namespace ArrayOperators
 	void SafeArrayToFile(std::string Filename, double* Array, unsigned int Size, FileType Type);
 	void SafeArrayToFile(std::string Filename, float* Array, unsigned int Size, FileType Type);
 	void SafeArrayToFile(std::string Filename, unsigned int* Array, unsigned int Size, FileType Type);
+
 
 
 	

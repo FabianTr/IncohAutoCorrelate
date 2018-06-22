@@ -178,7 +178,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	//std::cout << "Thread from " << LowerBound <<" launched\n";
 	//g_echo_mutex.unlock();
 
-	Detector Det(RefDet);
+	Detector Det(RefDet, true);
 
 	if (JungfrauDet)
 	{

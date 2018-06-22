@@ -31,19 +31,23 @@ Detector::Detector()
 		kMap = new float[1];
 }
 
-Detector::Detector(const Detector &RefDet):Detector(RefDet)
+Detector::Detector(const Detector &RefDet, bool DeepCopy):Detector(RefDet)
 {
 	PixelMap = new float[DetectorSize[0] + DetectorSize[1] * 3];
-	std::copy(RefDet.PixelMap, RefDet.PixelMap + DetectorSize[0] + DetectorSize[1] * 3, PixelMap);
+	if (RefDet.Checklist.PixelMap)
+		std::copy(RefDet.PixelMap, RefDet.PixelMap + DetectorSize[0] + DetectorSize[1] * 3, PixelMap);
 
 	kMap = new float[DetectorSize[0] + DetectorSize[1] * 3];
-	std::copy(RefDet.kMap, RefDet.kMap + DetectorSize[0] + DetectorSize[1] * 3, kMap);
+	if (RefDet.Checklist.KMap)
+		std::copy(RefDet.kMap, RefDet.kMap + DetectorSize[0] + DetectorSize[1] * 3, kMap);
 
 	PixelMask = new int[DetectorSize[0] + DetectorSize[1]];
-	std::copy(RefDet.PixelMask, RefDet.PixelMask + DetectorSize[0] + DetectorSize[1], PixelMask);
+	if (RefDet.Checklist.PixelMask)
+		std::copy(RefDet.PixelMask, RefDet.PixelMask + DetectorSize[0] + DetectorSize[1], PixelMask);
 
 	Intensity = new float[DetectorSize[0] + DetectorSize[1]];
-	std::copy(RefDet.Intensity, RefDet.Intensity + DetectorSize[0] + DetectorSize[1], Intensity);
+	if (RefDet.Checklist.Intensity)
+		std::copy(RefDet.Intensity, RefDet.Intensity + DetectorSize[0] + DetectorSize[1], Intensity);
 
 	//for (unsigned int i = 0; i < DetectorSize[0]+ DetectorSize[1]*3; i++)
 	//{
@@ -183,6 +187,8 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 
 
 	file.close();
+
+	Checklist.Intensity = true;
 }
 
 void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_string DataSet, int SlicePosition)
@@ -254,7 +260,7 @@ void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_stri
 
 
 	file.close();
-
+	Checklist.Intensity = true;
 }
 
 //k-Map
@@ -282,23 +288,6 @@ void Detector::Calc_kMap()
 			x = GetPixelPos(0, i_x, i_y);
 			y = GetPixelPos(1, i_x, i_y);
 			z = GetPixelPos(2, i_x, i_y);
-
-
-			//if (x > Pmax[0])
-			//	Pmax[0] = x;
-			//if (y > Pmax[1])
-			//	Pmax[1] = y;
-			//if (z > Pmax[2])
-			//	Pmax[2] = z;
-
-			//if (x < Pmin[0])
-			//	Pmin[0] = x;
-			//if (y < Pmin[1])
-			//	Pmin[1] = y;
-			//if (z < Pmin[2])
-			//	Pmin[2] = z;
-
-
 
 			r = sqrtf(x*x + y*y + z*z);
 
@@ -567,7 +556,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		}
 	}
 	ArrayOperators::ParMultiplyScalar(Intensity, 1.0 / (UpperBound - LowerBound), DetectorSize[1] * DetectorSize[0]);
-
+	Checklist.Intensity = true;
 }
 
 
@@ -685,6 +674,7 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 
 	delete[] SubDet1;
 	delete[] SubDet2;
+	Checklist.Intensity = true;
 }
 
  
