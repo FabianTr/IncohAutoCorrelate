@@ -356,7 +356,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 6;//6;
+	int RunMode = 2;//6;
 
 	int N_autorun = 1;
 	if (Panelwise)

@@ -420,13 +420,17 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 			}
 		else//[nx][ny][3]
 		{ 
-			for (unsigned int i_y = 0; i_y < dims[1]; i_y++)
+			for (unsigned int i_x = 0; i_x < dims[1]; i_x++)
 			{
-				for (unsigned int i_x = 0; i_x < dims[2]; i_x++)
+				for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
 				{
 					for (unsigned int i_d = 0; i_d < 3; i_d++)
 					{
-						PixelMap[i_d + 3 * i_x + 3 * dims[1] * i_y] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+					//	PixelMap[i_d + 3 * i_x + 3 * dims[1] * i_y] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+
+
+						PixelMap[i_d + 3 * i_y + 3 * dims[2] * i_x] = TmpPixleMap[i_y + i_x * dims[2] + i_d * dims[2] * dims[1]];
+
 						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] > Pmax[i_d])
 							Pmax[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
 						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] < Pmin[i_d])
