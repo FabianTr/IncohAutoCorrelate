@@ -259,17 +259,6 @@ namespace RunIAC
 		if (SM_Settings.PixelMask_Path != "")
 		{
 			ArrayOperators::LoadArrayFromFile<int>(SM_Settings.PixelMask_Path, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
-			//for (int i = 0; i < 200; i++)
-			//{
-			//	for (int j = 0; j < 200; j++)
-			//	{
-			//		std::cout << Det.PixelMask[100 * i + j] ;
-			//	}
-			//	std::cout << "\n";
-			//}
-
-			//int w;
-			//std::cin >> w;
 		}
 		else
 		{
@@ -280,7 +269,7 @@ namespace RunIAC
 				Det.PixelMask[i] = 1;
 			}
 		}
-
+		Det.Checklist.PixelMask = true;
 
 		//Set up AC1D - Container
 		AC.Initialize(Det, SM_Settings.ArraySize);
@@ -318,7 +307,7 @@ namespace RunIAC
 		{
 			Detector t_Int(Det, true);
 			delete[] t_Int.Intensity;
-			t_Int.Intensity = new float[1]; // otherwise it deletes pointer of Det in LoadIntensityData_PSANA_StyleJungfr ...
+			t_Int.Intensity = new float[1](); // otherwise it deletes pointer of Det in LoadIntensityData_PSANA_StyleJungfr ...
 			Profiler.Tic();
 			for (unsigned int i = 0; i < StackSize; i++)
 			{
@@ -339,6 +328,7 @@ namespace RunIAC
 				ArrayOperators::DiscretizeToPhotons(t_Int.Intensity, SM_Settings.PhotonOffset, SM_Settings.PhotonStep, Det.DetectorSize[0] * Det.DetectorSize[1]);
 				ArrayOperators::ParAdd(Det.Intensity, t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
 				//Save Mean Int of exposure
+				PrgSettings.HitEvents[i].PhotonCount = (int)(ArrayOperators::Sum(t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]));
 				PrgSettings.HitEvents[i].MeanIntensity = (ArrayOperators::Sum(t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]) / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1])));
 				if (!SM_Settings.JungfrDet)
 				{

@@ -33,26 +33,48 @@ Detector::Detector()
 
 Detector::Detector(const Detector &RefDet, bool DeepCopy):Detector(RefDet)
 {
-	PixelMap = new float[DetectorSize[0] + DetectorSize[1] * 3];
+	PixelMap = new float[DetectorSize[0] * DetectorSize[1] * 3];
 	if (RefDet.Checklist.PixelMap)
-		std::copy(RefDet.PixelMap, RefDet.PixelMap + DetectorSize[0] + DetectorSize[1] * 3, PixelMap);
+	{
+		for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1] * 3; i++)
+		{
+			PixelMap[i] = RefDet.PixelMap[i];
+		}
+		//std::copy(RefDet.PixelMap, RefDet.PixelMap + DetectorSize[0] * DetectorSize[1] * 3, PixelMap);
+	}
 
-	kMap = new float[DetectorSize[0] + DetectorSize[1] * 3];
+
+		
+
+	kMap = new float[DetectorSize[0] * DetectorSize[1] * 3];
 	if (RefDet.Checklist.KMap)
-		std::copy(RefDet.kMap, RefDet.kMap + DetectorSize[0] + DetectorSize[1] * 3, kMap);
+	{
+		for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1] * 3; i++)
+		{
+			kMap[i] = RefDet.kMap[i];
+		}
+		//std::copy(RefDet.kMap, RefDet.kMap + DetectorSize[0] * DetectorSize[1] * 3, kMap);
+	}
 
-	PixelMask = new int[DetectorSize[0] + DetectorSize[1]];
+	PixelMask = new int[DetectorSize[0] * DetectorSize[1]];
 	if (RefDet.Checklist.PixelMask)
-		std::copy(RefDet.PixelMask, RefDet.PixelMask + DetectorSize[0] + DetectorSize[1], PixelMask);
+	{
+		for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
+		{
+			PixelMask[i] = RefDet.PixelMask[i];
+		}
+		//std::copy(RefDet.PixelMask, RefDet.PixelMask + DetectorSize[0] * DetectorSize[1], PixelMask);
+	}
 
-	Intensity = new float[DetectorSize[0] + DetectorSize[1]];
+	Intensity = new float[DetectorSize[0] * DetectorSize[1]];
 	if (RefDet.Checklist.Intensity)
-		std::copy(RefDet.Intensity, RefDet.Intensity + DetectorSize[0] + DetectorSize[1], Intensity);
-
-	//for (unsigned int i = 0; i < DetectorSize[0]+ DetectorSize[1]*3; i++)
-	//{
-	//	PixelMap[i] = RefDet.PixelMap[i];
-	//}
+	{
+		for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
+		{
+			Intensity[i] = RefDet.Intensity[i];
+		}
+		//std::copy(RefDet.Intensity, RefDet.Intensity + DetectorSize[0] * DetectorSize[1], Intensity);
+	}
 }
 
 
@@ -74,15 +96,15 @@ inline float Detector::DiscretizeToPhotones(float Value, float Threshold, float 
 	return ceilf((Value - Threshold) / PhotonSamplingStep)*(Value >= Threshold);
 }
 
-//PixelMap
-inline float Detector::GetPixelPos(int dimension, int i_x, int i_y)
-{
-	return PixelMap[dimension + 3 * i_x + 3 * DetectorSize[0] * i_y];
-}
-inline float Detector::GetkVal(int dimension, int i_x, int i_y)
-{
-	return kMap[dimension + 3 * i_x + 3 * DetectorSize[0] * i_y];
-}
+////PixelMap
+//inline float Detector::GetPixelPos(int dimension, int i_x, int i_y)
+//{
+//	return PixelMap[dimension + 3 * i_x + 3 * DetectorSize[0] * i_y];
+//}
+//inline float Detector::GetkVal(int dimension, int i_x, int i_y)
+//{
+//	return kMap[dimension + 3 * i_x + 3 * DetectorSize[0] * i_y];
+//}
 void Detector::Calc_PixelMapExtremeValues()
 {
 	PixelMapExtend.max_x = -9999999;
@@ -267,7 +289,7 @@ void Detector::LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_stri
 void Detector::Calc_kMap()
 {
 	delete[] kMap;
-	kMap = new float[3 * DetectorSize[0] * DetectorSize[1]];
+	kMap = new float[3 * DetectorSize[0] * DetectorSize[1]]();
 
 	Max_k[0] = -100.0f;
 	Max_k[1] = -100.0f;
@@ -277,51 +299,43 @@ void Detector::Calc_kMap()
 	Min_k[2] = 100.0f;
 
 
-	//float Pmax[3] = { -99999999, -99999999, -99999999 };
-	//float Pmin[3] = { 99999999, 99999999, 99999999 };
-
-	for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
+	for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
 	{
-		for (unsigned int i_x = 0; i_x < DetectorSize[0]; i_x++)
-		{
-			float x, y, z, r;
-			x = GetPixelPos(0, i_x, i_y);
-			y = GetPixelPos(1, i_x, i_y);
-			z = GetPixelPos(2, i_x, i_y);
+		float x, y, z, r;
+		x = PixelMap[3 * i + 0];
+		y = PixelMap[3 * i + 1];
+		z = PixelMap[3 * i + 2];
 
-			r = sqrtf(x*x + y*y + z*z);
+		r = sqrtf(x*x + y * y + z * z);
 
-			x = x / r;
-			y = y / r;
-			z = z / r;
-		
-			kMap[0 + 3 * i_x + 3 * DetectorSize[0] * i_y] = x;
-			kMap[1 + 3 * i_x + 3 * DetectorSize[0] * i_y] = y;
-			kMap[2 + 3 * i_x + 3 * DetectorSize[0] * i_y] = z;
+		x = x / r;
+		y = y / r;
+		z = z / r;
 
-			if (x > Max_k[0])
-				Max_k[0] = x;
-			if (y > Max_k[1])
-				Max_k[1] = y;
-			if (z > Max_k[2])
-				Max_k[2] = z;
+		kMap[3 * i + 0] = x;
+		kMap[3 * i + 1] = y;
+		kMap[3 * i + 2] = z;
 
-			if (x < Min_k[0])
-				Min_k[0] = x;
-			if (y < Min_k[1])
-				Min_k[1] = y;
-			if (z < Min_k[2])
-				Min_k[2] = z;
-		}
+		if (x > Max_k[0])
+			Max_k[0] = x;
+		if (y > Max_k[1])
+			Max_k[1] = y;
+		if (z > Max_k[2])
+			Max_k[2] = z;
+
+		if (x < Min_k[0])
+			Min_k[0] = x;
+		if (y < Min_k[1])
+			Min_k[1] = y;
+		if (z < Min_k[2])
+			Min_k[2] = z;
+
 	}
-	//Calculate maximal q-range for this detector
+
 	Max_q[0] = fabsf(Max_k[0] - Min_k[0]);
 	Max_q[1] = fabsf(Max_k[1] - Min_k[1]);
 	Max_q[2] = fabsf(Max_k[2] - Min_k[2]);
 
-
-	//std::cout << "PixMap_max = [" << Pmax[0] << "; " << Pmax[1] << "; " << Pmax[2] << "]\n";
-	//std::cout << "PixMap_min = [" << Pmin[0] << "; " << Pmin[1] << "; " << Pmin[2] << "]\n";
 	Checklist.KMap = true;
 }
 
@@ -605,6 +619,8 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 		std::cerr << "    -> Detector::LoadIntensityData_PSANA_Style()";
 		throw;
 	}
+
+
 	H5::DataSpace DS = dataset.getSpace();
 	//std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
 
@@ -668,8 +684,10 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 
 	for (unsigned int i = 0; i < (DetectorSize[0]/2) * DetectorSize[1]; i++)
 	{
-		Intensity[i] = SubDet1[i];
-		Intensity[i + ((DetectorSize[0] / 2) * DetectorSize[1])] = SubDet2[i];
+		Intensity[i] = (float)SubDet1[i];
+		Intensity[i + ((DetectorSize[0] / 2) * DetectorSize[1])] = (float)SubDet2[i];
+
+
 	}
 
 	delete[] SubDet1;
@@ -680,33 +698,33 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
  
 
 void Detector::CreateSparseHitList(float Threshold)
-{
-//	std::cout << "DEBUG: Start create SparseHitList\n";
+ {
+	//	std::cout << "DEBUG: Start create SparseHitList\n";
 
 	SparseHitList.clear();
 	SparseHitList.reserve(1000);
+
+	
 
 	//struct TmpSparseVecStr { std::vector<std::array<float,4>> Vec; };
 
 	//TmpSparseVecStr* TmpSparseVec = new TmpSparseVecStr[DetectorSize[1]];
 
-	for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
+	for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
 	{
-		for (unsigned int i_x = 0; i_x < DetectorSize[0]; i_x++)
+		float I = Intensity[i];
+		if (I >= Threshold)
 		{
-			if (Intensity[i_x + DetectorSize[0]* i_y] >= Threshold)
-			{
-				std::array< float,4> TmpEntry;
+			std::array< float, 4> TmpEntry;
 
-				TmpEntry[0] = GetkVal(0, i_x, i_y);
-				TmpEntry[1] = GetkVal(1, i_x, i_y);
-				TmpEntry[2] = GetkVal(2, i_x, i_y);
-				TmpEntry[3] = Intensity[i_x + DetectorSize[0] * i_y];
-				SparseHitList.push_back(TmpEntry);
-			}
+			TmpEntry[0] = kMap[3 * i + 0];
+			TmpEntry[1] = kMap[3 * i + 1];
+			TmpEntry[2] = kMap[3 * i + 2];
+			TmpEntry[3] = I;
+			SparseHitList.push_back(TmpEntry);
 		}
 	}
-
+	//std::cout << SparseHitList.size() << "\n";
 	Checklist.SparseHitList = true;
 }
 

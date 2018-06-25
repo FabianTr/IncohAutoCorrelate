@@ -186,7 +186,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	}
 	else
 	{
-		Det.Intensity = new float[Det.DetectorSize[0]* Det.DetectorSize[1]];
+		Det.Intensity = new float[Det.DetectorSize[0]* Det.DetectorSize[1]]();
 	}
 
 	for (unsigned int i = LowerBound; i < UpperBound; i++)
@@ -215,7 +215,9 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 		ArrayOperators::MultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
 		//Create sparse List (and Photonize)
+		Det.SparseHitList.clear();
 		Det.CreateSparseHitList(Photonisation[0], Photonisation[1],false); //suppress OMP parallelization within Threadpool!
+		//std::cout << "Sparse List Size: " << Det.SparseHitList.size() << "\n";
 		//iterate over all combinations
 		for (unsigned int j = 0; j < Det.SparseHitList.size(); j++)
 		{
@@ -274,7 +276,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation, bool JungfrauDet)
 {
-	const int Threads = 200; //set higher than expectred threads because of waitingtimes for read from file
+	const int Threads = 200; //(200) set higher than expectred threads because of waitingtimes for read from file
 
 	if (Options.HitEvents.size() <= 0)
 	{
@@ -284,6 +286,7 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 	}
 
 	int WorkerSize = (int)Options.HitEvents.size() / (Threads - 1);
+
 	std::vector<std::array<unsigned int,2>> WorkerBounds;
 	for (unsigned int i = 0; i < Threads; i++)
 	{

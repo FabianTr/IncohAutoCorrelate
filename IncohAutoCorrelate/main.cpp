@@ -367,7 +367,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 5;//6;
+	int RunMode = 7;
 
 	int N_autorun = 1;
 	if (Panelwise)
@@ -603,7 +603,7 @@ int main()
 			}
 			break;
 		case 5: //Autocorrelate Single Molecule Jungfrau 120mm
-			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for single molecule\n******************************\n";
+			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for single molecule (Jungfr)\n******************************\n";
 			{
 				RunIAC::CreateSM_Settings SM_Settings;
 
@@ -786,6 +786,7 @@ int main()
 
 				AC1D Results;
 
+
 				RunIAC::Run_AC_SM_Full(Results, SM_Settings, Options);
 
 
@@ -841,7 +842,7 @@ int main()
 			break;
 
 		case 7: //Autocorrelate Single Molecule Epix 300mm
-			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for single molecule ePix\n******************************\n";
+			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for single molecule (ePix)\n******************************\n";
 			{
 				RunIAC::CreateSM_Settings SM_Settings;
 
