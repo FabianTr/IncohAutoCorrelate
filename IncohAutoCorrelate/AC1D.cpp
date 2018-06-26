@@ -264,7 +264,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	}
 
 	//Free in thread distributed Det memory:
-	delete[] Det.Intensity;
+	//delete[] Det.Intensity;
 
 
 	g_echo_mutex.lock();

@@ -11,6 +11,8 @@
 #include <boost/foreach.hpp>
 #include <set>
 
+
+
 #include "ArrayOperators.h"
 
 
@@ -373,7 +375,18 @@ void Settings::SafeHitEventListToFile(std::string Filename)
 	//}
 	//boost::property_tree::write_xml(Filename, pt);
 }
+
+
+
 void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList)
+{
+
+	//HitEventList is stored in xml format
+
+	SafeHitEventListToFile(Filename, HitEventList, false);
+}
+
+void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList, bool AdditionalInformations, std::unordered_map<std::string, std::string> AdditioInfoMap)
 {
 
 	//HitEventList is stored in xml format
@@ -381,6 +394,20 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 	ptree pt;
 
 	pt.put("root.Info.Size", HitEventList.size());
+
+	if (AdditionalInformations)
+	{
+		for (auto it = AdditioInfoMap.begin(); it != AdditioInfoMap.end(); it++)
+		{
+			std::string key, val;
+			key= it->first;
+			val = it->second;
+
+			pt.put("root.Info." + key, val);
+		}
+	}
+
+
 	for (unsigned int i = 0; i < HitEventList.size(); i++)
 	{
 		std::string path = "root.content.";
@@ -405,6 +432,8 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 	}
 	boost::property_tree::write_xml(Filename, pt);
 }
+
+
 
 
 

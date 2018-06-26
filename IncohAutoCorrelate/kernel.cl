@@ -514,9 +514,9 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 
 __kernel void SimulateCrystal(__global const float *PixelMap,
-	__global const double *EmitterList,
+	__global const float *EmitterList,
 	__global const double *Params,
-	__global double *Intensity)
+	__global float *Intensity)
 {
 	unsigned int ind = get_global_id(0);
 
@@ -524,16 +524,16 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 	unsigned int NumEM = (unsigned int)Params[0]; //number of emitters
 	int SuSa = (unsigned int)Params[2]; //Subsampling
 
-	double u_Step[3]; //u direction (fs)
+	float u_Step[3]; //u direction (fs)
 	u_Step[0] = Params[3];
 	u_Step[1] = Params[4];
 	u_Step[2] = Params[5];
-	double v_Step[3]; //v direction (ss)
+	float v_Step[3]; //v direction (ss)
 	v_Step[0] = Params[6];
 	v_Step[1] = Params[7];
 	v_Step[2] = Params[8];
 	//
-	double Wavelength = Params[9];
+	float Wavelength = Params[9];
 
 
 	////Debug Bullshit
@@ -551,7 +551,7 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 	////
 
 
-	double PixelCentPos[3];
+	float PixelCentPos[3];
 	PixelCentPos[0] = PixelMap[3 * ind + 0];
 	PixelCentPos[1] = PixelMap[3 * ind + 1];
 	PixelCentPos[2] = PixelMap[3 * ind + 2];
@@ -562,28 +562,28 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 	{
 		for (int u = -SuSa; u <= SuSa; u++) //subsampling in v direction (fs)
 		{
-			double realPsi = 0;
-			double imagPsi = 0;
+			float realPsi = 0;
+			float imagPsi = 0;
 			for (unsigned int i = 0; i < NumEM; i++)
 			{
 				//Calculate k
-				double Curr_Pos[3];
+				float Curr_Pos[3];
 				Curr_Pos[0] = PixelCentPos[0] + (v * v_Step[0]) + (u * v_Step[0]);
 				Curr_Pos[1] = PixelCentPos[1] + (v * v_Step[1]) + (u * v_Step[1]);
 				Curr_Pos[2] = PixelCentPos[2] + (v * v_Step[2]) + (u * v_Step[2]);
 				//calculate k
-				double k[3];
-				double Norm_k = 1.0 / sqrt(Curr_Pos[0] * Curr_Pos[0] + Curr_Pos[1] * Curr_Pos[1] + Curr_Pos[2] * Curr_Pos[2]);
+				float k[3];
+				float Norm_k = 1.0 / sqrt(Curr_Pos[0] * Curr_Pos[0] + Curr_Pos[1] * Curr_Pos[1] + Curr_Pos[2] * Curr_Pos[2]);
 				Norm_k *= ((2.0 * PI) / Wavelength); //Norm_k converts the position vector into the according k vector.
 				k[0] = Curr_Pos[0] * Norm_k;
 				k[1] = Curr_Pos[1] * Norm_k;
 				k[2] = Curr_Pos[2] * Norm_k;
 
-				double arg = 0; //argument for exponent (here split in real(cos) and imag(sin) part). Psi = exp^(i arg) 
-				arg += k[0] * ((double)EmitterList[4 * i + 0]);
-				arg += k[1] * ((double)EmitterList[4 * i + 1]);
-				arg += k[2] * ((double)EmitterList[4 * i + 2]);
-				arg += ((double)EmitterList[4 * i + 3]); //Phase
+				float arg = 0; //argument for exponent (here split in real(cos) and imag(sin) part). Psi = exp^(i arg) 
+				arg += k[0] * ((float)EmitterList[4 * i + 0]);
+				arg += k[1] * ((float)EmitterList[4 * i + 1]);
+				arg += k[2] * ((float)EmitterList[4 * i + 2]);
+				arg += ((float)EmitterList[4 * i + 3]); //Phase
 
 				realPsi += cos(arg);
 				imagPsi += sin(arg);
@@ -610,7 +610,7 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 		}
 	}
 
-	Intensity[ind] = Intensity[ind] / ((double)((2 * SuSa + 1)*(2 * SuSa + 1)));
+	Intensity[ind] = Intensity[ind] / ((float)((2 * SuSa + 1)*(2 * SuSa + 1)));
 	//Do Poisson sampling on cpu (need to know integrated intensity first, there is no way to calculate it here (need all threads to be finished))
 
 }

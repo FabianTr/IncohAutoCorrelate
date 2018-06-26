@@ -176,6 +176,14 @@ namespace ArrayOperators
 			Array[i] = (double)ScalarPoissonSampling(Array[i]);
 		}
 	}
+	inline void ParPoissonSampling(float* Array, unsigned int Size)
+	{
+		#pragma omp parallel for
+		for (unsigned int i = 0; i < Size; i++)
+		{
+			Array[i] = (float)ScalarPoissonSampling(Array[i]);
+		}
+	}
 	inline void ParAddWhiteNoise(double* Array,double level, unsigned int Size) //Noise is +/- level (spread: 2x level, mean = 0, StAbw ~= 0.577 level)
 	{
 		#pragma omp parallel for
@@ -184,7 +192,14 @@ namespace ArrayOperators
 			Array[i] = Array[i] + ((2*Drand()-1)*level);
 		}
 	}
-
+	inline void ParAddWhiteNoise(float* Array, float level, unsigned int Size) //Noise is +/- level (spread: 2x level, mean = 0, StAbw ~= 0.577 level)
+	{
+		#pragma omp parallel for
+		for (unsigned int i = 0; i < Size; i++)
+		{
+			Array[i] = Array[i] + ((2 * Drand() - 1)*level);
+		}
+	}
 
 	//serialfunctions
 	inline void MultiplyScalar(float* Array, float Factor, int Size)

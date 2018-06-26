@@ -15,6 +15,8 @@ private:
 	std::mt19937_64 mt;
 	void WriteIntensityToH5(Detector & Det, std::string Filename, std::string Dataset);
 
+	
+
 public:
 	Simulator();
 	~Simulator();
@@ -47,10 +49,14 @@ public:
 		std::string Dataset = "data";
 		std::string Filename_Intensity = "";
 		std::string Filename_XML = "";
+
+		unsigned int UnitCells[3] = { 1,1,1 };
+		float CrystalSize[3] = { 0,0,0 };
 	};
 
-	struct SimulationOutput
+	struct SimulationOutput 
 	{
+		//must not contain pointers
 		std::vector<Settings::HitEvent> HitEvents;
 		std::vector<std::vector<float>> Intensities;
 
@@ -58,7 +64,12 @@ public:
 	};
 
 	void Simulate(Crystal EmitterCrystal,Detector &Det, SimulationSettings SimSettings, SimulationOutput & Output, Settings & Options); //Detector needs a PixleMap
+	void ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSettings SimSettings, SimulationOutput & Output, Settings & Options);
 
-	void SaveSimulationOutput(SimulationOutput &Output, std::string HDF5_Path, std::string XML_Path);
+	void SaveSimulationOutput(SimulationOutput &Output, std::string HDF5_Path, std::string XML_Path, SimulationSettings SimSettings);
+
+private: 
+	static void SimulatePart(Crystal  EmitterCrystal, Detector & Det, SimulationSettings  SimSettings, SimulationOutput & Output, Settings & Options, int ThreadNum);
+	void PrintSimInfos(const SimulationSettings & SimSettings);
 };
 

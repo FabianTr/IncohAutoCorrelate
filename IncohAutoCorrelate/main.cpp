@@ -262,36 +262,38 @@ void CombineStuff(std::string Fr_AC_UW, std::string Fr_CQ, std::string Fw_AC, in
 
 void Simulate(Settings & Options, std::string PixelMap_Path)
 {
-	//Custom Settings
-	//Crystal Size (in Unitcells) 
-	unsigned int CrystalSize[3];
-	CrystalSize[0] = 70;
-	CrystalSize[1] = 70;
-	CrystalSize[2] = 70;
-	//
+
 	Simulator::SimulationSettings SimSettings;
+
+	SimSettings.UnitCells[0] = 25;
+	SimSettings.UnitCells[1] = 25;
+	SimSettings.UnitCells[2] = 25;
 
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 5;
+	SimSettings.NumberOfSimulations = 1000; // 30
 
 	SimSettings.Modes = 2;
-	SimSettings.AveragePhotonesPerEmitterOnDetector = 1000.0f;
+	SimSettings.AveragePhotonesPerEmitterOnDetector = 1000.0f * 0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
 	SimSettings.PoissonSample = true;
-	SimSettings.SubSampling = 0;
+	SimSettings.SubSampling = 3; // 3 => (2*3+1)^2 = 49
 
-	//SimSettings.Wavelength
+	SimSettings.Wavelength = 1.94; //1.94A = 194pm 
 
-	SimSettings.Value_per_Photon = 1.0;
+	SimSettings.Value_per_Photon = 6.4;
 
-	SimSettings.CrystSettings.FlYield = 0.1f;
+	SimSettings.CrystSettings.FlYield = 1.0f; //0.1
 	SimSettings.CrystSettings.Incoherent = true;
 	SimSettings.CrystSettings.Isotropie = 1.0f;
 	SimSettings.CrystSettings.RandOrientation = true;
 
-	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/IntensityStack_TEST.h5";
-	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/IntensityStack_TEST.xml";
+	SimSettings.SaveResults = true;
+
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_1kStack_1.h5";
+	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_1kStack_1.xml";
+	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.h5";
+	//SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.xml";
 	SimSettings.Dataset = "data";
 
 
@@ -303,15 +305,18 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			LatticeVector[i][j] = Options.MReference(i, j); 
+			LatticeVector[i][j] = Options.MReference(i, j)*10;//nm -> A 
+
+			std::cout << LatticeVector[i][j] << "    ";
 			//LatticeVector[i][j] = Options.MReference(i, j) / 1000.0; //convert nanometer to microns (same unit as Pixel-map)
 		}
+		std::cout << "\n";
 	}
 	std::vector<std::array<double, 3>> UnitCell; //Hardcode unitcell for Hb (1gzx)
 	std::array<double, 3> t_pos;
 	t_pos = { 15.817 , 16.279 , 14.682  }; 
 	UnitCell.push_back(t_pos);
-	t_pos = { -10.262 / 10000.0, -4.051 , -0.010  };
+	t_pos = { -10.262, -4.051 , -0.010  };
 	UnitCell.push_back(t_pos);
 	t_pos = { 6.437 , -16.819 , 12.649  }; 
 	UnitCell.push_back(t_pos);
@@ -327,8 +332,11 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	//t_pos = { 2.097 / 10000.0, 11.532 / 10000.0, 34.460 / 10000.0 }; //convert anström to microns
 	//UnitCell.push_back(t_pos);
 
+	SimSettings.CrystalSize[0] = SimSettings.UnitCells[0] * sqrt(LatticeVector[0][0] * LatticeVector[0][0] + LatticeVector[1][0] * LatticeVector[1][0] + LatticeVector[2][0] * LatticeVector[2][0]);
+	SimSettings.CrystalSize[1] = SimSettings.UnitCells[1] * sqrt(LatticeVector[0][1] * LatticeVector[0][1] + LatticeVector[1][1] * LatticeVector[1][1] + LatticeVector[2][1] * LatticeVector[2][1]);
+	SimSettings.CrystalSize[2] = SimSettings.UnitCells[2] * sqrt(LatticeVector[0][2] * LatticeVector[0][2] + LatticeVector[1][2] * LatticeVector[1][2] + LatticeVector[2][2] * LatticeVector[2][2]);
 
-	Crystal Cryst(LatticeVector, CrystalSize, UnitCell);
+	Crystal Cryst(LatticeVector, SimSettings.UnitCells, UnitCell);
 
 	Detector Sim_Det;
 
@@ -338,8 +346,9 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	Simulator Sim;
 	Simulator::SimulationOutput Sim_Output;
 
-	Sim.Simulate(Cryst, Sim_Det, SimSettings, Sim_Output, Options);
+	//Sim.Simulate(Cryst, Sim_Det, SimSettings, Sim_Output, Options);
 
+	Sim.ParSimulate(Cryst, Sim_Det, SimSettings, Sim_Output, Options);
 
 }
 
@@ -367,7 +376,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 7;
+	int RunMode = 10;
 
 	int N_autorun = 1;
 	if (Panelwise)
@@ -751,24 +760,25 @@ int main()
 
 				//SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
 
+				std::string Praefix = "Block3_Thr48";
 
 				if (Panelwise)
 				{//auto adapt Panel
 					//std::string MaskPath = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg";
 					SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
 
-					SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_avINT.bin";
-					SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_CQ.bin";
-					SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_ACuw.bin";
-					SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan" + std::to_string(i_autorun) + "_AC.bin";
+					SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/" + Praefix + "_Pan" + std::to_string(i_autorun) + "_avINT.bin";
+					SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/" + Praefix + "_Pan" + std::to_string(i_autorun) + "_CQ.bin";
+					SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/" + Praefix + "_Pan" + std::to_string(i_autorun) + "_ACuw.bin";
+					SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/" + Praefix + "_Pan" + std::to_string(i_autorun) + "_AC.bin";
 				}//auto adapt Panel
 				if (!Panelwise)
 				{
 					SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
-					SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block3_avINT.bin";
-					SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block3_CQ.bin";
-					SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block3_ACuw.bin";
-					SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block1_Pan3_AC.bin";
+					SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/" + Praefix + "_avINT.bin";
+					SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/" + Praefix + "_CQ.bin";
+					SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/" + Praefix + "_ACuw.bin";
+					SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/" + Praefix + "_AC.bin";
 				}//auto adapt Panel
 
 
@@ -779,7 +789,8 @@ int main()
 				//SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Block3_Pan1_AC.bin";
 				SM_Settings.Output_Q_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Q_Jungfr120.bin";
 
-
+				SM_Settings.PhotonOffset = 4.8;//3.2
+				SM_Settings.PhotonStep = 6.4;//6.4
 
 
 				SM_Settings.ArraySize = 1200;
@@ -846,8 +857,8 @@ int main()
 			{
 				RunIAC::CreateSM_Settings SM_Settings;
 
-				bool Block_1 = true; // Adapt file names !!!
-				bool Block_2 = true;
+				bool Block_1 = false; // Adapt file names !!!
+				bool Block_2 = false;
 				bool Block_3 = true;
 
 
@@ -973,14 +984,16 @@ int main()
 				SM_Settings.PixelMap_DataSet = "geometry";
 				SM_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/ePix_mask1.bin";
 
-				SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/All_ePix_avINT.bin";
-				SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/All_ePix_CQ.bin";
-				SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/All_ePix_ACuw.bin";
-				SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/All_ePix_AC.bin";
-				SM_Settings.Output_Q_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/All_ePix_Q.bin";
+				std::string Praefix = "Block3_Thr75";
+
+				SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/"+ Praefix +"_ePix_avINT.bin";
+				SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/" + Praefix + "_ePix_CQ.bin";
+				SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/" + Praefix + "_ePix_ACuw.bin";
+				SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/" + Praefix + "_ePix_AC.bin";
+				SM_Settings.Output_Q_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/EPIX/" + Praefix + "_ePix_Q.bin";
 
 				//Epix ADU differ from Jungfrau!! (needs maybe refinement)
-				SM_Settings.PhotonOffset = 50;
+				SM_Settings.PhotonOffset = 75;//50
 				SM_Settings.PhotonStep = 100;
 				//
 
@@ -996,7 +1009,7 @@ int main()
 			}
 			break;
 
-		case 10: //Simmulate
+		case 10: //Simulate
 		{
 			std::cout << "\n******************************\nRun IncohAutoCorrelate in Simulation-mode\n******************************\n";
 			{
@@ -1004,6 +1017,16 @@ int main()
 				Simulate(Options, PixelMap_Path);
 			}
 		}
+
+
+		case 20: //Evaluate simulated data Block 1
+		{
+			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for simulated Jungfrau data\n******************************\n";
+
+			Options.Echo("Load Events from XML");
+			Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml");
+		}
+
 		break;
 		}//end switch
 
