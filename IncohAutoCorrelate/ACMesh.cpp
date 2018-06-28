@@ -9,7 +9,7 @@ ACMesh::ACMesh()
 	if (CQMesh == nullptr)
 		CQMesh = new double[1];
 	if (Mesh == nullptr)
-		Mesh = new unsigned int[1];
+		Mesh = new unsigned long[1];
 }
 
 
@@ -65,7 +65,7 @@ void ACMesh::CreateSmallMeshForDetector(Detector & Det, int PerpSize, float q_Zo
 
 
 	delete[] Mesh;
-	Mesh = new unsigned int[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
+	Mesh = new unsigned long[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 	Checklist.SmallMesh = true;
 }
 
@@ -102,7 +102,7 @@ void ACMesh::CreateBigMeshForDetector(Detector & Det, int EdgeSize, float q_Zoom
 
 
 	delete[] Mesh;
-	Mesh = new unsigned int[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
+	Mesh = new unsigned long[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 	Checklist.BigMesh = true;
 }
 

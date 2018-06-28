@@ -65,6 +65,7 @@ public:
 	void SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList);
 	void SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList, bool AdditionalInformations, std::unordered_map<std::string, std::string> AdditioInfoMap = std::unordered_map<std::string, std::string>{});
 	void LoadHitEventListFromFile(char* Filename);
+	void LoadHitEventListFromFile(std::string Filename);
 
 
 	// AC Settings
@@ -79,15 +80,22 @@ public:
 		float Step = 1; //steps for discretization
 	};
 	FloatIntConversion F_I_Conversion;
-	inline int FloatToInt(float f)
+	inline long FloatToInt(float f)
 	{
-		return (int)floorf(((f + F_I_Conversion.Offset) / F_I_Conversion.Step) + 0.5f);
+		return (long)floorf(((f + F_I_Conversion.Offset) / F_I_Conversion.Step) + 0.5f);
 	}
 	inline float IntToFloat(int i)
 	{
 		return ((float)i * F_I_Conversion.Step) - (float)(F_I_Conversion.Offset);
 	}
-
+	inline float IntToFloat(long i)
+	{
+		return ((float)i * F_I_Conversion.Step) - (float)(F_I_Conversion.Offset);
+	}
+	inline float IntToFloat(unsigned long i)
+	{
+		return ((float)i * F_I_Conversion.Step) - (float)(F_I_Conversion.Offset);
+	}
 
 	struct SettingsChecklist {
 		bool OpenCL = false;

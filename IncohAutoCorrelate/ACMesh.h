@@ -14,7 +14,7 @@ public:
 	~ACMesh();
 
 	double* CQMesh = nullptr;
-	unsigned int* Mesh = nullptr; // "virt" 3DArray [a,b,z] dimensions are not the same as Detector Geometry dimensions 
+	unsigned long* Mesh = nullptr; // "virt" 3DArray [a,b,z] dimensions are not the same as Detector Geometry dimensions 
 
 
 	struct MeshShape { 

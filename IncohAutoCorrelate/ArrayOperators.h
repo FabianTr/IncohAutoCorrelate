@@ -100,7 +100,7 @@ namespace ArrayOperators
 	inline void ParMultiplyElementwise(float* Array, float* Factor, unsigned int Size)
 	{
 		#pragma omp parallel for
-		for (int i = 0; i < Size; i++)
+		for (unsigned int i = 0; i < Size; i++)
 		{
 			Array[i] = Array[i] * Factor[i];
 		}
@@ -108,7 +108,7 @@ namespace ArrayOperators
 	inline void ParMultiplyElementwise(float* Array, int* Factor, unsigned int Size)
 	{
 		#pragma omp parallel for
-		for (int i = 0; i < Size; i++)
+		for (unsigned int i = 0; i < Size; i++)
 		{
 			Array[i] = Array[i] * (float)Factor[i];
 		}
@@ -116,24 +116,24 @@ namespace ArrayOperators
 
 	inline void MultiplyElementwise(float* Array, float* Factor, unsigned int Size)
 	{
-		for (int i = 0; i < Size; i++)
+		for (unsigned int i = 0; i < Size; i++)
 		{
 			Array[i] = Array[i] * Factor[i];
 		}
 	}
 	inline void MultiplyElementwise(float* Array, int* Factor, unsigned int Size)
 	{
-		for (int i = 0; i < Size; i++)
+		for (unsigned int i = 0; i < Size; i++)
 		{
 			Array[i] = Array[i] * (float)Factor[i];
 		}
 	}
 
-	inline void DiscretizeToPhotons(float* Array, float Threshold, float PhotonSamplingStep, int Size)
+	inline void DiscretizeToPhotons(float* Array, float Threshold, float PhotonSamplingStep, unsigned int Size)
 	{
 		//Simple Threshold Method
 		#pragma omp parallel for
-		for (int i = 0; i < Size; i++)
+		for (unsigned int i = 0; i < Size; i++)
 		{
 			float t = ceilf((Array[i] - Threshold) / PhotonSamplingStep)*(Array[i] >= Threshold);
 			

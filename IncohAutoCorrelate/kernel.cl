@@ -144,8 +144,7 @@ inline void atomic_add_float(__global double *source, const double value) {
 //}
 
 
-
-
+//Autocorrelation for C(q)
 __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 	__global const float *KMap,
 	__global const double *Params,
@@ -271,9 +270,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 }
 
 
-
-
-
+//Merge small C(q) to one big Mesh (Merge and Weight)
 __kernel void Merge_CQ(__global const double *smallMesh,
 	__global const float *RW,
 	__global const double *Params,
@@ -391,11 +388,94 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 }
 
 
+//Autocorrelates sparse Hit List (analog to CPU implementation)
+__kernel void Autocor_sparseHL(__global const float *SparseHitList,
+	__global const double *Params,
+	__global const float *RotMatrix,
+	__global unsigned long *AC)
+{
+	unsigned int ind = get_global_id(0);
+
+	unsigned int ListSize = (unsigned int)Params[0]; //Entrys in sparse HitList
+	float dqdV = (float)Params[1]; // dq/dV
+
+	unsigned int MeshSize = (unsigned int)Params[2]; //Only cube Meshes allowed here
+	unsigned int MeshCenter = (MeshSize - 1) / 2;
+
+	float MaxQ = (float)Params[4];
+	int DoubleMapping = (int)Params[5]; //if 1, maps two times (before and after rotation)
+	double Multiplicator = Params[6]; //for conversion float -> int
+
+
+	//obtain k-vector and value given by kernel index
+	float k1[3];
+	k1[0] = SparseHitList[4 * ind + 0];
+	k1[1] = SparseHitList[4 * ind + 1];
+	k1[2] = SparseHitList[4 * ind + 2];
+	float f_Val = SparseHitList[4 * ind + 3];
+
+	for (unsigned int i = 0; i < ListSize; i++)
+	{
+		if (i == ind) // ignore q = 0
+		{
+			continue;
+		}
+
+		float q[3];
+		q[0] = k1[0] - SparseHitList[4 * i + 0];
+		q[1] = k1[1] - SparseHitList[4 * i + 1];
+		q[2] = k1[2] - SparseHitList[4 * i + 2];
+
+		if (sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2]) > MaxQ) //check if q is in range
+		{
+			continue;
+		}
+
+		float t_Val = f_Val * SparseHitList[4 * i + 3];
+		unsigned long Val = (unsigned long)(t_Val * Multiplicator);
+
+		//convert q to units of voxel
+		q[0] = q[0] / dqdV;
+		q[1] = q[1] / dqdV;
+		q[2] = q[2] / dqdV;
+
+		if(DoubleMapping == 1)
+		{ 
+			//map to mesh
+			int fs_l, ms_l, ss_l;
+			fs_l = (int)(floor(q[0] + 0.5) + MeshCenter);
+			ms_l = (int)(floor(q[1] + 0.5) + MeshCenter);
+			ss_l = (int)(floor(q[2] + 0.5) + MeshCenter);
+			//convert back to q
+			q[0] = (float)(fs_l - MeshCenter);
+			q[1] = (float)(ms_l - MeshCenter);
+			q[2] = (float)(ss_l - MeshCenter);
+		}
+
+		//Rotation
+		float t_q[3];
+		t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+		t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+		t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+
+		q[0] = t_q[0];
+		q[1] = t_q[1];
+		q[2] = t_q[2];
+
+		//map to mesh
+		int fs, ms, ss;
+		fs = (int)(floor(q[0] + 0.5) + MeshCenter);
+		ms = (int)(floor(q[1] + 0.5) + MeshCenter);
+		ss = (int)(floor(q[2] + 0.5) + MeshCenter);
+
+		atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+
+	}
+}
 
 
 
-
-
+//create C(q) for angular averaged stuff (1D)
 __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 	__global const float *KMap,
 	__global const double *Params,
@@ -512,7 +592,7 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 }
 
 
-
+//Simulation (Emitterlist -> Intensity pattern)
 __kernel void SimulateCrystal(__global const float *PixelMap,
 	__global const float *EmitterList,
 	__global const double *Params,

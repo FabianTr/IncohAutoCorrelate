@@ -789,7 +789,7 @@ void Detector::InitializeDetector(H5std_string PixelMap_Path, H5std_string Pixel
 	CreateSparseHitList(Pixel_Threshold);
 }
 
-void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping)
+void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping, Settings & Options)
 {
 	if (!Checklist.SparseHitList)
 	{
@@ -803,27 +803,129 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		std::cerr << "   ->: Detector::AutoCorrelateSparseList()\n ";
 		throw;
 	}
-	//Implementation for CPU
-	#pragma omp parallel for
-	for (unsigned int i = 0; i < SparseHitList.size(); i++)
-	{
-		for (unsigned int j = i; j < SparseHitList.size(); j++)
+	
+	float SHLsizeQuot = ((float)SparseHitList.size()) / ((float)(DetectorSize[0] * DetectorSize[1]));
+	if(SHLsizeQuot < 0.0075f) // (switch for SparseHitList.size / DetSize > p(0.0075))
+	{ //Implementation for CPU
+		#pragma omp parallel for
+		for (unsigned int i = 0; i < SparseHitList.size(); i++)
 		{
-			if (j == i)
-				continue;
-			float q[3];
-			//float RM[9] = { 1,0,0,0,1,0,0,0,1 };//TODO IMPLEMENT ROTATION MATRIX -> THIS IS A DUMMY
+			for (unsigned int j = i; j < SparseHitList.size(); j++)
+			{
+				if (j == i)
+					continue;
+				float q[3];
+				//float RM[9] = { 1,0,0,0,1,0,0,0,1 };//TODO IMPLEMENT ROTATION MATRIX -> THIS IS A DUMMY
 
-			q[0] = SparseHitList[i][0] - SparseHitList[j][0];
-			q[1] = SparseHitList[i][1] - SparseHitList[j][1];
-			q[2] = SparseHitList[i][2] - SparseHitList[j][2];
-			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
-			//std::cout << SparseHitList[i][3] * SparseHitList[j][3] << ", ";
-			q[0] = SparseHitList[j][0] - SparseHitList[i][0];
-			q[1] = SparseHitList[j][1] - SparseHitList[i][1];
-			q[2] = SparseHitList[j][2] - SparseHitList[i][2];
-			BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
+				q[0] = SparseHitList[i][0] - SparseHitList[j][0];
+				q[1] = SparseHitList[i][1] - SparseHitList[j][1];
+				q[2] = SparseHitList[i][2] - SparseHitList[j][2];
+				BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
+				//std::cout << SparseHitList[i][3] * SparseHitList[j][3] << ", ";
+				q[0] = SparseHitList[j][0] - SparseHitList[i][0];
+				q[1] = SparseHitList[j][1] - SparseHitList[i][1];
+				q[2] = SparseHitList[j][2] - SparseHitList[i][2];
+				BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
+			}
 		}
+	}
+	else
+	{ //Implementation for GPU 
+		//calculate Multiplicator
+		double Multiplicator = 1000; //1 is sufficient for photon discretised values (only integer possible)
+
+		//set Parameter
+		double Params[8];
+		Params[0] = SparseHitList.size();
+
+		Params[1] = BigMesh.Shape.dq_per_Voxel; //dq per Voxel
+		Params[2] = BigMesh.Shape.Size_AB; // Size perp
+		Params[3] = BigMesh.Shape.Size_C; // Size C
+
+		Params[4] = BigMesh.Shape.Max_Q;
+		
+		Params[5] = (double)DoubleMapping;
+
+		Params[6] = Multiplicator; //Multiplicator for conversion to long
+		Params[4] = Flags.InterpolationMode; //Not implementet, only nearest neighbours
+								   //reserve OpenCL Device
+		int OpenCLDeviceNumber = -1;
+		cl_int err;
+
+		while ((OpenCLDeviceNumber = Options.OCL_ReserveDevice()) == -1)
+		{
+			std::this_thread::sleep_for(std::chrono::microseconds(Options.ThreadSleepForOCLDev));
+		}
+
+		//obtain Device
+		cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
+
+
+		//Setup Queue
+		cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
+		Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelateSparseList() ");
+		cl::Event cl_event;
+		
+		//profiler stuff
+		ProfileTime Profiler;
+
+
+		//Buffers
+		//Output
+		uint64_t * TempBigMesh;
+		TempBigMesh = new uint64_t[BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB *BigMesh.Shape.Size_C]();
+
+		size_t ACsize = sizeof(uint64_t) * (BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB);
+		cl::Buffer CL_AC(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempBigMesh, &err);
+
+		//Input:
+		size_t SparseListSize = sizeof(float) * 4 * SparseHitList.size();
+		cl::Buffer CL_SparseList(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, SparseListSize, SparseHitList.data(), &err);
+		cl::Buffer CL_RotM(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*9, DetectorEvent->RotMatrix, &err);
+		cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
+
+		//Setup Kernel
+		cl::Kernel kernel(Options.CL_Program, "Autocor_sparseHL", &err);
+		Options.checkErr(err, "Setup AutoCorr_CQ in Detector::AutoCorrelateSparseList() ");
+
+		//Set Arguments
+		kernel.setArg(0, CL_SparseList);
+		kernel.setArg(1, CL_Params);
+		kernel.setArg(2, CL_RotM);
+		kernel.setArg(3, CL_AC);
+		const size_t &global_size = SparseHitList.size();
+
+		//launch Kernel
+
+
+
+		Profiler.Tic();
+
+		err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
+
+		Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelateSparseList() ");
+		cl_event.wait();
+		Options.Echo("C(q)-Merge kernel finished in");
+		Profiler.Toc(true);
+
+		err = queue.enqueueReadBuffer(CL_SparseList, CL_TRUE, 0, ACsize, TempBigMesh);
+		Options.checkErr(err, "OpenCL kernel, launched in Detector::AutoCorrelateSparseList() ");
+
+		//Free Device
+		Options.OCL_FreeDevice(OpenCLDeviceNumber);
+
+		//add to Bigmesh
+		#pragma omp parallel for
+		for (unsigned int i = 0; i < BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB; i++)
+		{
+			float t_val = (float)TempBigMesh[i] / (float)Multiplicator;
+			unsigned long val;
+			val = (unsigned long)Options.FloatToInt(t_val);
+			BigMesh.Mesh[i] += val;
+		}
+
+
+		Profiler.Toc(true);
 	}
 
 

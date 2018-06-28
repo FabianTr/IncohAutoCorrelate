@@ -111,5 +111,8 @@ namespace RunIAC
 	//Helpers
 	unsigned int GetH5StackSize(std::string Filename, std::string Dataset);
 
+	//Statistics
+	void Print_Statistics_SM(CreateSM_Settings SM_Settings, Settings & PrgSettings);
+
 	
 }
