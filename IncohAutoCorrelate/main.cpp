@@ -265,17 +265,17 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	Simulator::SimulationSettings SimSettings;
 
-	SimSettings.UnitCells[0] = 25;
-	SimSettings.UnitCells[1] = 25;
-	SimSettings.UnitCells[2] = 25;
+	SimSettings.UnitCells[0] = 20;
+	SimSettings.UnitCells[1] = 20;
+	SimSettings.UnitCells[2] = 20;
 
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 1000; // 30
+	SimSettings.NumberOfSimulations = 500; // 30
 
 	SimSettings.Modes = 2;
-	SimSettings.AveragePhotonesPerEmitterOnDetector = 1000.0f * 0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
+	SimSettings.AveragePhotonesPerEmitterOnDetector = 10000.0f * 0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
 	SimSettings.PoissonSample = true;
 	SimSettings.SubSampling = 3; // 3 => (2*3+1)^2 = 49
 
@@ -286,12 +286,12 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	SimSettings.CrystSettings.FlYield = 1.0f; //0.1
 	SimSettings.CrystSettings.Incoherent = true;
 	SimSettings.CrystSettings.Isotropie = 1.0f;
-	SimSettings.CrystSettings.RandOrientation = true;
+	SimSettings.CrystSettings.RandOrientation = false;
 
 	SimSettings.SaveResults = true;
 
-	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_1kStack_1.h5";
-	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_1kStack_1.xml";
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim20_Fixed_TEST_3.h5";
+	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim20_Fixed_TEST_3.xml";
 	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.h5";
 	//SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.xml";
 	SimSettings.Dataset = "data";
@@ -376,7 +376,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 20;
+	int RunMode = 10;
 
 	int N_autorun = 1;
 	if (Panelwise)

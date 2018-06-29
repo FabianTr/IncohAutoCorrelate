@@ -70,6 +70,7 @@
     <ClCompile Include="Crystal.cpp" />
     <ClCompile Include="Detector.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PPP.cpp" />
     <ClCompile Include="ProfileTime.cpp" />
     <ClCompile Include="RunIAC.cpp" />
     <ClCompile Include="Settings.cpp" />
@@ -84,6 +85,7 @@
     <ClInclude Include="Crystal.h" />
     <ClInclude Include="Detector.h" />
     <ClInclude Include="Forward.h" />
+    <ClInclude Include="PPP.h" />
     <ClInclude Include="ProfileTime.h" />
     <ClInclude Include="RunIAC.h" />
     <ClInclude Include="Settings.h" />

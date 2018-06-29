@@ -523,7 +523,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
 
 
-			if (PixelMask)
+			if (Checklist.PixelMask)
 			{
 				//TODO IMPLEMENT Checklist for PixelMask and a LoadPixelmask() method
 				ArrayOperators::ParMultiplyElementwise(tmpIntensity, PixelMask, DetectorSize[0]* DetectorSize[1]);
@@ -540,16 +540,16 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 			else// Photon discretising
 			{
 				#pragma omp parallel for
-				for (unsigned int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
+				for (unsigned int j = 0; j < DetectorSize[1] * DetectorSize[0]; j++)
 				{
-					if (tmpIntensity[i] >= Threshold)
+					if (tmpIntensity[j] >= Threshold)
 					{
-						tmpIntensity[i] = DiscretizeToPhotones(tmpIntensity[i], Threshold, PhotonSamplingStep);
-						IntensityPhotonDiscr[i] += (int)tmpIntensity[i];
+						tmpIntensity[j] = DiscretizeToPhotones(tmpIntensity[j], Threshold, PhotonSamplingStep);
+						IntensityPhotonDiscr[j] += (int)tmpIntensity[j];
 					}
 					else
 					{ 
-						tmpIntensity[i] = 0;
+						tmpIntensity[j] = 0;
 					}
 				}
 
@@ -557,6 +557,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 				Events[i].PhotonCount = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]);
 				Events[i].MeanIntensity = (float)Events[i].PhotonCount / ((float) (DetectorSize[1] * DetectorSize[0]));
 
+				//std::cout << i << ": Mean = " << Events[i].MeanIntensity << " ^= " << Events[i].PhotonCount << " photons\n";
 			}
 		}
 		delete[] tmpIntensity;
@@ -832,6 +833,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 	else
 	{ //Implementation for GPU 
 		//calculate Multiplicator
+		//std::cout << "GPU Mode\n";
 		double Multiplicator = 1000; //1 is sufficient for photon discretised values (only integer possible)
 
 		//set Parameter
@@ -847,7 +849,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		Params[5] = (double)DoubleMapping;
 
 		Params[6] = Multiplicator; //Multiplicator for conversion to long
-		Params[4] = Flags.InterpolationMode; //Not implementet, only nearest neighbours
+		Params[7] = Flags.InterpolationMode; //Not implementet, only nearest neighbours
 								   //reserve OpenCL Device
 		int OpenCLDeviceNumber = -1;
 		cl_int err;
@@ -860,7 +862,6 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		//obtain Device
 		cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
 
-
 		//Setup Queue
 		cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 		Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelateSparseList() ");
@@ -869,19 +870,28 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		//profiler stuff
 		ProfileTime Profiler;
 
-
 		//Buffers
 		//Output
-		uint64_t * TempBigMesh;
-		TempBigMesh = new uint64_t[BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB *BigMesh.Shape.Size_C]();
+		int64_t * TempBigMesh;
+		TempBigMesh = new int64_t[BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB]();
 
-		size_t ACsize = sizeof(uint64_t) * (BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB);
+		size_t ACsize = sizeof(int64_t) * (BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB);
 		cl::Buffer CL_AC(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempBigMesh, &err);
 
 		//Input:
 		size_t SparseListSize = sizeof(float) * 4 * SparseHitList.size();
-		cl::Buffer CL_SparseList(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, SparseListSize, SparseHitList.data(), &err);
-		cl::Buffer CL_RotM(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*9, DetectorEvent->RotMatrix, &err);
+		//for (int i = 1000; i < 1500; i++)
+		//{
+		//	std::cout << ((float*)SparseHitList.data())[i] << "\n";
+		//}
+		cl::Buffer CL_SparseList(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, SparseListSize, (void*)SparseHitList.data(), &err);
+		
+		float RM[9];
+		for (int i = 0; i < 9; i++)
+			RM[i] = DetectorEvent->RotMatrix[i];
+		
+		
+		cl::Buffer CL_RotM(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(RM), &RM, &err);
 		cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
 
 		//Setup Kernel
@@ -896,19 +906,19 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		const size_t &global_size = SparseHitList.size();
 
 		//launch Kernel
-
+	
 
 
 		Profiler.Tic();
 
 		err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
 
-		Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelateSparseList() ");
+	//	Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelateSparseList() ");
 		cl_event.wait();
-		Options.Echo("C(q)-Merge kernel finished in");
+
 		Profiler.Toc(true);
 
-		err = queue.enqueueReadBuffer(CL_SparseList, CL_TRUE, 0, ACsize, TempBigMesh);
+		err = queue.enqueueReadBuffer(CL_AC, CL_TRUE, 0, ACsize, TempBigMesh);
 		Options.checkErr(err, "OpenCL kernel, launched in Detector::AutoCorrelateSparseList() ");
 
 		//Free Device
@@ -925,7 +935,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		}
 
 
-		Profiler.Toc(true);
+	//	Profiler.Toc(true);
 	}
 
 

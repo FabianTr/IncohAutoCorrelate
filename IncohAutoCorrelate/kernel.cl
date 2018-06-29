@@ -392,20 +392,32 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	__global const double *Params,
 	__global const float *RotMatrix,
-	__global unsigned long *AC)
+	__global long *AC)
 {
 	unsigned int ind = get_global_id(0);
+
 
 	unsigned int ListSize = (unsigned int)Params[0]; //Entrys in sparse HitList
 	float dqdV = (float)Params[1]; // dq/dV
 
-	unsigned int MeshSize = (unsigned int)Params[2]; //Only cube Meshes allowed here
-	unsigned int MeshCenter = (MeshSize - 1) / 2;
+	int MeshSize = (unsigned int)Params[2]; //Only cube Meshes allowed here
+	int MeshCenter = (MeshSize - 1) / 2;
 
 	float MaxQ = (float)Params[4];
 	int DoubleMapping = (int)Params[5]; //if 1, maps two times (before and after rotation)
 	double Multiplicator = Params[6]; //for conversion float -> int
 
+	//printf("MeshSize: %d;    MeshCenter: %d\n", MeshSize, MeshCenter);
+
+
+	//if (ind == 0)//ind == 0
+	//{
+	//	printf("Kernel is alive\n");
+	//	for (int i = 0; i < 7; i++)
+	//	{
+	//		printf("Params[%d] = %f\n",i,Params[i]);
+	//	}
+	//}
 
 	//obtain k-vector and value given by kernel index
 	float k1[3];
@@ -413,6 +425,10 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	k1[1] = SparseHitList[4 * ind + 1];
 	k1[2] = SparseHitList[4 * ind + 2];
 	float f_Val = SparseHitList[4 * ind + 3];
+
+	//printf("ind: %d; k = [%f, %f, %f]; Val = %f\n",ind, k1[0], k1[1], k1[2],f_Val);
+
+	//printf("RotMat: {{%f, %f, %f},{%f, %f, %f},{%f, %f, %f}}\n", RotMatrix[0], RotMatrix[1], RotMatrix[2], RotMatrix[3], RotMatrix[4], RotMatrix[5], RotMatrix[6], RotMatrix[7], RotMatrix[8]);
 
 	for (unsigned int i = 0; i < ListSize; i++)
 	{
@@ -426,18 +442,21 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 		q[1] = k1[1] - SparseHitList[4 * i + 1];
 		q[2] = k1[2] - SparseHitList[4 * i + 2];
 
+
 		if (sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2]) > MaxQ) //check if q is in range
 		{
 			continue;
 		}
 
 		float t_Val = f_Val * SparseHitList[4 * i + 3];
-		unsigned long Val = (unsigned long)(t_Val * Multiplicator);
+		long Val = (long)(t_Val * Multiplicator);
+
 
 		//convert q to units of voxel
 		q[0] = q[0] / dqdV;
 		q[1] = q[1] / dqdV;
 		q[2] = q[2] / dqdV;
+		
 
 		if(DoubleMapping == 1)
 		{ 
@@ -446,17 +465,20 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 			fs_l = (int)(floor(q[0] + 0.5) + MeshCenter);
 			ms_l = (int)(floor(q[1] + 0.5) + MeshCenter);
 			ss_l = (int)(floor(q[2] + 0.5) + MeshCenter);
+			//printf("t_scan = [%d, %d, %d]\n", fs_l, ms_l, ss_l);
 			//convert back to q
 			q[0] = (float)(fs_l - MeshCenter);
 			q[1] = (float)(ms_l - MeshCenter);
 			q[2] = (float)(ss_l - MeshCenter);
 		}
+		//printf("q = [%f, %f, %f]\n", q[0], q[1], q[2]);
 
 		//Rotation
 		float t_q[3];
 		t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
 		t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
 		t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+
 
 		q[0] = t_q[0];
 		q[1] = t_q[1];
@@ -468,7 +490,9 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 		ms = (int)(floor(q[1] + 0.5) + MeshCenter);
 		ss = (int)(floor(q[2] + 0.5) + MeshCenter);
 
+
 		atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+
 
 	}
 }
