@@ -43,9 +43,6 @@ Detector::Detector(const Detector &RefDet, bool DeepCopy):Detector(RefDet)
 		//std::copy(RefDet.PixelMap, RefDet.PixelMap + DetectorSize[0] * DetectorSize[1] * 3, PixelMap);
 	}
 
-
-		
-
 	kMap = new float[DetectorSize[0] * DetectorSize[1] * 3];
 	if (RefDet.Checklist.KMap)
 	{
@@ -152,7 +149,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 
 	if (DS.getSimpleExtentNdims() != 3) //check if shape is [nE][nx][ny] or [ny][nx][nE]  nE =^ Number of Slices(Events)
 	{
-		std::cerr << "ERROR: Intensity data dimension is not 3 => shape is not (N, nx, ny)\n";
+		std::cerr << "ERROR: Intensity data dimension is not 3, but "<< DS.getSimpleExtentNdims()<< " => shape is not (N, nx, ny)\n";
 		throw;
 	}
 	hsize_t dims[3];
@@ -473,6 +470,11 @@ void Detector::LoadPixelMask(std::string Path)
 	}
 
 	Checklist.PixelMask = true;
+}
+
+void Detector::ApplyPixelMask()
+{
+	ArrayOperators::ParMultiplyElementwise(Intensity, PixelMask, DetectorSize[0] * DetectorSize[1]);
 }
 
 void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, int LowerBound, int UpperBound)

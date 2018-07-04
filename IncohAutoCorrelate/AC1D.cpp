@@ -79,6 +79,10 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	}
 	Multiplicator = Multiplicator * 100000;
 
+	if (Multiplicator > 1e18)
+		Multiplicator = 1e18;
+
+
 	unsigned int MapAndReduce_Factor = 10000; //Take care of Device Memory !!!!!!!!!
 	unsigned int TempArraySize = MapAndReduce_Factor * Shape.Size;
 
@@ -179,7 +183,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	//g_echo_mutex.unlock();
 
 	Detector Det(RefDet, true);
-
+	delete[] Det.Intensity;
 	if (JungfrauDet)
 	{
 		Det.Intensity = new float[1];
@@ -192,13 +196,15 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	for (unsigned int i = LowerBound; i < UpperBound; i++)
 	{
 		//
-		if ((i- LowerBound) % 100 == 0 && i > LowerBound)
+		if (Options.echo)
 		{
-			g_echo_mutex.lock();
-			std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " : " << i- LowerBound << "/" << (UpperBound - LowerBound) << std::endl;
-			g_echo_mutex.unlock();
+			if ((i - LowerBound) % 100 == 0 && i > LowerBound)
+			{
+				g_echo_mutex.lock();
+				std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " : " << i - LowerBound << "/" << (UpperBound - LowerBound) << std::endl;
+				g_echo_mutex.unlock();
+			}
 		}
-
 
 		//Load Intensity
 		g_loadFile_mutex.lock();
@@ -208,6 +214,8 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 		}
 		else
 		{
+			delete[] Det.Intensity;
+			Det.Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
 			Det.LoadIntensityData_EPIX(Det.Intensity, Options.HitEvents[i].Filename, Options.HitEvents[i].Dataset, Options.HitEvents[i].Event);
 		}
 		g_loadFile_mutex.unlock();
@@ -266,17 +274,23 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	//Free in thread distributed Det memory:
 	//delete[] Det.Intensity;
 
-
-	g_echo_mutex.lock();
-	std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " Finished." << std::endl;
-	g_echo_mutex.unlock();
-	
+	if (Options.echo)
+	{
+		g_echo_mutex.lock();
+		std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " Finished." << std::endl;
+		g_echo_mutex.unlock();
+	}
 
 }
 
 void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation, bool JungfrauDet)
 {
-	const int Threads = 200; //(200) set higher than expectred threads because of waitingtimes for read from file
+	int Threads = 200; //(200) set higher than expectred threads because of waitingtimes for read from file
+	if (Options.HitEvents.size() < 200)
+	{
+		Threads = (int)Options.HitEvents.size();
+	}
+	
 
 	if (Options.HitEvents.size() <= 0)
 	{

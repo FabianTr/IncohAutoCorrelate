@@ -104,6 +104,8 @@ namespace RunIAC
 
 	void Run_AC_SM_Full(AC1D & Output, CreateSM_Settings SM_Settings, Settings& PrgSettings);
 
+	void Run_AC_SM_fractionalCQ(AC1D & AC, CreateSM_Settings SM_Settings, Settings & PrgSettings, unsigned int FractionSize, bool PPPdata);
+
 	//General
 	void Load_and_average_Intensities(Settings &Options, Detector &Det, float PhotonThreshold, float PhotonStep, std::string XML_Filename, std::string AvInt_Filename);
 

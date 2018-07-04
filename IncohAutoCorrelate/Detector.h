@@ -59,6 +59,7 @@ public:
 	void LoadPixelMap(H5std_string Path, H5std_string DataSet);
 
 	void LoadPixelMask(std::string Path);
+	void ApplyPixelMask();
 	
 	void LoadIntensityData(Settings::HitEvent* Event);
 	void LoadIntensityData();
