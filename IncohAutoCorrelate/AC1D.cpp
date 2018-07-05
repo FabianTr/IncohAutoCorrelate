@@ -86,7 +86,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	unsigned int MapAndReduce_Factor = 10000; //Take care of Device Memory !!!!!!!!!
 	unsigned int TempArraySize = MapAndReduce_Factor * Shape.Size;
 
-	double Params[7];
+	double Params[8];
 	Params[0] = (double)(Det.DetectorSize[0] * Det.DetectorSize[1]);
 	Params[1] = (double)Shape.dq_per_Step;
 	Params[2] = (double)Shape.Size;
@@ -94,19 +94,23 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	Params[4] = (double)Shape.Max_Q;
 	Params[5] = (double)Multiplicator;
 	Params[6] = (double)MapAndReduce_Factor; //Map and reduce: sub sections
+	Params[7] = (double)Options.echo;
 
 
-	//DEBUG BULLSHIT
-	std::cout << "Parameter for 1D C(q):\n";
-	for (int i = 0; i < 7; i++)
-	{
-		std::cout << Params[i] << "\n";
+	if (Options.echo)
+	{ //Print Parameter
+		std::cout << "Parameter for 1D C(q):\n";
+		for (int i = 0; i < 7; i++)
+		{
+			std::cout << Params[i] << "\n";
+		}
 	}
-	//END DEBUG BULLSHIT
+
 
 	uint64_t * TempArray = new uint64_t[TempArraySize]();
 
-	std::cout << "TempArraySize: " << TempArraySize << "\n";
+	if (Options.echo)
+		std::cout << "TempArraySize: " << TempArraySize << "\n";
 
 	//Setup Queue
 	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
@@ -138,7 +142,8 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	const size_t &global_size = Det.DetectorSize[0] * Det.DetectorSize[1];
 
 	//launch Kernel
-	Options.Echo("Launch kernel ... \n");
+	if (Options.echo)
+		Options.Echo("Launch kernel ... \n");
 	Profiler.Tic();
 	err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
 

@@ -567,10 +567,7 @@ namespace RunIAC
 		ArrayOperators::SafeArrayToFile(SM_Settings.Output_AC_Path, AC.AC, AC.Shape.Size, ArrayOperators::FileType::Binary);
 		std::cout << "Saved angular averaged AC as: " << SM_Settings.Output_AC_Path << "\n";
 
-
-		//clean up
-		delete[] AC.AC;
-	}//end
+	}
 
 
 

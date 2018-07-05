@@ -377,7 +377,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 501;
+	int RunMode = 20;
 
 	int N_autorun = 1;
 	if (Panelwise)
@@ -841,7 +841,7 @@ int main()
 					SM_Settings.Output_AV_Int_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Fractional LAP/TMPavINT.bin";
 					SM_Settings.Output_CQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Fractional LAP/TMPcq_CQ.bin";
 					SM_Settings.Output_ACUW_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Fractional LAP/TMPacuw_ACuw.bin";
-					SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Fractional LAP/" + Praefix + "_Frac"+std::to_string(FracSize)+"_AC.bin";
+					SM_Settings.Output_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/NanoStar/Fractional LAP/" + Praefix + "_Frac" + std::to_string(FracSize) + "_AC.bin";
 				}//auto adapt Panel
 
 
@@ -860,8 +860,8 @@ int main()
 
 				AC1D Results;
 
-				
-				RunIAC::Run_AC_SM_fractionalCQ(Results, SM_Settings, Options,FracSize, true);
+
+				RunIAC::Run_AC_SM_fractionalCQ(Results, SM_Settings, Options, FracSize, true);
 
 
 			}
@@ -1593,7 +1593,7 @@ int main()
 
 		}
 		break;
-		case 51: //Photon Hitfinding SM
+		case 51: //Photon Hitfinding SM Jungfr
 		{
 			Detector Det;
 			//needed only for DetClass to work propaly (ToDo: Check if it is really needed)
@@ -1780,6 +1780,186 @@ int main()
 		}
 		break;
 
+		case 52: //Photon Hitfinding SM ePix
+		{
+			Detector Det;
+			//needed only for DetClass to work propaly (ToDo: Check if it is really needed)
+			Det.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Epix_rough.h5", "geometry");
+			Det.LoadPixelMask("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/ePix_mask1.bin");
+
+
+			std::string XML_IN = "/gpfs/cfel/cxi/scratch/user/trostfab/HitEventList_SM_ePix_Block3.xml";
+			//std::string XML_IN = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml";
+			std::string XML_OUT = "/gpfs/cfel/cxi/scratch/user/trostfab/PPPData/HitEventList_SM_ePix_Block3_LAP.xml";
+			std::string H5_OUT = "/gpfs/cfel/cxi/scratch/user/trostfab/PPPData/IntensityData_SM_ePix_Block3_LAP.h5";
+			std::string H5_Dataset_OUT = "LAP";
+
+			std::vector<PPP::DetectorPanel> DetPanels;
+			//ePix Panel:
+			{
+				PPP::DetectorPanel DetPan;
+				//first Jungfrau Panel
+				DetPan.FirstInd = 0;
+				DetPan.Size = Det.DetectorSize[0] * Det.DetectorSize[1];
+				DetPan.Scans[0] = Det.DetectorSize[0];
+				DetPan.Scans[1] = Det.DetectorSize[1];
+
+				DetPanels.push_back(DetPan);
+			}
+
+			RunIAC::CreateSM_Settings SM_Settings;
+
+			bool Block1 = false;
+			bool Block2 = false;
+			bool Block3 = true;
+
+			if (Block1)//Block 1
+			{
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_139-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run139/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_140-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run140/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_141-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run141/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_142-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run142/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_143-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run143/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_146-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run146/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_147-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run147/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_159-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run159/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_160-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run160/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_161-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run161/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_162-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run162/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_163-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run163/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_164-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run164/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_165-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run165/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_166-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run166/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_167-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run167/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_168-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run168/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_169-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run169/Epix100a/calib/data");
+			}
+
+			if (Block2)//Block2
+			{
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_203-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run203/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_204-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run204/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_205-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run205/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_206-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run206/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_207-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run207/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_208-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run208/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_209-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run209/Epix100a/calib/data");
+			}
+
+			if (Block3)
+			{
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_253-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run253/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_255-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run255/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_256-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run256/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_257-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run257/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_258-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run258/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_263-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run263/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_264-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run264/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_265-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run265/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_266-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run266/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_267-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run267/Epix100a/calib/data");
+
+				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_268-xes.h5");
+				SM_Settings.H5Dataset.push_back("/mfxlr1716/run268/Epix100a/calib/data");
+			}
+
+			Settings Options;
+			//Create XML
+			//Get number of events 
+			std::cout << "Calculate full stack size (number of events).\n";
+			Options.HitEvents.clear();
+			Options.HitEvents.reserve(100000);
+			unsigned int StackSize = 0;
+			for (unsigned int i = 0; i < SM_Settings.Files.size(); i++)
+			{
+				unsigned int t_size = RunIAC::GetH5StackSize(SM_Settings.Files[i], SM_Settings.H5Dataset[i]);
+				StackSize += t_size;
+				for (unsigned int j = 0; j < t_size; j++)
+				{
+					Settings::HitEvent t_Event;
+					t_Event.Event = j;
+					t_Event.Filename = SM_Settings.Files[i];
+					t_Event.Dataset = SM_Settings.H5Dataset[i];
+					t_Event.SerialNumber = j;
+					Options.HitEvents.push_back(t_Event);
+				}
+			}
+			Options.SafeHitEventListToFile(XML_IN);
+
+
+
+			PPP::ProcessData_PF_LAP_SM(XML_IN, XML_OUT, H5_OUT, H5_Dataset_OUT, DetPanels, Det, Det.DetectorSize[0] * Det.DetectorSize[1], 100.0f, 0.5f, 0.9f, false);
+
+		}
+		break;
+
 		case 500: //Photon Hitfinding UnitTest
 		{
 			Detector Det;
@@ -1822,6 +2002,22 @@ int main()
 
 			//save Intensity after Photon finding
 			ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Tests/IntAfterPhotonFinding.bin", Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::Binary);
+
+
+		}
+		break;
+
+
+		case -1://Histogram Jungfr
+		{
+			std::cout << "\n******************************\nRun Statistics Histogram for Jungfrau\n******************************\n";
+			Detector RefDet;
+			RefDet.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5", "data/data");
+			RefDet.LoadPixelMask("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin");
+			Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml");
+
+			Statistics::Histogram Hist = Statistics::Make_AllPixel_Histogram(Options, RefDet, 40, 0, 20);
+			Hist.SafeToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Statistics/Hist_Jungfr_Hb3fs.bin");
 
 
 		}

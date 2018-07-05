@@ -268,6 +268,7 @@ namespace ArrayOperators
 	void SafeArrayToFile(std::string Filename, double* Array, unsigned int Size, FileType Type);
 	void SafeArrayToFile(std::string Filename, float* Array, unsigned int Size, FileType Type);
 	void SafeArrayToFile(std::string Filename, unsigned int* Array, unsigned int Size, FileType Type);
+	void SafeArrayToFile(std::string Filename, unsigned long * Array, unsigned int Size, FileType Type);
 
 
 

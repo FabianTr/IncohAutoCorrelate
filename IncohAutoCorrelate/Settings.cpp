@@ -410,7 +410,7 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 
 	for (unsigned int i = 0; i < HitEventList.size(); i++)
 	{
-		std::string path = "root.content.";
+		std::string path = "root.content.N";
 		path = path + std::to_string(i);
 
 		pt.put(path + ".Filename", HitEventList[i].Filename);
@@ -453,12 +453,27 @@ void Settings::LoadHitEventListFromFile(char * Filename)
 		throw;
 	}
 
+
 	HitEvents.clear();
+
+	if (Size == 0)
+		return;
+
+	std::string pathbase;
+	if ( pt.get<std::string>("root.content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER")
+	{
+		pathbase = "root.content.";
+	}
+	else
+	{
+		pathbase = "root.content.N";
+	}
+
 
 	for (unsigned int i = 0; i < Size; i++)
 	{
-		std::string path = "root.content.";
-		path = path + std::to_string(i);
+
+		std::string path = pathbase + std::to_string(i);
 
 		HitEvent tmp;
 		tmp.Filename = pt.get<std::string>(path + ".Filename");
@@ -482,6 +497,9 @@ void Settings::LoadHitEventListFromFile(char * Filename)
 	}
 
 
+
+
+
 }
 
 
@@ -500,13 +518,24 @@ void Settings::LoadHitEventListFromFile(std::string Filename)
 		std::cerr << "    -> in  Settings::LoadHitEventListFromFile()\n";
 		throw;
 	}
+	if (Size == 0)
+		return;
 
 	HitEvents.clear();
 
+	std::string pathbase;
+	if (pt.get<std::string>("root.content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER")
+	{
+		pathbase = "root.content.";
+	}
+	else
+	{
+		pathbase = "root.content.N";
+	}
+
 	for (unsigned int i = 0; i < Size; i++)
 	{
-		std::string path = "root.content.";
-		path = path + std::to_string(i);
+		std::string path = pathbase + std::to_string(i);
 
 		HitEvent tmp;
 		tmp.Filename = pt.get<std::string>(path + ".Filename");

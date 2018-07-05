@@ -120,7 +120,7 @@ namespace PPP
 
 		float CounterStep = ((float)OptionsIn.HitEvents.size())/100.0f;
 		float Counter = 0;
-
+		
 		for (unsigned int i = 0; i < OptionsIn.HitEvents.size(); i++)
 		{
 			Det.LoadIntensityData(&OptionsIn.HitEvents[i]);
@@ -139,7 +139,6 @@ namespace PPP
 			t_Event.MeanIntensity = (float)t_Event.PhotonCount / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1]));
 
 			OptionsOut.HitEvents.push_back(t_Event);
-
 
 			start[0] = i;
 			dataspace.selectHyperslab(H5S_SELECT_SET, count, start, stride, block);

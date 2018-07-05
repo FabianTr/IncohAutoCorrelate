@@ -409,16 +409,6 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 
 	//printf("MeshSize: %d;    MeshCenter: %d\n", MeshSize, MeshCenter);
 
-
-	//if (ind == 0)//ind == 0
-	//{
-	//	printf("Kernel is alive\n");
-	//	for (int i = 0; i < 7; i++)
-	//	{
-	//		printf("Params[%d] = %f\n",i,Params[i]);
-	//	}
-	//}
-
 	//obtain k-vector and value given by kernel index
 	float k1[3];
 	k1[0] = SparseHitList[4 * ind + 0];
@@ -520,7 +510,7 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 	unsigned int MaR_ScanAdd = ((ind*MapAndReduce) / (DetSize)) * ArraySize;
 
 	//Debug Bullshit
-	if (ind == 0)//ind == 0
+	if (ind == 0 && Params[7] > 0.4)//ind == 0
 	{
 		printf("Kernel is alive\n");
 		printf("Detector Size: %d\n", DetSize);
