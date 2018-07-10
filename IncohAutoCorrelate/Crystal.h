@@ -21,6 +21,8 @@ public:
 	Crystal(double LatticeVector[3][3], unsigned int CrystalSize[3], std::vector<std::array<double, 3>> UnitCell);
 	~Crystal();
 
+	void RandomGen_ReSeed();
+
 	static std::array<float, 9> RotateVectors(std::vector<std::array<double, 3>> &Vectors, const double angle, std::array<double, 3> axis);
 	static std::array<float, 9> RotateVectors(std::vector<std::array<double, 3>> &Vectors, std::array<float, 9> RotMatrix);
 

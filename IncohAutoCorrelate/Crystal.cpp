@@ -1,5 +1,6 @@
 #include "Crystal.h"
 #include <omp.h>
+#include <iostream>
 
 
 
@@ -13,6 +14,11 @@ Crystal::Crystal(double LatticeVector[3][3], unsigned int CrystalSize[3], std::v
 
 Crystal::~Crystal()
 {
+}
+
+void Crystal::RandomGen_ReSeed()
+{
+	mt.seed(std::random_device{}());
 }
 
 std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Settings,  std::array<float, 9> & RotationMatrix, bool UseGivenRotation)
@@ -85,15 +91,23 @@ std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Setting
 	std::vector<Emitter> Ret;
 	Ret.resize(At_temp.size());
 
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for (unsigned int i = 0; i < Ret.size(); i++)
-	{
+	{		
 		Emitter EM;
 		EM.Position[0] = At_temp[i][0];
 		EM.Position[1] = At_temp[i][1];
 		EM.Position[2] = At_temp[i][2];
 		if (Settings.Incoherent)
-			EM.Phase = (Drand() * 2 * M_PIl);
+		{
+			//EM.Phase = (ThrRand(mt) * 2 * M_PIl);
+			EM.Phase = Drand() * 2 * M_PIl;
+			
+		}
+		else
+		{
+			EM.Phase = 0.0;
+		}
 		Ret[i]=EM;
 	}
 

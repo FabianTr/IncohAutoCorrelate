@@ -616,7 +616,7 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 
 	//Get Parameter
 	unsigned int NumEM = (unsigned int)Params[0]; //number of emitters
-	int SuSa = (unsigned int)Params[2]; //Subsampling
+	int SuSa = (int)Params[2]; //Subsampling
 
 	float u_Step[3]; //u direction (fs)
 	u_Step[0] = Params[3];
@@ -677,20 +677,11 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 				arg += k[0] * ((float)EmitterList[4 * i + 0]);
 				arg += k[1] * ((float)EmitterList[4 * i + 1]);
 				arg += k[2] * ((float)EmitterList[4 * i + 2]);
-				arg += ((float)EmitterList[4 * i + 3]); //Phase
+				arg +=        ((float)EmitterList[4 * i + 3]); //Phase
 
 				realPsi += cos(arg);
 				imagPsi += sin(arg);
 
-				////Debug Bullshit
-				//if (ind == 0)
-				//{
-				//	//printf("k = (%f, %f, %f), phi = %f\n",k[0],k[1],k[2], EmitterList[4 * i + 3]);
-				//	double fak = 1;
-				//	printf("i: %d :: r = (%f, %f, %f\n)",i, EmitterList[4 * i + 0]*fak, EmitterList[4 * i + 1]*fak, EmitterList[4 * i + 2]*fak);
-				//	printf("normK: %f\t realPsi: %f;\t  imagPsi: %f;\t  arg:%f  \n", Norm_k, realPsi, imagPsi, arg);
-				//}
-				////
 			}
 			Intensity[ind] += sqrt((realPsi * realPsi) + (imagPsi * imagPsi));
 

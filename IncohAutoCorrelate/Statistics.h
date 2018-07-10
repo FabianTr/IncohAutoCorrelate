@@ -43,4 +43,6 @@ namespace Statistics
 
 	Histogram Make_AllPixel_Histogram(Settings & Options, Detector &RefDet, unsigned int Bins, double SmallestVal, double HighestVal);
 
+	std::vector<Histogram> MakePixelHistogramStack(Settings & Options, Detector &RefDet, unsigned int Bins, double SmallestVal, double HighestVal);
+
 }

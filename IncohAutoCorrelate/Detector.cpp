@@ -936,8 +936,8 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 			BigMesh.Mesh[i] += val;
 		}
 
-
-	//	Profiler.Toc(true);
+		//clean up
+		delete[] TempBigMesh;
 	}
 
 

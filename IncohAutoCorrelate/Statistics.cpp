@@ -66,6 +66,53 @@ namespace Statistics
 		return Hist;
 	}
 
+	std::vector<Histogram> MakePixelHistogramStack(Settings & Options, Detector & RefDet, unsigned int Bins, double SmallestVal, double HighestVal)
+	{
+		std::vector<Histogram> HistStack;
+		HistStack.reserve(RefDet.DetectorSize[0] * RefDet.DetectorSize[1]);
+		//create empty Histograms:
+		for (unsigned int i = 0; i < RefDet.DetectorSize[0]*RefDet.DetectorSize[1]; i++)
+		{
+			Histogram Hist(Bins, (HighestVal - SmallestVal) / Bins, SmallestVal);
+			HistStack.push_back(Hist);
+		}
+		Detector Det(RefDet, true);
+
+		ProfileTime profiler;
+		profiler.Tic();
+
+		double CounterStep = Options.HitEvents.size() / 100.0;
+		int Prog = 0;
+
+		for (unsigned int i = 0; i < Options.HitEvents.size(); i++)
+		{
+
+			Det.LoadIntensityData(&Options.HitEvents[i]);
+			if (Det.Checklist.PixelMask)
+				Det.ApplyPixelMask();
+
+			#pragma omp parallel for
+			for (int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
+			{
+				HistStack[j].AddValue(Det.Intensity[j]);
+			}
+
+			if (Options.echo)
+			{
+				if (i / CounterStep > Prog)
+				{
+					std::cout << "Pattern " << i << " / " << Options.HitEvents.size() << " \t^= " << Prog << "%\n";
+					profiler.Toc(true);
+					Prog++;
+				}
+			}
+
+		}
+		profiler.Toc(Options.echo);
+
+		return HistStack;
+	}
+
 
 
 

@@ -28,5 +28,7 @@ namespace PPP
 
 	void ProcessData_PF_LAP_SM(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector & Det, int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold, bool Jungfrau);
 
+	void ProcessData_ConvertSM(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector & Det, int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold, bool Jungfrau);
+
 
 }

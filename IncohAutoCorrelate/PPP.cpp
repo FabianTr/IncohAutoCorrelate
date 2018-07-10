@@ -9,7 +9,10 @@
 
 namespace PPP
 {
-
+	//ShortTerms:
+	//	LAP = Largest Adjacent Pixel
+	//	SM = SingleMolecule  (here Nanostar)
+	//	PF = Photon Finder
 
 
 	void PhotonFinder_LargestAdjacentPixel(float * Intensity, std::vector<DetectorPanel> DetectorPanels,int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold )
@@ -251,6 +254,90 @@ namespace PPP
 
 
 
+	void ProcessData_ConvertSM(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector &Det, int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold, bool Jungfrau)
+	{
+		Settings OptionsIn;
 
+		OptionsIn.LoadHitEventListFromFile(XML_In);
+
+
+		Settings OptionsOut(OptionsIn);
+		OptionsOut.HitEvents.clear();
+		OptionsOut.HitEvents.reserve(OptionsIn.HitEvents.size());
+
+		H5::H5File file(H5_Out, H5F_ACC_TRUNC);
+
+		hsize_t dims[3];
+		dims[0] = OptionsIn.HitEvents.size();
+		dims[1] = Det.DetectorSize[0];
+		dims[2] = Det.DetectorSize[1];
+		H5::DataSpace dataspace(3, dims);
+
+		H5::DataSet dataset = file.createDataSet(Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
+
+		hsize_t start[3] = { 0, 0, 0 };  // Start of hyperslab, offset
+		hsize_t stride[3] = { 1, 1, 1 }; // Stride of hyperslab
+		hsize_t count[3] = { 1, 1, 1 };  // Block count
+		hsize_t block[3] = { 1, dims[1], dims[2] }; // Block sizes
+
+		H5::DataSpace mspace(3, block);
+
+		float CounterStep = ((float)OptionsIn.HitEvents.size()) / 100.0f;
+		float Counter = 0;
+
+		for (unsigned int i = 0; i < OptionsIn.HitEvents.size(); i++)
+		{
+			//Det.LoadIntensityData(&OptionsIn.HitEvents[i]);
+
+			if (Jungfrau)
+			{
+				Det.LoadIntensityData_PSANA_StyleJungfr(OptionsIn.HitEvents[i].Filename, OptionsIn.HitEvents[i].Dataset, OptionsIn.HitEvents[i].Event);
+			}
+			else
+			{
+				delete[] Det.Intensity;
+				Det.Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]];
+				Det.LoadIntensityData_EPIX(Det.Intensity, OptionsIn.HitEvents[i].Filename, OptionsIn.HitEvents[i].Dataset, OptionsIn.HitEvents[i].Event);
+			}
+
+			//Det.ApplyPixelMask();
+
+			//PhotonFinder_LargestAdjacentPixel(Det.Intensity, DetectorPanels, FullDetSize, ADU_perPhoton, SeedThershold, CombinedThershold);
+
+			Settings::HitEvent t_Event;
+			t_Event.Dataset = Dataset;
+			t_Event.Event = i;
+			t_Event.Filename = H5_Out;
+			t_Event.SerialNumber = OptionsIn.HitEvents[i].SerialNumber;
+			for (int j = 0; j < 9; j++)
+				t_Event.RotMatrix[j] = OptionsIn.HitEvents[i].RotMatrix[j];
+			t_Event.PhotonCount = (int)ArrayOperators::Sum(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+			t_Event.MeanIntensity = (float)t_Event.PhotonCount / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1]));
+
+			OptionsOut.HitEvents.push_back(t_Event);
+
+
+			start[0] = i;
+			dataspace.selectHyperslab(H5S_SELECT_SET, count, start, stride, block);
+			dataset.write(Det.Intensity, H5::PredType::NATIVE_FLOAT, mspace, dataspace);
+
+			if ((float)i >= Counter)
+			{
+				std::cout << i << "/" << OptionsIn.HitEvents.size() << "  ^= " << Counter / CounterStep << "%\n";
+				Counter += CounterStep;
+			}
+
+		}
+
+		mspace.close();
+		dataspace.close();
+		dataset.close();
+		file.close();
+
+
+		//Save XML File
+		OptionsOut.SafeHitEventListToFile(XML_Out);
+
+	}
 
 }

@@ -485,9 +485,13 @@ void Simulator::PrintSimInfos(const SimulationSettings & SimSettings)
 
 //Parallel Sim (3 Threads)
 std::mutex g_echo_mutex_Sim;
-void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & Det, SimulationSettings  SimSettings, SimulationOutput & Output, Settings & Options, int ThreadNum)
+void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, SimulationSettings  SimSettings, SimulationOutput & Output, Settings & Options, int ThreadNum)
 {
 	ProfileTime Profiler;
+
+	EmitterCrystal.RandomGen_ReSeed();
+
+	Detector Det(RefDet, true);
 
 	//Check requirements
 	if (!Det.Checklist.PixelMap)
@@ -586,7 +590,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & Det, Simulation
 
 		//Obtain EmitterList
 		std::array<float, 9> RotMat;
-		EmitterList = EmitterCrystal.GetEmitters(SimSettings.CrystSettings, RotMat);
+		EmitterList = EmitterCrystal.GetEmitters(SimSettings.CrystSettings, RotMat,false);
 		unsigned int NumEM = EmitterList.size();
 
 		for (int j = 0; j < 9; j++)//Store Rotation Matrix of current Crystal
@@ -594,7 +598,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & Det, Simulation
 			curr_Event.RotMatrix[j] = RotMat[j];
 		}
 
-		float * EM = new float[4 * NumEM];
+		float * EM = new float[4 * NumEM]();
 		for (unsigned int j = 0; j < NumEM; j++)
 		{
 			EM[4 * j + 0] = (float)EmitterList[j].Position[0];
@@ -628,9 +632,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & Det, Simulation
 		float * Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
 		double Params[10];
 		Params[0] = (double)NumEM; // number of Emitters
-
 		Params[1] = (double)SimSettings.PoissonSample;
-
 		Params[2] = (double)SimSettings.SubSampling; //Subsampling is only possible if the orientation and size of a pixel is known! 
 													 //Pixels are within the plane given by u and v. u and v also represents the orientation (their edges). Here it is assumed, that all pixels are orientated in parallel
 
@@ -645,7 +647,6 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & Det, Simulation
 
 
 
-
 		for (unsigned int ModeRun = 0; ModeRun < SimSettings.Modes; ModeRun++)
 		{
 			float * t_Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
@@ -657,7 +658,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & Det, Simulation
 				NumEM = EmitterList.size();
 				Params[0] = (double)NumEM;
 
-				EM = new float[4 * NumEM];
+				EM = new float[4 * NumEM]();
 				for (unsigned int j = 0; j < NumEM; j++)
 				{
 					EM[4 * j + 0] = (float)EmitterList[j].Position[0];
@@ -729,9 +730,8 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & Det, Simulation
 
 			//add up intensity (incoherent for mode simulation)
 			ArrayOperators::ParAdd(Intensity, t_Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
-
-
-
+			
+			//Clean up
 			delete[] t_Intensity;
 			delete[] EM;
 		}
@@ -823,6 +823,8 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & Det, Simulation
 			//	<< " Photons\n";
 		}
 		delete[] Intensity;
+
+
 	}
 
 
@@ -865,7 +867,7 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 
 		 
 	SimulationSettings SimSettingsPart[2] = { SimSettings ,SimSettings  };
-	SimSettingsPart[0].NumberOfSimulations = (unsigned int)(SimSettings.NumberOfSimulations / 2);
+	SimSettingsPart[0].NumberOfSimulations = (unsigned int)(SimSettings.NumberOfSimulations/2 );
 	SimSettingsPart[1].NumberOfSimulations = SimSettings.NumberOfSimulations - SimSettingsPart[0].NumberOfSimulations;
 	//SimSettingsPart[2].NumberOfSimulations = SimSettings.NumberOfSimulations - SimSettingsPart[0].NumberOfSimulations - SimSettingsPart[1].NumberOfSimulations;
 
