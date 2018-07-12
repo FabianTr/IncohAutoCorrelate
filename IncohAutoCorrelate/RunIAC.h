@@ -117,4 +117,8 @@ namespace RunIAC
 	void Print_Statistics_SM(CreateSM_Settings SM_Settings, Settings & PrgSettings);
 
 	
+	//Pixelmap
+	void GeneratePixelMapForSimulator(std::string Filename, std::string Dataset, double Distance, double PixelSize, int SizeFS, int SizeSS, std::array<float,3> Orientation);
+
+
 }

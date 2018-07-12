@@ -45,7 +45,9 @@ Simulator::~Simulator()
 void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSettings SimSettings, SimulationOutput & Output, Settings & Options)
 {
 	ProfileTime Profiler;
-
+	std::cerr << "ERROR: not updated serial simulateion\n";
+	std::cerr << "   -> in Simulator::Simulate()\n";
+	throw;
 	//Check requirements
 	if (!Det.Checklist.PixelMap)
 	{
@@ -742,12 +744,12 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 
 		//Rescale for expected number of photons
 		float ExpNumOfPhotones = (float)(SimSettings.AveragePhotonesPerEmitterOnDetector * SimSettings.CrystSettings.FlYield * EmitterCrystal.AtomPositions.size());
-		float IntegratedIntensity = 0.0f;
+		double IntegratedIntensity = 0.0f;
 		for (unsigned int l = 0; l < Det.DetectorSize[0] * Det.DetectorSize[1]; l++)
 		{ //Reminder: don't even think about to parallelize this!
 			IntegratedIntensity += Intensity[l];
 		}
-		float t_IntFactor = ExpNumOfPhotones / IntegratedIntensity;
+		double t_IntFactor = ExpNumOfPhotones / IntegratedIntensity;
 		ArrayOperators::ParMultiplyScalar(Intensity, t_IntFactor, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
 		//Poisson Sample (if required)
@@ -893,6 +895,11 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 	Output.Intensities = OutputPart[0].Intensities;
 	Output.Intensities.insert(Output.Intensities.end(), OutputPart[1].Intensities.begin(), OutputPart[1].Intensities.end());
 	//Output.Intensities.insert(Output.Intensities.end(), OutputPart[2].Intensities.begin(), OutputPart[2].Intensities.end());
+
+	for (int i = 0; i <  SimSettings.NumberOfSimulations; i++)
+	{
+		Output.HitEvents[i].Event = i;
+	}
 
 
 	// Save stuff

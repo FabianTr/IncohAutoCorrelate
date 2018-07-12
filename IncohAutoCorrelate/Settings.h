@@ -84,6 +84,10 @@ public:
 	{
 		return (long)floorf(((f + F_I_Conversion.Offset) / F_I_Conversion.Step) + 0.5f);
 	}
+	inline long FloatToInt(double f)
+	{
+		return ( long)floor(((f + F_I_Conversion.Offset) / F_I_Conversion.Step) + 0.5);
+	}
 	inline float IntToFloat(int i)
 	{
 		return ((float)i * F_I_Conversion.Step) - (float)(F_I_Conversion.Offset);

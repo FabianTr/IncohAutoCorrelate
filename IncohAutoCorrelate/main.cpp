@@ -266,33 +266,33 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	Simulator::SimulationSettings SimSettings;
 
-	SimSettings.UnitCells[0] = 5;
-	SimSettings.UnitCells[1] = 5;
-	SimSettings.UnitCells[2] = 5;
+	SimSettings.UnitCells[0] = 10;
+	SimSettings.UnitCells[1] = 10;
+	SimSettings.UnitCells[2] = 10;
 
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 250; // 30
+	SimSettings.NumberOfSimulations = 10; // 30
 
 	SimSettings.Modes = 1;
-	SimSettings.AveragePhotonesPerEmitterOnDetector = 100.0f * 1000.0f * 0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
-	SimSettings.PoissonSample = false;
+	SimSettings.AveragePhotonesPerEmitterOnDetector =  1e4; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
+	SimSettings.PoissonSample = true;
 	SimSettings.SubSampling = 1; // 3 => (2*3+1)^2 = 49
 
 	SimSettings.Wavelength = 1.94; //1.94A = 194pm 
 
-	SimSettings.Value_per_Photon = 6.4;
+	SimSettings.Value_per_Photon = 1.0f;//6.4
 
-	SimSettings.CrystSettings.FlYield = 1.0f; //0.1
+	SimSettings.CrystSettings.FlYield = 0.99f; //0.1
 	SimSettings.CrystSettings.Incoherent = true;
 	SimSettings.CrystSettings.Isotropie = 1.0f;
 	SimSettings.CrystSettings.RandOrientation = false;
 
 	SimSettings.SaveResults = true;
 
-	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestX2.h5";//Sim20_Fixed_NP_3
-	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestX2.xml";//Sim20_Fixed_NP_3
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestX.h5";//Sim20_Fixed_NP_3
+	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestX.xml";//Sim20_Fixed_NP_3
 	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.h5";
 	//SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.xml";
 	SimSettings.Dataset = "data";
@@ -1439,10 +1439,10 @@ int main()
 			//SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_1.xml");
 			//SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_2.xml");
 
-			SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestX2.xml");//Sim20_Fixed_NP_3
+			SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestX.xml");//Sim20_Fixed_NP_3
 
 
-			std::string Prefix = "TESTX2";//FixedNP5_
+			std::string Prefix = "TESTX";//FixedNP5_
 			Options.HitEvents.clear();
 
 			//compound HitEventLists
@@ -1454,8 +1454,15 @@ int main()
 			}
 
 
-			float PhotonThreshold = 3.2f;
-			float PhotonStep = 6.4f;
+			float PhotonThreshold = 0.001f;
+			float PhotonStep = 1.0f;
+
+
+			//REMOVE BEFORE RELEASE
+			for (int i = 0; i < 10; i++)
+				std::cout << Options.HitEvents[i].MeanIntensity << "    ";
+			std::cout << "\n";
+			//REMOVE BEFORE RELEASE
 
 			Detector Det;
 			std::string PixelMapPath = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
@@ -1472,15 +1479,15 @@ int main()
 				CQ_Settings.AC_Merge_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
 				CQ_Settings.AC_Small_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
 
-				CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "IntensityAv.bin";
+			//	CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "IntensityAv.bin";
 				//CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF_Seg" + std::to_string(i_autorun) + ".bin";
+				CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/JungfrFlatOne.bin";
+
 
 				CQ_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
 				CQ_Settings.PixelMap_DataSet = "data/data";
 
 
-
-				CQ_Settings.PixelMask_Path = PixelMapPath;
 				//CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
 
 
@@ -1488,7 +1495,7 @@ int main()
 				CQ_Settings.echo = true;
 
 				CQ_Settings.MeshSize = 501;
-				CQ_Settings.QZoom = 1.0f;
+				CQ_Settings.QZoom = 2.0f;
 
 				CQ_Settings.SaveSmall_CQ = false;
 				CQ_Settings.SaveBig_CQ = true;
@@ -1514,12 +1521,12 @@ int main()
 
 				AC_Settings.DoubleMap = true;
 				AC_Settings.echo = true;
-				AC_Settings.PhotonOffset = 3.2f;
-				AC_Settings.PhotonStep = 6.4f;
+				AC_Settings.PhotonOffset = PhotonThreshold;//3.2
+				AC_Settings.PhotonStep = PhotonStep;//6.4
 			}
 
 			//Save Av Intensity
-			ArrayOperators::SafeArrayToFile(CQ_Settings.AVIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::FileType::Binary);
+		//	ArrayOperators::SafeArrayToFile(CQ_Settings.AVIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::FileType::Binary);
 
 
 			ACMesh CQ;
@@ -1532,7 +1539,10 @@ int main()
 			//RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options,0,1000);
 			//RunIAC::Run_AC_UW(AC, AC_Settings, Options,0,1000);
 
+
 			RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
+
+
 			RunIAC::Run_AC_UW(AC, AC_Settings, Options);
 
 			Options.Echo("Merge Stuff");
@@ -2033,10 +2043,11 @@ int main()
 			Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/SM_RAWs/HitEventList_SM_Jungfr_PasanaCalib_Block3.xml");
 
 
-			int HistSize = 110;
+			int HistSize = 55;
 			std::vector<Statistics::Histogram> HistStack = Statistics::MakePixelHistogramStack(Options, RefDet, HistSize, -1.0, 21.0);
 
 			double * NormalizedStack = new double[HistSize * RefDet.DetectorSize[0] * RefDet.DetectorSize[1]]();
+
 
 			#pragma omp parallel for
 			for (unsigned int i = 0; i < RefDet.DetectorSize[0] * RefDet.DetectorSize[1]; i++)
@@ -2055,7 +2066,7 @@ int main()
 				}
 			}
 
-			ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Statistics/PixelwiseHist_Jungfr_SM_Block3_110_-1_21.bin", NormalizedStack, HistSize * RefDet.DetectorSize[0] * RefDet.DetectorSize[1], ArrayOperators::Binary);
+			ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Statistics/PixelwiseHist_Jungfr_SM_Block3_55_-1_21.bin", NormalizedStack, HistSize * RefDet.DetectorSize[0] * RefDet.DetectorSize[1], ArrayOperators::Binary);
 
 			delete[] NormalizedStack;
 		}
@@ -2246,6 +2257,18 @@ int main()
 
 		}
 
+		break;
+
+		case -5000:
+		{
+			float * FlatOne = new float[1024 * 1024];
+			for (int i = 0; i < 1024*1024; i++)
+			{
+				FlatOne[i] = 1.0f;
+			}
+			ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/JungfrFlatOne.bin", FlatOne, 1024*1024, ArrayOperators::FileType::Binary);
+			delete[] FlatOne;
+		}
 		break;
 
 		}//end switch

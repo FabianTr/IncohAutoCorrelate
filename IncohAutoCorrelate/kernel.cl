@@ -392,7 +392,7 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	__global const double *Params,
 	__global const float *RotMatrix,
-	__global long *AC)
+	__global unsigned long *AC)
 {
 	unsigned int ind = get_global_id(0);
 
@@ -414,7 +414,7 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	k1[0] = SparseHitList[4 * ind + 0];
 	k1[1] = SparseHitList[4 * ind + 1];
 	k1[2] = SparseHitList[4 * ind + 2];
-	float f_Val = SparseHitList[4 * ind + 3];
+	double f_Val = (double)SparseHitList[4 * ind + 3];
 
 	//printf("ind: %d; k = [%f, %f, %f]; Val = %f\n",ind, k1[0], k1[1], k1[2],f_Val);
 
@@ -438,7 +438,7 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 			continue;
 		}
 
-		float t_Val = f_Val * SparseHitList[4 * i + 3];
+		double t_Val = f_Val * SparseHitList[4 * i + 3];
 		long Val = (long)(t_Val * Multiplicator);
 
 

@@ -168,9 +168,10 @@ namespace ArrayOperators
 		MeanValue = (float)t_mean;
 	}
 
+	//Poisson sampl is serial because of copied seed problem!!, FIX!!!
 	inline void ParPoissonSampling(double* Array, unsigned int Size)
 	{
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for (unsigned int i = 0; i < Size; i++)
 		{
 			Array[i] = (double)ScalarPoissonSampling(Array[i]);
@@ -178,7 +179,7 @@ namespace ArrayOperators
 	}
 	inline void ParPoissonSampling(float* Array, unsigned int Size)
 	{
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for (unsigned int i = 0; i < Size; i++)
 		{
 			Array[i] = (float)ScalarPoissonSampling(Array[i]);
@@ -238,12 +239,12 @@ namespace ArrayOperators
 	}
 	inline float Sum(float* Array, int Size)
 	{
-		float sum = 0;
+		double sum = 0.0;
 		for (int i = 0; i <Size; i++)
 		{
 			sum += Array[i];
 		}
-		return sum;
+		return (float)sum;
 	}
 	inline double Sum(double* Array, int Size)
 	{

@@ -155,8 +155,12 @@ namespace RunIAC
 
 
 			Det.LoadIntensityData(&PrgSettings.HitEvents[i]);
+
 			ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
-			Det.CreateSparseHitList(AC_Settings.PhotonOffset, AC_Settings.PhotonStep);
+
+			Det.CreateSparseHitList(AC_Settings.PhotonOffset, AC_Settings.PhotonStep); //Sparsificate
+			std::cout << i << ": Pixels with hits: " << Det.SparseHitList.size()*100.0 / (Det.DetectorSize[0]* Det.DetectorSize[1]) << "%"<< "    Mean intensity: " << PrgSettings.HitEvents[i].MeanIntensity << "\n";
+
 			Det.AutoCorrelateSparseList(AC, AC_Settings.AC_FirstMap_Flags, AC_Settings.DoubleMap, PrgSettings);
 		}
 
@@ -680,6 +684,8 @@ namespace RunIAC
 
 	}
 
+
+
 	//General
 	void Load_and_average_Intensities(Settings &Options, Detector &Det, float PhotonThreshold, float PhotonStep, std::string XML_Filename, std::string AvInt_Filename)
 	{
@@ -699,4 +705,21 @@ namespace RunIAC
 		ArrayOperators::SafeArrayToFile(AvInt_Filename, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::FileType::Binary);
 
 	}
+
+
+	void GeneratePixelMapForSimulator(std::string Filename, std::string Dataset, double Distance, double PixelSize, int SizeFS, int SizeSS, std::array<float, 3> Orientation)
+	{
+		double * PixelMap;
+		PixelMap = new double[SizeFS * SizeSS];
+
+
+
+		std::cerr << "To Implement.\n";
+		throw;
+
+
+		delete[] PixelMap;
+	}
+
+
 }

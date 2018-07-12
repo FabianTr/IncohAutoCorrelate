@@ -303,7 +303,7 @@ void Detector::Calc_kMap()
 		y = PixelMap[3 * i + 1];
 		z = PixelMap[3 * i + 2];
 
-		r = sqrtf(x*x + y * y + z * z);
+		r = sqrtf(x*x + y*y + z*z);
 
 		x = x / r;
 		y = y / r;
@@ -472,6 +472,17 @@ void Detector::LoadPixelMask(std::string Path)
 	Checklist.PixelMask = true;
 }
 
+void Detector::GenerateFlatOnesPixelMask()
+{
+	delete[] PixelMask;
+	PixelMask = new int[DetectorSize[0] * DetectorSize[1]];
+	for (unsigned int i = 0; i < DetectorSize[0]* DetectorSize[1]; i++)
+	{
+		PixelMask[i] = 1;
+	}
+	Checklist.PixelMask = true;
+}
+
 void Detector::ApplyPixelMask()
 {
 	ArrayOperators::ParMultiplyElementwise(Intensity, PixelMask, DetectorSize[0] * DetectorSize[1]);
@@ -504,13 +515,20 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		std::cerr << "WARNING: Event list is empty, no intensity integration/averaging can be performed.\n";
 		return;
 	}
-	int* IntensityPhotonDiscr = NULL;
+
+	if (!Checklist.PixelMask)
+	{
+		GenerateFlatOnesPixelMask();
+	}
+
+
+	long* IntensityPhotonDiscr = NULL;
 	delete[] Intensity;
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
 	{	
 		float* tmpIntensity = new float[DetectorSize[1] * DetectorSize[0]]();
 		if (PhotonSamplingStep > 0)
-			IntensityPhotonDiscr = new int[DetectorSize[1] * DetectorSize[0]]();
+			IntensityPhotonDiscr = new long[DetectorSize[1] * DetectorSize[0]]();
 
 		//std::cout << " \n ";
 		int t_prog = -1; //for progress indicator only
@@ -547,7 +565,8 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 					if (tmpIntensity[j] >= Threshold)
 					{
 						tmpIntensity[j] = DiscretizeToPhotones(tmpIntensity[j], Threshold, PhotonSamplingStep);
-						IntensityPhotonDiscr[j] += (int)tmpIntensity[j];
+						float yxc = tmpIntensity[j];
+						IntensityPhotonDiscr[j] += (long)tmpIntensity[j];
 					}
 					else
 					{ 
@@ -557,7 +576,14 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 
 				//update Event
 				Events[i].PhotonCount = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]);
-				Events[i].MeanIntensity = (float)Events[i].PhotonCount / ((float) (DetectorSize[1] * DetectorSize[0]));
+				//long yxc = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]);
+				//unsigned long qwertz = 0;
+				//for (int w = 0; w < DetectorSize[1] * DetectorSize[0]; w++)
+				//{
+				//	qwertz += (unsigned long) tmpIntensity[w];
+				//}
+				//std::cout << qwertz << "\n";
+				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float) (DetectorSize[1] * DetectorSize[0]));
 
 				//std::cout << i << ": Mean = " << Events[i].MeanIntensity << " ^= " << Events[i].PhotonCount << " photons\n";
 			}
@@ -602,6 +628,18 @@ void Detector::LoadIntensityData()
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
 
 	GetSliceOutOfHDFCuboid(Intensity, Path, DataSet, DetectorEvent->Event);
+
+
+	//Debug stuff
+	for (int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
+	{
+		if (Intensity[i] < 0)
+		{
+			std::cout << "ERROR: I<0 : " << Intensity[i] << "  WTF\n";
+		}
+	}
+
+	//
 
 }
 
@@ -702,20 +740,18 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 
 void Detector::CreateSparseHitList(float Threshold)
  {
-	//	std::cout << "DEBUG: Start create SparseHitList\n";
-
 	SparseHitList.clear();
 	SparseHitList.reserve(1000);
-
-	
-
-	//struct TmpSparseVecStr { std::vector<std::array<float,4>> Vec; };
-
-	//TmpSparseVecStr* TmpSparseVec = new TmpSparseVecStr[DetectorSize[1]];
 
 	for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
 	{
 		float I = Intensity[i];
+
+		if (I < 0)
+		{
+			std::cout << "ERROR: I = " << I << "\n";
+		}
+
 		if (I >= Threshold)
 		{
 			std::array< float, 4> TmpEntry;
@@ -727,7 +763,7 @@ void Detector::CreateSparseHitList(float Threshold)
 			SparseHitList.push_back(TmpEntry);
 		}
 	}
-	//std::cout << SparseHitList.size() << "\n";
+
 	Checklist.SparseHitList = true;
 }
 
@@ -738,6 +774,10 @@ void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
 	for (unsigned int i = 0; i < SparseHitList.size(); i++)
 	{
 		SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
+		if (SparseHitList[i][3] < 0)
+		{
+			std::cout << "ERROR: I = " << SparseHitList[i][3] << "\n";
+		}
 	}
 }
 
@@ -750,6 +790,10 @@ void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep, bo
 		for (unsigned int i = 0; i < SparseHitList.size(); i++)
 		{
 			SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
+			if (SparseHitList[i][3] < 0)
+			{
+				std::cout << "ERROR: I = " << SparseHitList[i][3] << "\n";
+			}
 		}
 	}
 	else
@@ -757,6 +801,10 @@ void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep, bo
 		for (unsigned int i = 0; i < SparseHitList.size(); i++)
 		{
 			SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
+			if (SparseHitList[i][3] < 0)
+			{
+				std::cout << "ERROR: I = " << SparseHitList[i][3] << "\n";
+			}
 		}
 	}
 }
@@ -836,7 +884,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 	{ //Implementation for GPU 
 		//calculate Multiplicator
 		//std::cout << "GPU Mode\n";
-		double Multiplicator = 1000; //1 is sufficient for photon discretised values (only integer possible)
+		double Multiplicator = 10; //1 is sufficient for photon discretised values (only integer possible)
 
 		//set Parameter
 		double Params[8];
@@ -874,12 +922,14 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 
 		//Buffers
 		//Output
-		int64_t * TempBigMesh;
-		TempBigMesh = new int64_t[BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB]();
+		uint64_t * TempBigMesh;
+		TempBigMesh = new uint64_t[BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB]();
 
-		size_t ACsize = sizeof(int64_t) * (BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB);
+		size_t ACsize = sizeof(uint64_t) * (BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB);
 		cl::Buffer CL_AC(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempBigMesh, &err);
 
+		
+		
 		//Input:
 		size_t SparseListSize = sizeof(float) * 4 * SparseHitList.size();
 		//for (int i = 1000; i < 1500; i++)
@@ -930,10 +980,16 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		#pragma omp parallel for
 		for (unsigned int i = 0; i < BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB; i++)
 		{
-			float t_val = (float)TempBigMesh[i] / (float)Multiplicator;
-			unsigned long val;
-			val = (unsigned long)Options.FloatToInt(t_val);
-			BigMesh.Mesh[i] += val;
+			double t_val = (double)TempBigMesh[i] / (double)Multiplicator;
+			long val;
+			val =  (long)Options.FloatToInt(t_val);
+
+			if (val < 0)
+			{
+				std::cerr << "ERROR: VAL < 0 : "<< t_val <<"\n";
+			}
+
+			BigMesh.Mesh[i] += (unsigned long)val;
 		}
 
 		//clean up
