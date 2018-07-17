@@ -266,9 +266,9 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	Simulator::SimulationSettings SimSettings;
 
-	SimSettings.UnitCells[0] = 10;
-	SimSettings.UnitCells[1] = 10;
-	SimSettings.UnitCells[2] = 10;
+	SimSettings.UnitCells[0] = 50;
+	SimSettings.UnitCells[1] = 50;
+	SimSettings.UnitCells[2] = 50;
 
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
@@ -284,15 +284,15 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	SimSettings.Value_per_Photon = 1.0f;//6.4
 
-	SimSettings.CrystSettings.FlYield = 0.99f; //0.1
+	SimSettings.CrystSettings.FlYield = 1.0f; //0.1
 	SimSettings.CrystSettings.Incoherent = true;
 	SimSettings.CrystSettings.Isotropie = 1.0f;
 	SimSettings.CrystSettings.RandOrientation = false;
 
 	SimSettings.SaveResults = true;
 
-	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestX.h5";//Sim20_Fixed_NP_3
-	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestX.xml";//Sim20_Fixed_NP_3
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP2.h5";//Sim20_Fixed_NP_3
+	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP2.xml";//Sim20_Fixed_NP_3
 	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.h5";
 	//SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.xml";
 	SimSettings.Dataset = "data";
@@ -377,7 +377,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 10;
+	int RunMode = 20;
 
 	int N_autorun = 1;
 	if (Panelwise)
@@ -1439,10 +1439,10 @@ int main()
 			//SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_1.xml");
 			//SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_2.xml");
 
-			SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestX.xml");//Sim20_Fixed_NP_3
+			SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP2.xml");//Sim20_Fixed_NP_3
 
 
-			std::string Prefix = "TESTX";//FixedNP5_
+			std::string Prefix = "TestTMP2_";//FixedNP5_
 			Options.HitEvents.clear();
 
 			//compound HitEventLists
@@ -1471,7 +1471,7 @@ int main()
 
 			
 
-			//!!!!!!!!!!!!!!!!!!!!!!!!ConstructionSite !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	
 
 			RunIAC::CreateCQ_Settings CQ_Settings;
 			RunIAC::CreateAC_Settings AC_Settings;
@@ -1479,9 +1479,9 @@ int main()
 				CQ_Settings.AC_Merge_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
 				CQ_Settings.AC_Small_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
 
-			//	CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "IntensityAv.bin";
+				CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "IntensityAv.bin";
 				//CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF_Seg" + std::to_string(i_autorun) + ".bin";
-				CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/JungfrFlatOne.bin";
+			//	CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/JungfrFlatOne.bin";
 
 
 				CQ_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
@@ -1495,13 +1495,14 @@ int main()
 				CQ_Settings.echo = true;
 
 				CQ_Settings.MeshSize = 501;
-				CQ_Settings.QZoom = 2.0f;
+				CQ_Settings.QZoom = 4.0f;
 
-				CQ_Settings.SaveSmall_CQ = false;
+				CQ_Settings.SaveSmall_CQ = true;
 				CQ_Settings.SaveBig_CQ = true;
 
 
-				CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "Cq_503-Z2_Big.bin";
+				CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "Cq_503-Z4_Big.bin";
+				CQ_Settings.SmallCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "Cq_503-Z4_Small.bin";
 				//CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
 
 				//ac shared settings
@@ -1515,7 +1516,7 @@ int main()
 
 				//ac further settings
 				AC_Settings.SaveBig_AC = true;
-				AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "AC_UW_503-Z2_Big.bin";
+				AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "AC_UW_503-Z4_Big.bin";
 				//AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
 
 
@@ -1526,7 +1527,7 @@ int main()
 			}
 
 			//Save Av Intensity
-		//	ArrayOperators::SafeArrayToFile(CQ_Settings.AVIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::FileType::Binary);
+			ArrayOperators::SafeArrayToFile(CQ_Settings.AVIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::FileType::Binary);
 
 
 			ACMesh CQ;
@@ -1536,23 +1537,19 @@ int main()
 
  			Options.Echo("Launch threads");
 
-			//RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options,0,1000);
-			//RunIAC::Run_AC_UW(AC, AC_Settings, Options,0,1000);
-
-
+			//C(q)
 			RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
-
-
+			//AC unweighted
 			RunIAC::Run_AC_UW(AC, AC_Settings, Options);
 
 			Options.Echo("Merge Stuff");
 
-			double * FinalAC = new double[CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB];
 
+			double * FinalAC = nullptr;
 			RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
 
-			ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "AC_Final_503-Z2.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
-			std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "AC_Final_503-Z2.bin \n";
+			ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "AC_Final_503-Z4.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
+			std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "AC_Final_504-Z2.bin \n";
 
 			//ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
 			//std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin \n";
@@ -1562,9 +1559,6 @@ int main()
 
 			std::cout << "\n\n Finished in ";
 			profiler.Toc(true);
-
-
-
 		}
 
 		break;
@@ -2026,10 +2020,16 @@ int main()
 			Detector RefDet;
 			RefDet.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5", "data/data");
 			RefDet.LoadPixelMask("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin");
-			Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml");
+			
+			//Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml");
+			Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/10fs_JF.stream", "entry_1/instrument_1/detector_2/detector_corrected/data", false);
+			
 
-			Statistics::Histogram Hist = Statistics::Make_AllPixel_Histogram(Options, RefDet, 40, 0, 20);
-			Hist.SafeToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Statistics/Hist_Jungfr_Hb3fs.bin");
+
+			Options.SafeHitEventListToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_10fs_Jungfr.xml");
+
+			Statistics::Histogram Hist = Statistics::Make_AllPixel_Histogram(Options, RefDet, 100, 0, 50);
+			Hist.SafeToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Statistics/Hist_Jungfr_Hb10fs.bin");
 
 
 		}
@@ -2259,7 +2259,7 @@ int main()
 
 		break;
 
-		case -5000:
+		case -5000: //Create flat 1
 		{
 			float * FlatOne = new float[1024 * 1024];
 			for (int i = 0; i < 1024*1024; i++)

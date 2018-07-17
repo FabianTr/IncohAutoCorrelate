@@ -31,26 +31,17 @@ namespace RunIAC
 		//Create k-Map
 		Det.Calc_kMap();
 		//Load Pixelmask
-		Det.PixelMask = new int[Det.DetectorSize[0] * Det.DetectorSize[1]]();
-		if (CQ_Settings.PixelMask_Path != "")
-		{
-			ArrayOperators::LoadArrayFromFile<int>(CQ_Settings.PixelMask_Path, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
-		}
-		else
-		{
-			// No Pixelmask given => set every entry to one
-#pragma omp parallel for
-			for (unsigned int i = 0; i < Det.DetectorSize[0] * Det.DetectorSize[1]; i++)
-			{
-				Det.PixelMask[i] = 1;
-			}
-		}
+		Det.LoadPixelMask(CQ_Settings.PixelMask_Path);
+
 
 		//load integrated/averaged intensity
+		delete[] Det.Intensity;
 		Det.Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
 		ArrayOperators::LoadArrayFromFile(CQ_Settings.AVIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+		Det.Checklist.Intensity = true;
 		//apply Pixelmask
-		ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
+		Det.ApplyPixelMask();
+
 
 
 		//Setup dense Correlation
@@ -244,6 +235,48 @@ namespace RunIAC
 		DS.getSimpleExtentDims(dims, NULL);
 
 		return (unsigned int)dims[0];
+	}
+
+	void Run_AutoCorr_DataEval(Settings PrgSettings, CreateDataEval_Settings EvalSettings)
+	{
+		Detector Det;
+
+		//Initialize Stuff and average intensity
+		{
+			if (EvalSettings.PixelMap_Path == "")
+			{ 
+				std::cerr << "ERROR: No pixel map path set => can't load Hit Events\n";
+				std::cerr << "    -> in Run_AutoCorr_DataEval()\n";
+				throw;
+			}
+			if (EvalSettings.EchoLevel > 0)
+				std::cout << "Load pixel map\n";
+			
+			Det.LoadPixelMap(EvalSettings.PixelMap_Path, EvalSettings.PixelMap_DataSet);
+
+			Det.LoadPixelMask(EvalSettings.PixelMask_Path);
+
+			if (EvalSettings.XML_Path == "")
+			{
+				std::cerr << "ERROR: No XML path set => can't load Hit Events\n";
+				std::cerr << "    -> in Run_AutoCorr_DataEval()\n";
+				throw;
+			}
+			if (EvalSettings.EchoLevel > 0)
+				std::cout << "Load Hit Event List\n";
+
+
+
+
+			PrgSettings.LoadHitEventListFromFile(EvalSettings.XML_Path);
+		
+		}
+
+
+
+
+		std::cerr << "   ToImplement -> in Run_AutoCorr_DataEval()\n";
+		throw;
 	}
 
 	void Run_AC_SM_Full(AC1D & AC, CreateSM_Settings SM_Settings, Settings & PrgSettings)
@@ -709,13 +742,16 @@ namespace RunIAC
 
 	void GeneratePixelMapForSimulator(std::string Filename, std::string Dataset, double Distance, double PixelSize, int SizeFS, int SizeSS, std::array<float, 3> Orientation)
 	{
+		std::cerr << "To Implement.\n";
+		throw;
+
+
 		double * PixelMap;
 		PixelMap = new double[SizeFS * SizeSS];
 
 
+		double OrientNormLength;
 
-		std::cerr << "To Implement.\n";
-		throw;
 
 
 		delete[] PixelMap;

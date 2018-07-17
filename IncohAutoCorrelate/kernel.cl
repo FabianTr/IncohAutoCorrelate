@@ -148,7 +148,7 @@ inline void atomic_add_float(__global double *source, const double value) {
 __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 	__global const float *KMap,
 	__global const double *Params,
-	__global long *CQsmall)
+	__global unsigned long *CQsmall)
 {
 	unsigned int ind = get_global_id(0);
 	//Params[0] = DetectorSize[0] * DetectorSize[1]; //Numer of pixels (size[0]*size[1])
@@ -232,7 +232,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		}
 
 		long ValConv = 0;
-		ValConv = (long)(Val*Multiplicator);
+		ValConv = (unsigned long)(Val*Multiplicator);
 
 		k2[0] = KMap[0 + 3 * i];
 		k2[1] = KMap[1 + 3 * i];
@@ -262,7 +262,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		ss = (unsigned int)(floor(q1[Cind] + 0.5) + MeshCenterC);
 		atomic_add(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), ValConv);
 
-		if (ss < 0 || ms < 0 || fs < 0 || ss >= MeshSizeC || ms >= MeshSizeAB || fs >= MeshSizeAB)//Use only the half space to safe memory (positive q_z only)
+		if (ss < 0 || ms < 0 || fs < 0 || ss >= MeshSizeC || ms >= MeshSizeAB || fs >= MeshSizeAB)//Check scans and display overflows.
 		{
 			printf("ME: scans:%d, %d, %d   q: %f, %f, %f\n", ss, ms, fs, q1[0], q1[1], q1[2]);
 		}
@@ -274,7 +274,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 __kernel void Merge_CQ(__global const double *smallMesh,
 	__global const float *RW,
 	__global const double *Params,
-	__global long *CQ)
+	__global unsigned long *CQ)
 {
 	unsigned int ind = get_global_id(0);
 	//Params[0] = SmallMesh.Shape.dq_per_Voxel; //dq per Voxel
@@ -339,13 +339,10 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 		q_out[2] = RW[10 * i + 6] * q_in[0] + RW[10 * i + 7] * q_in[1] + RW[10 * i + 8] * q_in[2];
 
 
-		//if (q_out[2] < 0) //Use only the half space to safe memory (positive q_z only)
-		//{
-		//	continue;
-		//}
+
 
 		//weight entry and transform to int64
-		double Val_in = (double)smallMesh[ind];
+		double Val_in = smallMesh[ind];
 
 		if (Val_in < 1e-37f)
 		{

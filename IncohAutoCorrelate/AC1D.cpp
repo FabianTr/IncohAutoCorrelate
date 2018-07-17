@@ -68,7 +68,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
 
 
-	double Multiplicator = 1;
+	double Multiplicator = 0.0000001;
 
 	float Min_I = 0, Max_I = 0, Mean_I = 0;
 	ArrayOperators::Min_Max_Mean_Value(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], Min_I, Max_I, Mean_I);
@@ -178,9 +178,9 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 }
 
 
+// <AC_UW>
 std::mutex g_loadFile_mutex;
 std::mutex g_echo_mutex;
-//std::unordered_map<std::string, std::mutex> H5Mutex;
 void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, float MaxQ, float dqdx, bool JungfrauDet)
 {
 	//g_echo_mutex.lock();
@@ -221,7 +221,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 		{
 			delete[] Det.Intensity;
 			Det.Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
-			Det.LoadIntensityData_EPIX(Det.Intensity, Options.HitEvents[i].Filename, Options.HitEvents[i].Dataset, Options.HitEvents[i].Event);
+			Det.GetSliceOutOfHDFCuboid(Det.Intensity, Options.HitEvents[i].Filename, Options.HitEvents[i].Dataset, Options.HitEvents[i].Event);
 		}
 		g_loadFile_mutex.unlock();
 
@@ -287,7 +287,6 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	}
 
 }
-
 void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation, bool JungfrauDet)
 {
 	int Threads = 200; //(200) set higher than expectred threads because of waitingtimes for read from file
@@ -365,4 +364,4 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 		delete[] AC_Map[i];
 	}
 }
-
+// </AC_UW>
