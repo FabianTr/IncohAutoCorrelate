@@ -240,8 +240,20 @@ namespace RunIAC
 	void Run_AutoCorr_DataEval(Settings PrgSettings, CreateDataEval_Settings EvalSettings)
 	{
 		Detector Det;
+		unsigned int StackSize = 0;
+		unsigned int lowerBound = 0;
+		unsigned int upperBound = 0;
 
-		//Initialize Stuff and average intensity
+		//<Output Field> (used on demand)
+		AC1D Vector_AC;
+		ACMesh Mesh_FinalAC;
+
+		ACMesh Mesh_CurrAC;
+		ACMesh Mesh_CQ;
+
+		//</Output Field>
+
+		//Initialize Stuff
 		{
 			if (EvalSettings.PixelMap_Path == "")
 			{ 
@@ -252,9 +264,10 @@ namespace RunIAC
 			if (EvalSettings.EchoLevel > 0)
 				std::cout << "Load pixel map\n";
 			
+			//load pixelmap and if existing pixel mask
 			Det.LoadPixelMap(EvalSettings.PixelMap_Path, EvalSettings.PixelMap_DataSet);
-
 			Det.LoadPixelMask(EvalSettings.PixelMask_Path);
+			Det.Calc_kMap();
 
 			if (EvalSettings.XML_Path == "")
 			{
@@ -265,11 +278,78 @@ namespace RunIAC
 			if (EvalSettings.EchoLevel > 0)
 				std::cout << "Load Hit Event List\n";
 
-
-
-
+			//Load Hit event list from xml-file
 			PrgSettings.LoadHitEventListFromFile(EvalSettings.XML_Path);
-		
+			if (EvalSettings.RestrictStackToBoundaries)
+			{
+				if (EvalSettings.UpperBoundary > PrgSettings.HitEvents.size())
+				{
+					std::cerr << "ERROR: Upper Hit boundary exeeds number of hits in loaded XML file\n";
+					std::cerr << "    -> in Run_AutoCorr_DataEval()\n";
+					throw;
+				}
+				else
+				{
+					StackSize = EvalSettings.UpperBoundary - EvalSettings.LowerBoundary;
+					lowerBound = EvalSettings.LowerBoundary;
+					upperBound = EvalSettings.UpperBoundary;
+				}
+			}
+			else
+			{
+				StackSize = PrgSettings.HitEvents.size();
+				lowerBound = 0;
+				upperBound = StackSize;
+			}
+		}
+
+		//check if fractional C(q) eval is required
+		if (EvalSettings.FractionalCq)
+		{
+			int Fractions_Num = StackSize / EvalSettings.SizeOfCqFraction;
+			
+			//To Implement
+
+			throw; //Implement remaining stuff
+		}
+		else
+		{
+			//Create averaged intensity
+			{
+				Det.LoadAndAverageIntensity(PrgSettings.HitEvents, EvalSettings.PhotonOffset, EvalSettings.PhotonStep, lowerBound, upperBound, true);
+				
+				if (EvalSettings.Out_AvIntensity_Path != "")//save averaged intensity
+				{
+					ArrayOperators::SafeArrayToFile(EvalSettings.Out_AvIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::Binary);
+					if (EvalSettings.EchoLevel > 0)
+						std::cout << "-> Averaged intensity saved as \"" << EvalSettings.Out_AvIntensity_Path << "\".\n";
+				}
+				//Apply Pixelmask
+				Det.ApplyPixelMask();
+			}
+
+			if (EvalSettings.AngularAveraged)// Angular Averaged, 1D Mode
+			{
+				Vector_AC.Initialize(Det, EvalSettings.MeshSize);
+
+				//To Implement
+				throw; //Implement remaining stuff
+			}
+			else //3D Mode
+			{
+				ProfileTime profiler;
+				profiler.Tic();
+				if (EvalSettings.EchoLevel > 0)
+					std::cout << "Start dense autocorrelating for small C(q)\n";
+
+				ACMesh smallMesh;
+				smallMesh.CreateSmallMesh_CofQ_ForDetector(Det, EvalSettings.MeshSize, EvalSettings.QZoom);
+
+
+				//To Implement
+				throw; //Implement remaining stuff
+			}
+
 		}
 
 
@@ -608,7 +688,7 @@ namespace RunIAC
 
 
 
-		//Statistics
+	//Statistics
 	void Print_Statistics_SM(CreateSM_Settings SM_Settings, Settings & PrgSettings)
 	{
 		ProfileTime Profiler;

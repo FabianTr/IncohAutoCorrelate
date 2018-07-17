@@ -173,7 +173,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 	int InterpolMode = (unsigned int)Params[7];
 
 	float MaxQ = (float)Params[8];
-	long Multiplicator = (long)Params[9];
+	double Multiplicator = (double)Params[9];
 
 
 	////Debug Bullshit
@@ -231,8 +231,10 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 			continue;
 		}
 
-		long ValConv = 0;
+		unsigned long ValConv = 0;
 		ValConv = (unsigned long)(Val*Multiplicator);
+		
+
 
 		k2[0] = KMap[0 + 3 * i];
 		k2[1] = KMap[1 + 3 * i];

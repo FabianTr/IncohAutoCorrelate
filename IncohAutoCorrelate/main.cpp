@@ -266,9 +266,9 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	Simulator::SimulationSettings SimSettings;
 
-	SimSettings.UnitCells[0] = 50;
-	SimSettings.UnitCells[1] = 50;
-	SimSettings.UnitCells[2] = 50;
+	SimSettings.UnitCells[0] = 75;
+	SimSettings.UnitCells[1] = 75;
+	SimSettings.UnitCells[2] = 75;
 
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
@@ -276,7 +276,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	SimSettings.NumberOfSimulations = 10; // 30
 
 	SimSettings.Modes = 1;
-	SimSettings.AveragePhotonesPerEmitterOnDetector =  1e4; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
+	SimSettings.AveragePhotonesPerEmitterOnDetector =  1e3 * 0.0275f; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
 	SimSettings.PoissonSample = true;
 	SimSettings.SubSampling = 1; // 3 => (2*3+1)^2 = 49
 
@@ -284,7 +284,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	SimSettings.Value_per_Photon = 1.0f;//6.4
 
-	SimSettings.CrystSettings.FlYield = 1.0f; //0.1
+	SimSettings.CrystSettings.FlYield = 0.1f; //0.1
 	SimSettings.CrystSettings.Incoherent = true;
 	SimSettings.CrystSettings.Isotropie = 1.0f;
 	SimSettings.CrystSettings.RandOrientation = false;
@@ -315,6 +315,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	}
 	std::vector<std::array<double, 3>> UnitCell; //Hardcode unitcell for Hb (1gzx)
 	std::array<double, 3> t_pos;
+	//Hardcoded Hb
 	t_pos = { 15.817 , 16.279 , 14.682 };
 	UnitCell.push_back(t_pos);
 	t_pos = { -10.262, -4.051 , -0.010 };
@@ -377,7 +378,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 20;
+	int RunMode = 10;
 
 	int N_autorun = 1;
 	if (Panelwise)
@@ -1480,7 +1481,7 @@ int main()
 				CQ_Settings.AC_Small_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
 
 				CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "IntensityAv.bin";
-				//CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF_Seg" + std::to_string(i_autorun) + ".bin";
+			//	CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF_Seg" + std::to_string(i_autorun) + ".bin";
 			//	CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/JungfrFlatOne.bin";
 
 
@@ -1488,7 +1489,7 @@ int main()
 				CQ_Settings.PixelMap_DataSet = "data/data";
 
 
-				//CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
+			//	CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
 
 
 
@@ -1503,7 +1504,7 @@ int main()
 
 				CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "Cq_503-Z4_Big.bin";
 				CQ_Settings.SmallCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "Cq_503-Z4_Small.bin";
-				//CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+			//	CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
 
 				//ac shared settings
 				AC_Settings.AC_FirstMap_Flags = CQ_Settings.AC_Small_Flags;

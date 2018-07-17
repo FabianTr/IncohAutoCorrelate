@@ -1044,7 +1044,7 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 		throw;
 	}
 
-	double Multiplicator = 0.000000001;
+	double Multiplicator = 1e-10;
 	for (; 1 > Mean_I*Mean_I * Multiplicator; )
 	{
 		Multiplicator *= 10;
@@ -1124,18 +1124,27 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 
 
 	//convert to Double
-	#pragma omp parallel for
+	double mean=0;
+	//#pragma omp parallel for
 	for (unsigned int i = 0; i < SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_C; i++)
 	{
 		SmallMesh.CQMesh[i] = (double)TempMesh[i] / Multiplicator;
+		mean += SmallMesh.CQMesh[i];
 	}
+	std::cout << "Mean cq: " << mean / SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_C << "\n";
+
+
+
 
 	//Free Memory
 	delete[] TempMesh;
 
-
 }
 
+void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector<Settings::HitEvent>& Events, Settings & Options, AutoCorrFlags Flags)
+{
+	Merge_smallCofQ(BigMesh, SmallMesh, Events, 0, Events.size(), Options, Flags);
+}
 void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings & Options, AutoCorrFlags Flags)
 {
 	{//Test stuff
@@ -1155,7 +1164,6 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 
 
 	double MaxWeight  = 0.0;
-	double MeanWeight = 0.0;
 	float* Rot_and_Weight = new float[10 * (UpperBound - LowerBound)];
 	unsigned int ind = 0;
 	for (unsigned int i = LowerBound; i < UpperBound; i++)
@@ -1197,9 +1205,8 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		Rot_and_Weight[ind + 9] = Events[i].MeanIntensity*Events[i].MeanIntensity;
 
 		if (Events[i].MeanIntensity>MaxWeight)
-			MaxWeight = Events[i].MeanIntensity*Events[i].MeanIntensity;
+			MaxWeight = Events[i].MeanIntensity;
 
-		MeanWeight += Events[i].MeanIntensity / ((double)(UpperBound - LowerBound));
 		
 		//if (i < 20)
 		//{
@@ -1212,38 +1219,19 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 
 		ind += 10;
 	}
-	//Debug Stuff
-	{
-		//int j = 14;
-		//std::cout << j << " : ";
-		//for (int n = 0; n < 10; n++)
-		//{
-		//	std::cout << Rot_and_Weight[n + 10 * j] << "    ";
-		//}
-		//std::cout << "\n";
 
-		// j = 15;
-		//std::cout << j << " : ";
-		//for (int n = 0; n < 10; n++)
-		//{
-		//	std::cout << Rot_and_Weight[n + 10 * j] << "    ";
-		//}
-		//std::cout << "\n";
 
-		// j = 38;
-		//std::cout << j << " : ";
-		//for (int n = 0; n < 10; n++)
-		//{
-		//	std::cout << Rot_and_Weight[n + 10 * j] << "    ";
-		//}
-		//std::cout << "\n";
-	}
-	
+	std::cout << "Max weight: " << MaxWeight << "\n";
 
-	std::cout << "Max weight: " << MaxWeight << "    Mean weight: " << MeanWeight <<"\n";
 
-	double Multiplicator = 0.00000000001;
-	for(; 1>MeanWeight*MaxWeight*Multiplicator;) //Order of magnitude of largest weight //=> goto largest weight^2
+	double Min_Cq, Mean_Cq, Max_Cq;
+	ArrayOperators::Min_Max_Mean_Value(SmallMesh.CQMesh, SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_C, Min_Cq, Max_Cq, Mean_Cq);
+
+
+	std::cout << "Small C(q):: Min = " << Min_Cq << "; Max = " << Max_Cq << "; Mean = " << Mean_Cq<<"\n";
+
+	double Multiplicator = 1e-15;
+	for(; 1>MaxWeight*MaxWeight*Mean_Cq*Multiplicator;) //Order of magnitude of largest weight //=> goto largest weight^2
 	{ 
 		Multiplicator *=  10;
 	}
@@ -1271,7 +1259,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	Params[7] = Multiplicator; //Multiplicator for conversion to long
 	Params[8] = UpperBound - LowerBound; //Number of Rotations
 
-							   //DEBUG BULLSHIT
+	//DEBUG BULLSHIT
 	std::cout << "\n***************\nParams:\n";
 	for (int i = 0; i < 9; i++)
 	{
@@ -1314,8 +1302,8 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	cl::Buffer CL_RW(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, RotWeightSize, Rot_and_Weight, &err);
 	cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
 
-
-	std::cout << "Memory needed by kernel: " << (((double)(ACsize+ACsizeSmall+RotWeightSize+ sizeof(Params))) / (1024.0*1024.0*1024.0)) << "Gb\n";
+	if(Options.echo)
+		std::cout << "Memory needed by kernel: " << (((double)(ACsize+ACsizeSmall+RotWeightSize+ sizeof(Params))) / (1024.0*1024.0*1024.0)) << "Gb\n";
 
 	//Setup Kernel
 	cl::Kernel kernel(Options.CL_Program, "Merge_CQ", &err);
@@ -1366,10 +1354,6 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	delete[] Rot_and_Weight;
 	delete[] TempBigMesh;
 
-}
-void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector<Settings::HitEvent>& Events, Settings & Options, AutoCorrFlags Flags)
-{
-	Merge_smallCofQ(BigMesh, SmallMesh, Events, 0, Events.size(), Options, Flags);
 }
 
 

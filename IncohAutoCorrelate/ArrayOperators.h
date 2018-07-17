@@ -168,6 +168,23 @@ namespace ArrayOperators
 		MeanValue = (float)t_mean;
 	}
 
+	inline void Min_Max_Mean_Value(double* Array, int Size, double& MinValue, double& MaxValue, double& MeanValue)
+	{
+		double t_mean = 0;
+		MinValue = 1e38f;
+		MaxValue = -1e38f;
+		for (int i = 0; i < Size; i++)
+		{
+			if (Array[i] > MaxValue)
+				MaxValue = Array[i];
+			if (Array[i] < MinValue)
+				MinValue = Array[i];
+			t_mean += Array[i];
+		}
+		t_mean = t_mean / Size;
+		MeanValue = (double)t_mean;
+	}
+
 	//Poisson sampl is serial because of copied seed problem!!, FIX!!!
 	inline void ParPoissonSampling(double* Array, unsigned int Size)
 	{
