@@ -1002,7 +1002,6 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		delete[] TempBigMesh;
 	}
 
-
 }
 
 

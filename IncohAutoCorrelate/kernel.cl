@@ -518,6 +518,7 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 		printf("Multiplicator: %f\n", Multiplicator);
 		printf("MapAndReduce: %d\n", MapAndReduce);
 		printf("Max q: %f\n", MaxQ);
+		printf("dq/dx: %f\n", dqPerVox);
 	}
 	//END
 
@@ -556,11 +557,14 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 		k2[2] = KMap[2 + 3 * i];
 
 		q = sqrt((k1[0] - k2[0]) * (k1[0] - k2[0])
-			+ (k1[1] - k2[1]) * (k1[1] - k2[1])
-			+ (k1[2] - k2[2]) * (k1[2] - k2[2]));
+			 	+ (k1[1] - k2[1]) * (k1[1] - k2[1])
+				+ (k1[2] - k2[2]) * (k1[2] - k2[2]));
 
 
-
+		if (q > MaxQ)
+		{
+			continue;
+		}
 
 		//if (q > MaxQ)
 		//{
@@ -703,89 +707,82 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 
 
 //create AC fore dense HitList
-__kernel void AutoCorr_sparseHL_AV(__global const float *HitList,
+__kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 	__global const double *Params,
 	__global unsigned long *AC)
 {
+	//printf("Kernel is alive\n");
+
 	unsigned int ind = get_global_id(0);
-
 	unsigned int HLSize = (unsigned int)Params[0];
-	int ArraySize = (int)Params[1];
+	unsigned int ArraySize = (unsigned int)Params[1]; //vec Size
+	float MaxQ = (float)Params[2];
+	float dqdx = (float)Params[3];
+	double Multiplicator = Params[4];
+	unsigned int MapAndReduce = (unsigned int)Params[5];
+	int InterpolMode = (int)Params[6];
 
+	unsigned int MaR_ScanAdd = ((unsigned int)((ind*MapAndReduce) / (HLSize))) * ArraySize;
 
-	unsigned int MaR_ScanAdd = ((ind*MapAndReduce) / (HLSize)) * ArraySize;
 
 	//Debug Bullshit
-	if (ind == 0 && Params[7] > 0.4)//ind == 0
+	if (ind == 0)//ind == 0
 	{
-		printf("Kernel is alive\n");
-		//printf("Detector Size: %d\n", DetSize);
-		//printf("Interpolation mode: %d\n", InterpolMode);
-		//printf("ArraySize: %d\n", ArraySize);
+		//printf("Kernel is alive\n");
+		//printf("HitList Size: %d\n", HLSize);
+		//printf("Array Size: %d\n", ArraySize);
+		//printf("MaxQ: %f\n", MaxQ);
+		//printf("dqdx: %f\n", dqdx);
 		//printf("Multiplicator: %f\n", Multiplicator);
 		//printf("MapAndReduce: %d\n", MapAndReduce);
-		//printf("Max q: %f\n", MaxQ);
+		//printf("InterpolMode: %d\n", InterpolMode);
 	}
 	//END
 
-
-	//local Variables
-
+	//Get thread constant k1 and f_Val
 	float k1[3];
 	float k2[3];
-
-	k1[0] = KMap[0 + 3 * ind];
-	k1[1] = KMap[1 + 3 * ind];
-	k1[2] = KMap[2 + 3 * ind];
-
-	float q;
-	float INT_ind = IntensityData[ind];
+	k1[0] = HitList[4 * ind + 0];
+	k1[1] = HitList[4 * ind + 1];
+	k1[2] = HitList[4 * ind + 2];
+	double INT_ind = (double)HitList[4 * ind + 3];
 
 
-	for (int i = 0; i < DetSize; i++) //Loop over all Pixel //< DetSize
+	for (int i = 0; i < HLSize; i++) //Loop over all Pixel //< DetSize
 	{
 		if (i == ind) //exclude zeroth peak need to be set to infinity afterwards
 		{
 			continue;
 		}
+			
+		k2[0] = HitList[4 * i + 0];
+		k2[1] = HitList[4 * i + 1];
+		k2[2] = HitList[4 * i + 2];
 
-		double Val = INT_ind * IntensityData[i];
 
-		if (Val < 1e-37f) //no entry shortcut
+		float q = sqrt((k1[0] - k2[0]) * (k1[0] - k2[0])
+					 + (k1[1] - k2[1]) * (k1[1] - k2[1])
+					 + (k1[2] - k2[2]) * (k1[2] - k2[2]));
+
+		double Val = INT_ind * (double)HitList[4 * i + 3];
+
+		if (q > MaxQ) //check if q is in boundaries
 		{
 			continue;
 		}
 
-
-
-		k2[0] = KMap[0 + 3 * i];
-		k2[1] = KMap[1 + 3 * i];
-		k2[2] = KMap[2 + 3 * i];
-
-		q = sqrt((k1[0] - k2[0]) * (k1[0] - k2[0])
-			+ (k1[1] - k2[1]) * (k1[1] - k2[1])
-			+ (k1[2] - k2[2]) * (k1[2] - k2[2]));
-
-
-
-
-		//if (q > MaxQ)
-		//{
-		//	continue;
-		//}
-
-		q = q / dqPerVox;
+		q = q / dqdx;
 
 
 		if (InterpolMode == 0) //nearest neighbor interpolation
 		{
-			long ValConv = 0;
-			ValConv = (long)(Val*Multiplicator);
+			unsigned long ValConv = 0;
+			ValConv = (unsigned long)(Val * Multiplicator);
 
 			unsigned int sc;
 			sc = (unsigned int)(floor(q + 0.5)) + MaR_ScanAdd;
 
-			atomic_add(&(CQ[sc]), ValConv);
+			atomic_add(&(AC[sc]), ValConv);
 		}
 		if (InterpolMode == 1) //linear interpolation
 		{
@@ -796,17 +793,19 @@ __kernel void AutoCorr_sparseHL_AV(__global const float *HitList,
 
 			double Sep = q - (floor(q)); //separator
 
-			long ValConv1 = 0;
-			long ValConv2 = 0;
-			ValConv1 = (long)(Val*(1 - Sep)*Multiplicator);
-			ValConv2 = (long)(Val*(Sep)*Multiplicator);
+			unsigned long ValConv1 = 0;
+			unsigned long ValConv2 = 0;
 
-			atomic_add(&(CQ[sc1]), ValConv1);
-			atomic_add(&(CQ[sc2]), ValConv2);
+			ValConv1 = (unsigned long)(Val * (1 - Sep) * Multiplicator);
+			ValConv2 = (unsigned long)(Val * Sep * Multiplicator);
+
+			ValConv1 = 1;
+			ValConv2 = 0;
+
+			atomic_add(&(AC[sc1]), ValConv1);
+			atomic_add(&(AC[sc2]), ValConv2);
 		}
 
+	}
 
-
-
-	}//while ((i = (i + 1) % N) != n);
 }

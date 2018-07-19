@@ -273,10 +273,10 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 20; // 30
+	SimSettings.NumberOfSimulations = 10; // 30
 
 	SimSettings.Modes = 1;
-	SimSettings.AveragePhotonesPerEmitterOnDetector =  7.5e2 * 0.0275f; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
+	SimSettings.AveragePhotonesPerEmitterOnDetector =  1e4 * 0.0275f; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
 	SimSettings.PoissonSample = true;
 	SimSettings.SubSampling = 1; // 3 => (2*3+1)^2 = 49
 
@@ -378,7 +378,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 10;
+	int RunMode = 20;
 
 	int N_autorun = 1;
 	if (Panelwise)
@@ -1433,8 +1433,9 @@ int main()
 			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for simulated Jungfrau data\n******************************\n";
 
 
-			if(false)
+			if(true)
 			{
+				std::string Prefix = "SCRIPTTEST_AV";
 
 				RunIAC::CreateDataEval_Settings EvalSettings;
 				EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Test_75_2.xml";
@@ -1445,29 +1446,28 @@ int main()
 				//
 				EvalSettings.EchoLevel = 3;
 				//
-				EvalSettings.AngularAveraged = false;
+				EvalSettings.AngularAveraged = true;
 				EvalSettings.DoubleMap = true;
 				EvalSettings.FractionalCq = false;
 				EvalSettings.RestrictStackToBoundaries = false;
-				EvalSettings.MeshSize = 503;
-				EvalSettings.QZoom = 4.0f;
+				EvalSettings.MeshSize = 1025;
+				EvalSettings.QZoom = 1.0f;
 
 				EvalSettings.PhotonOffset = 0.0f;
 				EvalSettings.PhotonStep = 0.999f;
 
-				std::string Prefix = "Test";
+				
 				EvalSettings.Out_AvIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_avIntensity_.bin";
 				EvalSettings.Out_ACuw_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_uwAC_"+ std::to_string(EvalSettings.MeshSize) +"-Z"+ std::to_string(EvalSettings.QZoom) +".bin";
 				EvalSettings.Out_Cq_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_CQ_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
 				EvalSettings.Out_Cq_small_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_CQsmall_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
 				EvalSettings.Out_Final_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_AC_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
-			
+				EvalSettings.Out_Q_Vector = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_Q_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+
 				RunIAC::Run_AutoCorr_DataEval(Options, EvalSettings);
+
+				return 0;
 			}
-
-
-
-
 
 
 

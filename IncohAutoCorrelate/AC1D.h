@@ -35,6 +35,9 @@ public:
 	void Initialize(Detector &Det, unsigned int ArraySize);
 	void Initialize(Detector & Det, unsigned int ArraySize, float QZoom);
 
+	void CreateQVector();
+	void CalcAC();
+
 	//kernel handel
 	void Calculate_CQ(Detector &Det, Settings &Options, Settings::Interpolation IterpolMode);
 

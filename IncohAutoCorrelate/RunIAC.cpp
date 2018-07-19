@@ -353,14 +353,12 @@ namespace RunIAC
 				}
 				// </C(q)>
 
+
 				// <AC uw>
 				if (EvalSettings.EchoLevel > 0)
 					std::cout << "Calculate unweighted AC - vector\n";
-
+				
 				ProfileLevel_1.Tic();
-
-
-				//TODO: implement switch for dense/sparse mode and implement dense map and reduce kernel
 
 				bool RememberEchoLevel = PrgSettings.echo;
 				if (EvalSettings.EchoLevel < 1)
@@ -373,7 +371,7 @@ namespace RunIAC
 					std::cout << "Calculated unweighted AC - vector in\n";
 					ProfileLevel_1.Toc(true);
 				}
-
+				//save Results
 				if (EvalSettings.Out_ACuw_Path != "")
 				{
 					ArrayOperators::SafeArrayToFile(EvalSettings.Out_ACuw_Path, Vector_AC.AC_UW, Vector_AC.Shape.Size, ArrayOperators::FileType::Binary);
@@ -385,10 +383,35 @@ namespace RunIAC
 				}
 				// </AC uw>
 
-				
 
-				//To Implement
-				throw; //Implement remaining stuff
+				// <AC>
+				Vector_AC.CalcAC();
+				if (EvalSettings.Out_Final_AC_Path != "")
+				{
+					ArrayOperators::SafeArrayToFile(EvalSettings.Out_Final_AC_Path, Vector_AC.AC, Vector_AC.Shape.Size, ArrayOperators::FileType::Binary);
+					if (EvalSettings.EchoLevel > 0)
+					{
+						std::cout << " -> Saved angular Final AC as: \"" << EvalSettings.Out_Final_AC_Path << "\"\n";
+						std::cout << " --> Vetor Length = " << Vector_AC.Shape.Size << "\n";
+					}
+				}
+
+				// </AC>
+
+
+				// <Q Vector>
+				if (EvalSettings.Out_Q_Vector != "")
+				{
+					Vector_AC.CreateQVector();
+					ArrayOperators::SafeArrayToFile(EvalSettings.Out_Q_Vector, Vector_AC.Q, Vector_AC.Shape.Size, ArrayOperators::FileType::Binary);
+					if (EvalSettings.EchoLevel > 0)
+					{
+						std::cout << " -> Saved Q Vector as: \"" << EvalSettings.Out_Q_Vector << "\"\n";
+						std::cout << " --> Vetor Length = " << Vector_AC.Shape.Size << "\n";
+					}
+				}
+				// </Q Vector>
+
 			}
 			else //   3D Mode
 			{
@@ -534,6 +557,7 @@ namespace RunIAC
 			}
 
 		}
+
 
 
 

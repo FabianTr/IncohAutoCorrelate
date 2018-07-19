@@ -102,7 +102,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	Params[5] = (double)Multiplicator;
 	Params[6] = (double)MapAndReduce_Factor; //Map and reduce: sub sections
 	Params[7] = (double)Options.echo;
-
+	
 
 	if (EchoLevel > 1)
 	{ //Print Parameter
@@ -123,7 +123,6 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 	Options.checkErr(err, "Setup CommandQueue in AC1D::Calculate_CQ() ");
 	cl::Event cl_event;
-
 
 
 	//Define Kernel Buffers
@@ -251,7 +250,8 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 		float SHLsizeQuot = ((float)Det.SparseHitList.size()) / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1]));
 		if (SHLsizeQuot < 0.0075f) // (switch for SparseHitList.size / DetSize > p(0.0075))
-		{
+		{//CPU Mode
+			std::cout << "CPU MODE\n";
 			for (unsigned int j = 0; j < Det.SparseHitList.size(); j++)
 			{
 				for (unsigned int k = j; k < Det.SparseHitList.size(); k++)
@@ -285,8 +285,8 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 						float Sep = q - sc1; //separator
 
-						float Val1 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3])*(1 - Sep));
-						float Val2 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3])*(Sep));
+						float Val1 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3]) * (1 - Sep));
+						float Val2 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3]) * (Sep));
 
 						AC_M[sc1] += Val1;
 						AC_M[sc2] += Val2;
@@ -294,45 +294,100 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 				}
 			}
 		}
-		else
+		else //GPU Mode
 		{
-			{			
-				//Todo Implement GPU code
-				throw;
-			}
+			double Multiplicator = 100; //1 is sufficient for photon discretised values (only integer possible, nearest neighbour), 10 should be good for linear interpol.
 
-			double Multiplicator = 10; //1 is sufficient for photon discretised values (only integer possible)
-
-			int VecSize = (int)ceilf(MaxQ / dqdx);
+			
+			int MapAndReduce = 10000;
+			int VecSize = (int)ceilf(MaxQ / dqdx) - 1; //the -1 compensates for zeropadding
+			int TempArraySize = MapAndReduce * VecSize;
 
 			//set Parameter
-			double Params[8];
+			double Params[7];
 
 			Params[0] = (double)Det.SparseHitList.size();
 			Params[1] = (double)VecSize;
 			Params[2] = (double)MaxQ;
 			Params[3] = (double)dqdx;
+			Params[4] = Multiplicator; //Multiplicator for conversion to long
+			Params[5] = (double)MapAndReduce;
+			Params[6] = (double)IterpolMode; //Not implementet, only nearest neighbours
+			
+			uint64_t * TempArray = new uint64_t[TempArraySize]();
 			
 
-			Params[5] = 1.0;
+		//	std::cout << Params[0] << "; " << Params[1] << "; " << Params[2] << "; "
+		//		<< Params[3] << "; " << Params[4] << "; " << Params[5] << "; " << Params[6] << "\n";
 
-			Params[6] = Multiplicator; //Multiplicator for conversion to long
-			Params[7] = IterpolMode; //Not implementet, only nearest neighbours
-												 //reserve OpenCL Device
 
 			//Setup OpenCL stuff and reserve decvice
 			int OpenCLDeviceNumber = -1;
 			cl_int err;
-			while ((OpenCLDeviceNumber = Options.OCL_ReserveDevice()) == -1)
+			while ((OpenCLDeviceNumber = Options.OCL_ReserveDevice()) == -1)//reserve OpenCL Device
 			{
 				std::this_thread::sleep_for(std::chrono::microseconds(Options.ThreadSleepForOCLDev));
 			}
 
 
+			//obtain Device
+			cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
 
+			//Setup Queue
+			cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
+			Options.checkErr(err, "Setup CommandQueue in AC1D::Calculate_AC_UW_Mapped() ");
+			cl::Event cl_event;
+
+
+
+			//Input Buffer:
+			size_t SparseListSize = sizeof(float) * 4 * Det.SparseHitList.size();
+			cl::Buffer CL_SparseList(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, SparseListSize, (void*)Det.SparseHitList.data(), &err);
+			cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
+
+			//Output Buffer
+			size_t ACsize = sizeof(uint64_t) * TempArraySize;
+			cl::Buffer CL_AC(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempArray, &err);
+
+
+			//Setup Kernel
+			cl::Kernel kernel(Options.CL_Program, "AutoCorr_sparseHL_AAV", &err);
+			Options.checkErr(err, "Setup AutoCorr_CQ in AC1D::Calculate_AC_UW_Mapped() ");
+
+			//Set Arguments
+			kernel.setArg(0, CL_SparseList);
+			kernel.setArg(1, CL_Params);
+			kernel.setArg(2, CL_AC);
+			const size_t &global_size = (size_t)Det.SparseHitList.size();
+
+
+			//launch Kernel
+			err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
+			cl_event.wait();
+
+			//read results
+			err = queue.enqueueReadBuffer(CL_AC, CL_TRUE, 0, ACsize, TempArray);
+			Options.checkErr(err, "OpenCL kernel, launched in AC1D::Calculate_AC_UW_Mapped() ");
+
+			
 			//Free Device
 			Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
+			//Reduce mapped data and convert to double
+			int j = 0;
+			for (unsigned int i = 0; i < TempArraySize; i++)
+			{
+				if (j == VecSize)
+					j = 0;
+
+
+				AC_M[j] += ((double)TempArray[i] / (double)Multiplicator);
+				j++;
+			}
+
+			//free Memory
+			delete[] TempArray;
+			
 		}
 	}
 
@@ -345,14 +400,13 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 		std::cout << "AC (uw)-Thread " << LowerBound << " - " << UpperBound << " Finished." << std::endl;
 		g_echo_mutex.unlock();
 	}
-
 }
 
 void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, float PhotonOffset, float PhotonStep, int Threads )
 {
 	std::array<float, 2> Photonisation;
 	Photonisation[0] = PhotonOffset;
-	Photonisation[0] = PhotonStep;
+	Photonisation[1] = PhotonStep;
 	Calculate_AC_UW_MR(Options, RefDet, IterpolMode, Photonisation, false,Threads);
 }
 void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation, bool JungfrauDet, int Threads )
@@ -363,13 +417,14 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 		Threads = (int)Options.HitEvents.size();
 	}
 	
-
 	if (Options.HitEvents.size() <= 0)
 	{
 		std::cerr << "ERROR: No entrys in HitEvents\n";
 		std::cerr << "    -> in AC1D::Calculate_AC_M()\n";
 		throw;
 	}
+
+
 
 	int WorkerSize = (int)Options.HitEvents.size() / (Threads - 1);
 
@@ -414,7 +469,7 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 	//Calculate_AC_UW_Mapped(std::ref(Options), std::ref(RefDet), std::ref(AC_Map[0]), WorkerBounds[0][0], WorkerBounds[0][1], IterpolMode, Photonisation, Shape.Max_Q, Shape.dq_per_Step);
 	//profiler.Toc(true);
 	//std::cout << "done\n";
-
+	
 
 	//create AC_UW
 	delete[] AC_UW;
@@ -434,3 +489,23 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 }
 // </AC_UW sparse>
 
+void AC1D::CreateQVector()
+{
+	delete[] Q;
+	Q = new double[Shape.Size];
+	for (int i = 0; i < Shape.Size; i++)
+	{
+		Q[i] = i * Shape.dq_per_Step;
+	}
+}
+
+void AC1D::CalcAC()
+{
+	delete[] AC;
+	AC = new double[Shape.Size];
+
+	for (int i = 0; i < Shape.Size; i++)
+	{
+		AC[i] = AC_UW[i] / CQ[i];
+	}
+}
