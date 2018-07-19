@@ -273,10 +273,10 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 10; // 30
+	SimSettings.NumberOfSimulations = 20; // 30
 
 	SimSettings.Modes = 1;
-	SimSettings.AveragePhotonesPerEmitterOnDetector =  1e3 * 0.0275f; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
+	SimSettings.AveragePhotonesPerEmitterOnDetector =  7.5e2 * 0.0275f; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
 	SimSettings.PoissonSample = true;
 	SimSettings.SubSampling = 1; // 3 => (2*3+1)^2 = 49
 
@@ -291,8 +291,8 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	SimSettings.SaveResults = true;
 
-	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP2.h5";//Sim20_Fixed_NP_3
-	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP2.xml";//Sim20_Fixed_NP_3
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Test_75_2.h5";//Sim20_Fixed_NP_3
+	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Test_75_2.xml";//Sim20_Fixed_NP_3
 	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.h5";
 	//SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.xml";
 	SimSettings.Dataset = "data";
@@ -1432,6 +1432,50 @@ int main()
 		{
 			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for simulated Jungfrau data\n******************************\n";
 
+
+			if(false)
+			{
+
+				RunIAC::CreateDataEval_Settings EvalSettings;
+				EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Test_75_2.xml";
+
+				EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
+				EvalSettings.PixelMap_DataSet = "data/data";
+				EvalSettings.PixelMask_Path = "";
+				//
+				EvalSettings.EchoLevel = 3;
+				//
+				EvalSettings.AngularAveraged = false;
+				EvalSettings.DoubleMap = true;
+				EvalSettings.FractionalCq = false;
+				EvalSettings.RestrictStackToBoundaries = false;
+				EvalSettings.MeshSize = 503;
+				EvalSettings.QZoom = 4.0f;
+
+				EvalSettings.PhotonOffset = 0.0f;
+				EvalSettings.PhotonStep = 0.999f;
+
+				std::string Prefix = "Test";
+				EvalSettings.Out_AvIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_avIntensity_.bin";
+				EvalSettings.Out_ACuw_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_uwAC_"+ std::to_string(EvalSettings.MeshSize) +"-Z"+ std::to_string(EvalSettings.QZoom) +".bin";
+				EvalSettings.Out_Cq_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_CQ_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+				EvalSettings.Out_Cq_small_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_CQsmall_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+				EvalSettings.Out_Final_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_AC_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			
+				RunIAC::Run_AutoCorr_DataEval(Options, EvalSettings);
+			}
+
+
+
+
+
+
+
+
+
+
+
+			
 			Options.Echo("Load Events from XML");
 			//Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml");
 
@@ -1440,10 +1484,10 @@ int main()
 			//SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_1.xml");
 			//SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Sim25_A1000_Y1_2.xml");
 
-			SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP2.xml");//Sim20_Fixed_NP_3
+			SimPaths_XML.push_back("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Test_75_2.xml");//Sim20_Fixed_NP_3
 
 
-			std::string Prefix = "TestTMP2_";//FixedNP5_
+			std::string Prefix = "Test_75_2_";//FixedNP5_
 			Options.HitEvents.clear();
 
 			//compound HitEventLists
@@ -1550,7 +1594,7 @@ int main()
 			RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
 
 			ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "AC_Final_503-Z4.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
-			std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "AC_Final_504-Z2.bin \n";
+			std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "AC_Final_504-Z4.bin \n";
 
 			//ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
 			//std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin \n";

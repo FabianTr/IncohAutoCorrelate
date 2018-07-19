@@ -10,7 +10,7 @@
 class AC1D
 {
 private:
-
+	
 public:
 	AC1D();
 	~AC1D();
@@ -20,6 +20,8 @@ public:
 	double * AC_UW = NULL;
 	double * AC = NULL;
 	double * Q = NULL;
+
+	int EchoLevel = 1;
 
 	struct MeshShape {
 		unsigned int Size = 1000;
@@ -31,14 +33,17 @@ public:
 
 	void Initialize();
 	void Initialize(Detector &Det, unsigned int ArraySize);
-
+	void Initialize(Detector & Det, unsigned int ArraySize, float QZoom);
 
 	//kernel handel
 	void Calculate_CQ(Detector &Det, Settings &Options, Settings::Interpolation IterpolMode);
 
 
-	//Sparse Autocorrelate
-	void Calculate_AC_UW_MR(Settings &Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, bool JungfrauDet);
-	
+	//Sparse or Dense Autocorrelate dyn switch
+	void Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, float PhotonOffset, float PhotonStep, int Threads = 200);
+	void Calculate_AC_UW_MR(Settings &Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, bool JungfrauDet, int Threads = 200);
+
+
+
 };
 

@@ -50,8 +50,15 @@ void AC1D::Initialize(Detector & Det, unsigned int ArraySize)
 	Shape.dq_per_Step = Shape.Max_Q / ((float)(Shape.Size + 1));
 	Initialize();
 }
+void AC1D::Initialize(Detector & Det, unsigned int ArraySize, float QZoom)
+{
+	Shape.Size = ArraySize;
+	Shape.Max_Q = (float)(sqrt(Det.Max_q[0] * Det.Max_q[0] + Det.Max_q[1] * Det.Max_q[1] + Det.Max_q[2] * Det.Max_q[2]))/QZoom ;
+	Shape.dq_per_Step = Shape.Max_Q / ((float)(Shape.Size + 1));
+	Initialize();
+}
 
-void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolation IterpolMode)
+void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolation IterpolMode) //Det need avIntensity already be loaded
 {
 	//profiler stuff
 	ProfileTime Profiler;
@@ -68,7 +75,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
 
 
-	double Multiplicator = 0.0000001;
+	double Multiplicator = 1e-10;
 
 	float Min_I = 0, Max_I = 0, Mean_I = 0;
 	ArrayOperators::Min_Max_Mean_Value(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], Min_I, Max_I, Mean_I);
@@ -77,7 +84,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	{
 		Multiplicator *= 10;
 	}
-	Multiplicator = Multiplicator * 100000;
+	Multiplicator = Multiplicator * 1e5;
 
 	if (Multiplicator > 1e18)
 		Multiplicator = 1e18;
@@ -97,7 +104,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	Params[7] = (double)Options.echo;
 
 
-	if (Options.echo)
+	if (EchoLevel > 1)
 	{ //Print Parameter
 		std::cout << "Parameter for 1D C(q):\n";
 		for (int i = 0; i < 7; i++)
@@ -109,7 +116,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 
 	uint64_t * TempArray = new uint64_t[TempArraySize]();
 
-	if (Options.echo)
+	if (EchoLevel > 2)
 		std::cout << "TempArraySize: " << TempArraySize << "\n";
 
 	//Setup Queue
@@ -130,6 +137,11 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	cl::Buffer CL_kMap(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, KMapsize, Det.kMap, &err);
 	cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
 
+	if (EchoLevel > 2)
+	{
+		std::cout << "Memory needed by OCl kernel: " << ((ACsize + Intsize + KMapsize + sizeof(Params))/(1024.0*1024.0)) << "MB\n";
+	}
+
 	//Setup Kernel
 	cl::Kernel kernel(Options.CL_Program, "AutoCorr_CQ_AV", &err);
 	Options.checkErr(err, "Setup AutoCorr_CQ in AC1D::Calculate_CQ() ");
@@ -149,8 +161,12 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 
 	Options.checkErr(err, "Launch Kernel in AC1D::Calculate_CQ() ");
 	cl_event.wait();
-	Options.Echo("C(q)-AV kernel finished in");
-	Profiler.Toc(Options.echo);
+
+	if (EchoLevel > 0)
+	{
+		std::cout << "C(q)-AV kernel finished in\n";
+		Profiler.Toc(true);
+	}
 
 	err = queue.enqueueReadBuffer(CL_CQ, CL_TRUE, 0, ACsize, TempArray);
 	Options.checkErr(err, "OpenCL kernel, launched in AC1D::Calculate_CQ() ");
@@ -177,11 +193,11 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	delete[] TempArray;
 }
 
-
 // <AC_UW>
+// <AC_UW sparse>
 std::mutex g_loadFile_mutex;
 std::mutex g_echo_mutex;
-void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, float MaxQ, float dqdx, bool JungfrauDet)
+void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M, unsigned int LowerBound, unsigned int UpperBound, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, float MaxQ, float dqdx, bool JungfrauDet)
 {
 	//g_echo_mutex.lock();
 	//std::cout << "Thread from " << LowerBound <<" launched\n";
@@ -232,48 +248,92 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 		Det.CreateSparseHitList(Photonisation[0], Photonisation[1],false); //suppress OMP parallelization within Threadpool!
 		//std::cout << "Sparse List Size: " << Det.SparseHitList.size() << "\n";
 		//iterate over all combinations
-		for (unsigned int j = 0; j < Det.SparseHitList.size(); j++)
-		{
-			for (unsigned int k = j; k < Det.SparseHitList.size(); k++)
-			{
-				if (k == j)
-					continue;
 
-				float q = sqrt(
-					(Det.SparseHitList[j][0] - Det.SparseHitList[k][0]) * (Det.SparseHitList[j][0] - Det.SparseHitList[k][0]) +
-					(Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) * (Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) +
-					(Det.SparseHitList[j][2] - Det.SparseHitList[k][2]) * (Det.SparseHitList[j][2] - Det.SparseHitList[k][2]) 
+		float SHLsizeQuot = ((float)Det.SparseHitList.size()) / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1]));
+		if (SHLsizeQuot < 0.0075f) // (switch for SparseHitList.size / DetSize > p(0.0075))
+		{
+			for (unsigned int j = 0; j < Det.SparseHitList.size(); j++)
+			{
+				for (unsigned int k = j; k < Det.SparseHitList.size(); k++)
+				{
+					if (k == j)
+						continue;
+
+					float q = sqrt(
+						(Det.SparseHitList[j][0] - Det.SparseHitList[k][0]) * (Det.SparseHitList[j][0] - Det.SparseHitList[k][0]) +
+						(Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) * (Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) +
+						(Det.SparseHitList[j][2] - Det.SparseHitList[k][2]) * (Det.SparseHitList[j][2] - Det.SparseHitList[k][2])
 					);
 
-				if (q > MaxQ)
-				{
-					continue;
-				}
-				q = q / dqdx;
+					if (q > MaxQ)
+					{
+						continue;
+					}
+					q = q / dqdx;
 
-				if (IterpolMode == Settings::Interpolation::NearestNeighbour)
-				{
-					unsigned int sc;
-					sc = (unsigned int)(floor(q + 0.5));
-					AC_M[sc] += 2.0f * (Det.SparseHitList[j][3] * Det.SparseHitList[k][3]); //factor 2 because of both orientations (k = j; ...)
-				}
-				else if (IterpolMode == Settings::Interpolation::Linear)
-				{
-					unsigned int sc1, sc2;
-					sc1 = (unsigned int)(floor(q));
-					sc2 = sc1 + 1;
+					if (IterpolMode == Settings::Interpolation::NearestNeighbour)
+					{
+						unsigned int sc;
+						sc = (unsigned int)(floor(q + 0.5));
+						AC_M[sc] += 2.0f * (Det.SparseHitList[j][3] * Det.SparseHitList[k][3]); //factor 2 because of both orientations (k = j; ...)
+					}
+					else if (IterpolMode == Settings::Interpolation::Linear)
+					{
+						unsigned int sc1, sc2;
+						sc1 = (unsigned int)(floor(q));
+						sc2 = sc1 + 1;
 
-					float Sep = q - sc1; //separator
+						float Sep = q - sc1; //separator
 
-					float Val1 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3])*(1 - Sep));
-					float Val2 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3])*(Sep));
+						float Val1 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3])*(1 - Sep));
+						float Val2 = 2.0f * ((Det.SparseHitList[j][3] * Det.SparseHitList[k][3])*(Sep));
 
-					AC_M[sc1] += Val1;
-					AC_M[sc2] += Val2;
+						AC_M[sc1] += Val1;
+						AC_M[sc2] += Val2;
+					}
 				}
 			}
 		}
+		else
+		{
+			{			
+				//Todo Implement GPU code
+				throw;
+			}
 
+			double Multiplicator = 10; //1 is sufficient for photon discretised values (only integer possible)
+
+			int VecSize = (int)ceilf(MaxQ / dqdx);
+
+			//set Parameter
+			double Params[8];
+
+			Params[0] = (double)Det.SparseHitList.size();
+			Params[1] = (double)VecSize;
+			Params[2] = (double)MaxQ;
+			Params[3] = (double)dqdx;
+			
+
+			Params[5] = 1.0;
+
+			Params[6] = Multiplicator; //Multiplicator for conversion to long
+			Params[7] = IterpolMode; //Not implementet, only nearest neighbours
+												 //reserve OpenCL Device
+
+			//Setup OpenCL stuff and reserve decvice
+			int OpenCLDeviceNumber = -1;
+			cl_int err;
+			while ((OpenCLDeviceNumber = Options.OCL_ReserveDevice()) == -1)
+			{
+				std::this_thread::sleep_for(std::chrono::microseconds(Options.ThreadSleepForOCLDev));
+			}
+
+
+
+			//Free Device
+			Options.OCL_FreeDevice(OpenCLDeviceNumber);
+
+		}
 	}
 
 	//Free in thread distributed Det memory:
@@ -287,9 +347,17 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	}
 
 }
-void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation, bool JungfrauDet)
+
+void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, float PhotonOffset, float PhotonStep, int Threads )
 {
-	int Threads = 200; //(200) set higher than expectred threads because of waitingtimes for read from file
+	std::array<float, 2> Photonisation;
+	Photonisation[0] = PhotonOffset;
+	Photonisation[0] = PhotonStep;
+	Calculate_AC_UW_MR(Options, RefDet, IterpolMode, Photonisation, false,Threads);
+}
+void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation, bool JungfrauDet, int Threads )
+{
+	//int Threads = 200; //(200) set higher than expectred threads because of waitingtimes for read from file
 	if (Options.HitEvents.size() < 200)
 	{
 		Threads = (int)Options.HitEvents.size();
@@ -364,4 +432,5 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 		delete[] AC_Map[i];
 	}
 }
-// </AC_UW>
+// </AC_UW sparse>
+

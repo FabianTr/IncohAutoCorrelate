@@ -134,7 +134,7 @@ namespace RunIAC
 
 
 		if (AC_Settings.echo)
-			std::cout << AC_Settings.ThreadName << ": Start dense autocorrelating (small Mesh) ...\n";
+			std::cout << AC_Settings.ThreadName << ": Start sparse autocorrelating  ...\n";
 
 
 
@@ -237,21 +237,22 @@ namespace RunIAC
 		return (unsigned int)dims[0];
 	}
 
-	void Run_AutoCorr_DataEval(Settings PrgSettings, CreateDataEval_Settings EvalSettings)
+	void Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings)
 	{
+		ProfileTime ProfileLevel_0;
+		ProfileTime ProfileLevel_1;
 		Detector Det;
 		unsigned int StackSize = 0;
 		unsigned int lowerBound = 0;
 		unsigned int upperBound = 0;
 
-		//<Output Field> (used on demand)
+		// <Output Field> (used on demand)
 		AC1D Vector_AC;
-		ACMesh Mesh_FinalAC;
 
 		ACMesh Mesh_CurrAC;
 		ACMesh Mesh_CQ;
 
-		//</Output Field>
+		// </Output Field>
 
 		//Initialize Stuff
 		{
@@ -330,24 +331,206 @@ namespace RunIAC
 
 			if (EvalSettings.AngularAveraged)// Angular Averaged, 1D Mode
 			{
-				Vector_AC.Initialize(Det, EvalSettings.MeshSize);
+				ProfileLevel_0.Tic();
+				//initialize with specified size
+				Vector_AC.Initialize(Det, EvalSettings.MeshSize,EvalSettings.QZoom);
+				Vector_AC.EchoLevel = EvalSettings.EchoLevel;
+
+				// <C(q)>
+				if (EvalSettings.EchoLevel > 0)
+					std::cout << "Calculate C(q) - vector\n";
+				Vector_AC.Calculate_CQ(Det, PrgSettings, Settings::Interpolation::Linear);
+
+				//save C(q)
+				if (EvalSettings.Out_Cq_Path != "")
+				{
+					ArrayOperators::SafeArrayToFile(EvalSettings.Out_Cq_Path, Vector_AC.CQ, Vector_AC.Shape.Size, ArrayOperators::FileType::Binary);
+					if (EvalSettings.EchoLevel > 0)
+					{
+						std::cout << " -> Saved angular averaged C(q) as: \"" << EvalSettings.Out_Cq_Path << "\"\n";
+						std::cout << " --> Vetor Length = " << Vector_AC.Shape.Size << "\n";
+					}
+				}
+				// </C(q)>
+
+				// <AC uw>
+				if (EvalSettings.EchoLevel > 0)
+					std::cout << "Calculate unweighted AC - vector\n";
+
+				ProfileLevel_1.Tic();
+
+
+				//TODO: implement switch for dense/sparse mode and implement dense map and reduce kernel
+
+				bool RememberEchoLevel = PrgSettings.echo;
+				if (EvalSettings.EchoLevel < 1)
+					PrgSettings.echo = false;
+				Vector_AC.Calculate_AC_UW_MR(PrgSettings, Det, Settings::Interpolation::Linear, EvalSettings.PhotonOffset, EvalSettings.PhotonStep);
+				PrgSettings.echo = RememberEchoLevel;
+
+				if (EvalSettings.EchoLevel > 0)
+				{
+					std::cout << "Calculated unweighted AC - vector in\n";
+					ProfileLevel_1.Toc(true);
+				}
+
+				if (EvalSettings.Out_ACuw_Path != "")
+				{
+					ArrayOperators::SafeArrayToFile(EvalSettings.Out_ACuw_Path, Vector_AC.AC_UW, Vector_AC.Shape.Size, ArrayOperators::FileType::Binary);
+					if (EvalSettings.EchoLevel > 0)
+					{
+						std::cout << " -> Saved angular averaged unweighted AC as: \"" << EvalSettings.Out_ACuw_Path << "\"\n";
+						std::cout << " --> Vetor Length = " << Vector_AC.Shape.Size << "\n";
+					}
+				}
+				// </AC uw>
+
+				
 
 				//To Implement
 				throw; //Implement remaining stuff
 			}
-			else //3D Mode
+			else //   3D Mode
 			{
-				ProfileTime profiler;
-				profiler.Tic();
+				ProfileLevel_0.Tic();
 				if (EvalSettings.EchoLevel > 0)
 					std::cout << "Start dense autocorrelating for small C(q)\n";
 
+				// <C(q)>
+				// -> <C(q)_small>
+				ProfileLevel_1.Tic();
 				ACMesh smallMesh;
 				smallMesh.CreateSmallMesh_CofQ_ForDetector(Det, EvalSettings.MeshSize, EvalSettings.QZoom);
 
+				Detector::AutoCorrFlags Flags;
+				Flags.InterpolationMode = Settings::NearestNeighbour;
+				Det.AutoCorrelate_CofQ_SmallMesh(smallMesh, Flags, PrgSettings);
 
-				//To Implement
-				throw; //Implement remaining stuff
+				//save small C(q)
+				if (EvalSettings.Out_Cq_small_Path != "")
+				{
+					ArrayOperators::SafeArrayToFile(EvalSettings.Out_Cq_small_Path, smallMesh.CQMesh, smallMesh.Shape.Size_AB*smallMesh.Shape.Size_AB*smallMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
+					if (EvalSettings.EchoLevel > 0)
+					{
+						std::cout << "-> C(q) small Mesh saved as \"" << EvalSettings.Out_Cq_small_Path << "\"\n";
+						std::cout << "--> Mesh shape: " << smallMesh.Shape.Size_AB << " x " << smallMesh.Shape.Size_AB << " x " << smallMesh.Shape.Size_C << "\n";
+					}
+				}
+				if (EvalSettings.EchoLevel > 0)
+				{
+					std::cout << "C(q) small Mesh calculation done in\n";
+					ProfileLevel_1.Toc(true);
+				}
+				// -> </C(q)_small>
+
+				// -> <Merge CQ>
+				ProfileLevel_1.Tic();
+				if (EvalSettings.EchoLevel > 0)
+					std::cout << "Weight and merge C(q)\n";
+
+				Mesh_CQ.CreateBigMesh_CofQ_ForDetector(Det, EvalSettings.MeshSize, EvalSettings.QZoom);
+
+				Det.Merge_smallCofQ(Mesh_CQ, smallMesh, PrgSettings.HitEvents, lowerBound, upperBound, PrgSettings, Flags);
+
+				//save big C(q)
+				if(EvalSettings.Out_Cq_Path != "")
+				{
+					ArrayOperators::SafeArrayToFile(EvalSettings.Out_Cq_Path, Mesh_CQ.CQMesh, Mesh_CQ.Shape.Size_AB*Mesh_CQ.Shape.Size_AB*Mesh_CQ.Shape.Size_C, ArrayOperators::FileType::Binary);
+					if (EvalSettings.EchoLevel > 0)
+					{
+						std::cout << "-> C(q) Mesh (merged) saved as \"" << EvalSettings.Out_Cq_Path << "\"\n";
+						std::cout << "--> Mesh shape: " << Mesh_CQ.Shape.Size_AB << " x " << Mesh_CQ.Shape.Size_AB << " x " << Mesh_CQ.Shape.Size_C << "\n";
+					}
+				}
+				if (EvalSettings.EchoLevel > 0)
+				{
+					std::cout << "C(q) merge and weight done in\n";
+					ProfileLevel_1.Toc(true);
+				}
+				// -> </Merge CQ>
+				// </C(q)>
+
+				// <AC uw>
+				ProfileLevel_1.Tic();
+				ACMesh AC_uw;
+				//Setup  Correlation
+				AC_uw.CreateBigMeshForDetector(Det, EvalSettings.MeshSize, EvalSettings.QZoom);
+
+				if (EvalSettings.EchoLevel > 0)
+					std::cout << "Start auto correlation for sparsificated intensities\n";
+
+				Det.LoadIntensityData(&PrgSettings.HitEvents[0]);
+				for (unsigned int i = lowerBound; i < upperBound; i++)
+				{
+					if (EvalSettings.EchoLevel > 1)
+						std::cout << "AC event " << i << "/" << (upperBound) << std::endl;
+
+					Det.LoadIntensityData(&PrgSettings.HitEvents[i]);
+
+					ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
+
+					Det.CreateSparseHitList(EvalSettings.PhotonOffset, EvalSettings.PhotonStep); //Sparsificate
+				
+					if (EvalSettings.EchoLevel > 2)
+						std::cout << i << ": Pixels with hits: " << Det.SparseHitList.size()*100.0 / (Det.DetectorSize[0] * Det.DetectorSize[1]) << "%" << "    Mean intensity: " << PrgSettings.HitEvents[i].MeanIntensity << "\n";
+
+					Det.AutoCorrelateSparseList(AC_uw, Flags, EvalSettings.DoubleMap, PrgSettings);
+				}
+				//Save
+				if (EvalSettings.Out_ACuw_Path != "")
+				{
+					double* ACMesh = new double[AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C]();
+					#pragma omp parallel for
+					for (int i = 0; i < AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C; i++)
+					{
+						ACMesh[i] = PrgSettings.IntToFloat(AC_uw.Mesh[i]);
+					}
+					ArrayOperators::SafeArrayToFile(EvalSettings.Out_ACuw_Path, ACMesh, AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C, ArrayOperators::FileType::Binary);
+
+					if (EvalSettings.EchoLevel > 0)
+					{
+						std::cout << "-> Saved AC_uw (formated as double) as \"" << EvalSettings.Out_ACuw_Path << "\"\n";
+						std::cout << "--> Mesh shape: " << AC_uw.Shape.Size_AB << " x " << AC_uw.Shape.Size_AB << " x " << AC_uw.Shape.Size_C << "\n";
+					}
+					delete[] ACMesh;
+				}
+				if (EvalSettings.EchoLevel > 0)
+				{
+					std::cout << "AC unweighted calculated in\n";
+					ProfileLevel_1.Toc(true);
+				}
+				// </AC uw>
+
+				// <Apply C(q) to AC_uw>
+				if (EvalSettings.EchoLevel > 0)
+					std::cout << "Apply C(q) to unweighted AC\n";
+				double * FinalAC = nullptr;
+				Merge_ACandCQ(FinalAC, AC_uw, Mesh_CQ, PrgSettings);
+
+				if (EvalSettings.Out_Final_AC_Path != "")
+				{
+					ArrayOperators::SafeArrayToFile(EvalSettings.Out_Final_AC_Path, FinalAC, AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB, ArrayOperators::FileType::Binary);
+					
+					if (EvalSettings.EchoLevel > 0)
+					{
+						std::cout << "-> Saved AC (Final form, formated as double) as \"" << EvalSettings.Out_Final_AC_Path << "\"\n";
+						std::cout << "--> Mesh shape: " << AC_uw.Shape.Size_AB << " x " << AC_uw.Shape.Size_AB << " x " << AC_uw.Shape.Size_C << "\n";
+					}
+				}
+				else
+				{
+					std::cout << "WARNING: no path set for final AC => Results have not been saved!\n";
+				}
+				delete[] FinalAC;
+				// </Apply C(q) to AC_uw>
+
+				if (EvalSettings.EchoLevel > 0)
+				{
+					std::cout << "\n--------------------------\n Evaluation done in\n";
+					ProfileLevel_0.Toc(true);
+				}
+				//end of eval
+				return;
 			}
 
 		}
@@ -355,8 +538,7 @@ namespace RunIAC
 
 
 
-		std::cerr << "   ToImplement -> in Run_AutoCorr_DataEval()\n";
-		throw;
+		//end of method
 	}
 
 	void Run_AC_SM_Full(AC1D & AC, CreateSM_Settings SM_Settings, Settings & PrgSettings)

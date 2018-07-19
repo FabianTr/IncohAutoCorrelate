@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <thread>
 #include <mutex>
+#include <Eigen/SVD>
 
 #include "Simulator.h"
 #include "ProfileTime.h"
@@ -158,10 +159,22 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		EmitterList = EmitterCrystal.GetEmitters(SimSettings.CrystSettings, RotMat);
 		unsigned int NumEM = EmitterList.size();
 
-		for (int j = 0; j < 9; j++)//Store Rotation Matrix of current Crystal
-		{
-			curr_Event.RotMatrix[j] = RotMat[j];
-		}
+		//ToDo: Inverse matrix
+		Eigen::Matrix3d RotM;
+
+		RotM << RotMat[0], RotMat[1], RotMat[2], RotMat[3], RotMat[4], RotMat[5], RotMat[6], RotMat[7], RotMat[8];
+		Eigen::Matrix3d RotInv = RotM.inverse();
+		
+		curr_Event.RotMatrix[0] = RotInv(0, 0);
+		curr_Event.RotMatrix[1] = RotInv(0, 1);
+		curr_Event.RotMatrix[2] = RotInv(0, 2);
+		curr_Event.RotMatrix[3] = RotInv(1, 0);
+		curr_Event.RotMatrix[4] = RotInv(1, 1);
+		curr_Event.RotMatrix[5] = RotInv(1, 2);
+		curr_Event.RotMatrix[6] = RotInv(2, 0);
+		curr_Event.RotMatrix[7] = RotInv(2, 1);
+		curr_Event.RotMatrix[8] = RotInv(2, 2);
+
 
 		float * EM = new float[4 * NumEM];
 		for (unsigned int j = 0; j < NumEM; j++)

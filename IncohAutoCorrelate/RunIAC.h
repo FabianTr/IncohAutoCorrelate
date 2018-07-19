@@ -100,8 +100,9 @@ namespace RunIAC
 		std::string Out_AvIntensity_Path = "";
 		std::string Out_ACuw_Path = "";
 		std::string Out_Cq_Path = "";
-		std::string Out_Cq_small_Path = "";
+		std::string Out_Cq_small_Path = "";//only 3D
 		std::string Out_Final_AC_Path = "";
+		std::string Out_Q_Vector = "";//only 1D AAv
 
 		float PhotonOffset = 0.0f;
 		float PhotonStep = 1.0f;
@@ -113,7 +114,7 @@ namespace RunIAC
 		Detector::AutoCorrFlags AC_SecondMap_Flags; //to Implement
 		Detector::AutoCorrFlags AC_FirstMap_Flags;
 	};
-	void Run_AutoCorr_DataEval(Settings PrgSettings, CreateDataEval_Settings EvalSettings);
+	void Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings);
 
 
 	//Single Molecule

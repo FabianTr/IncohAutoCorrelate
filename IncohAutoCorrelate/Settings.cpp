@@ -105,6 +105,7 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 			//currEvent.RotMatrix[i * 3 + 1] = y;
 			//currEvent.RotMatrix[i * 3 + 2] = z;
 
+
 			for (int k = 0; k < 3; k++)
 			{
 				for (int l = 0; l < 3; l++)
