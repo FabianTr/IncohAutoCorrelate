@@ -215,9 +215,16 @@ namespace RunIAC
 		for (unsigned int i = 0; i < Size; i++)
 		{
 			if (CQ.CQMesh[i] <= 0)
+			{
 				Output[i] = 0;
+			}
+			else
+			{
+				Output[i] = AC[i] / CQ.CQMesh[i];
+			}
 
-			Output[i] = AC[i] / CQ.CQMesh[i];
+			if (std::isnan(Output[i]))
+				Output[i] = 0;
 		}
 
 	}
@@ -331,6 +338,8 @@ namespace RunIAC
 
 			if (EvalSettings.AngularAveraged)// Angular Averaged, 1D Mode
 			{
+				Settings::Interpolation AvInterpol = Settings::Interpolation::Linear;
+
 				ProfileLevel_0.Tic();
 				//initialize with specified size
 				Vector_AC.Initialize(Det, EvalSettings.MeshSize,EvalSettings.QZoom);
@@ -339,7 +348,7 @@ namespace RunIAC
 				// <C(q)>
 				if (EvalSettings.EchoLevel > 0)
 					std::cout << "Calculate C(q) - vector\n";
-				Vector_AC.Calculate_CQ(Det, PrgSettings, Settings::Interpolation::Linear);
+				Vector_AC.Calculate_CQ(Det, PrgSettings, AvInterpol);
 
 				//save C(q)
 				if (EvalSettings.Out_Cq_Path != "")
@@ -353,7 +362,6 @@ namespace RunIAC
 				}
 				// </C(q)>
 
-
 				// <AC uw>
 				if (EvalSettings.EchoLevel > 0)
 					std::cout << "Calculate unweighted AC - vector\n";
@@ -363,7 +371,7 @@ namespace RunIAC
 				bool RememberEchoLevel = PrgSettings.echo;
 				if (EvalSettings.EchoLevel < 1)
 					PrgSettings.echo = false;
-				Vector_AC.Calculate_AC_UW_MR(PrgSettings, Det, Settings::Interpolation::Linear, EvalSettings.PhotonOffset, EvalSettings.PhotonStep);
+				Vector_AC.Calculate_AC_UW_MR(PrgSettings, Det, AvInterpol, EvalSettings.PhotonOffset, EvalSettings.PhotonStep);
 				PrgSettings.echo = RememberEchoLevel;
 
 				if (EvalSettings.EchoLevel > 0)
@@ -383,7 +391,6 @@ namespace RunIAC
 				}
 				// </AC uw>
 
-
 				// <AC>
 				Vector_AC.CalcAC();
 				if (EvalSettings.Out_Final_AC_Path != "")
@@ -398,7 +405,6 @@ namespace RunIAC
 
 				// </AC>
 
-
 				// <Q Vector>
 				if (EvalSettings.Out_Q_Vector != "")
 				{
@@ -411,7 +417,11 @@ namespace RunIAC
 					}
 				}
 				// </Q Vector>
-
+				if (EvalSettings.EchoLevel > 0)
+				{
+					std::cout << "\n--------------------------\n Evaluation done in\n";
+					ProfileLevel_0.Toc(true);
+				}
 			}
 			else //   3D Mode
 			{
@@ -557,10 +567,6 @@ namespace RunIAC
 			}
 
 		}
-
-
-
-
 
 		//end of method
 	}
@@ -893,7 +899,6 @@ namespace RunIAC
 	}
 
 
-
 	//Statistics
 	void Print_Statistics_SM(CreateSM_Settings SM_Settings, Settings & PrgSettings)
 	{
@@ -1002,7 +1007,6 @@ namespace RunIAC
 
 
 	}
-
 
 
 	//General

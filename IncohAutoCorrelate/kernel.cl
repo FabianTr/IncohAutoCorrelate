@@ -387,7 +387,7 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 }
 
 
-//Autocorrelates sparse Hit List (analog to CPU implementation)
+//Autocorrelates sparse (dense) HitList (analog to CPU implementation)
 __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	__global const double *Params,
 	__global const float *RotMatrix,
@@ -504,8 +504,6 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 	double Multiplicator = (double)Params[5];
 	unsigned int MapAndReduce = (unsigned int)Params[6];
 
-
-
 	unsigned int MaR_ScanAdd = ((ind*MapAndReduce) / (DetSize)) * ArraySize;
 
 	//Debug Bullshit
@@ -522,9 +520,7 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 	}
 	//END
 
-
 	//local Variables
-
 	float k1[3];
 	float k2[3];
 
@@ -534,7 +530,6 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 	float q;
 	float INT_ind = IntensityData[ind];
-
 
 	for (int i = 0; i < DetSize; i++) //Loop over all Pixel //< DetSize
 	{
@@ -551,13 +546,12 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 		}
 
 
-
 		k2[0] = KMap[0 + 3 * i];
 		k2[1] = KMap[1 + 3 * i];
 		k2[2] = KMap[2 + 3 * i];
 
 		q = sqrt((k1[0] - k2[0]) * (k1[0] - k2[0])
-			 	+ (k1[1] - k2[1]) * (k1[1] - k2[1])
+				+ (k1[1] - k2[1]) * (k1[1] - k2[1])
 				+ (k1[2] - k2[2]) * (k1[2] - k2[2]));
 
 
@@ -572,7 +566,6 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 		//}
 
 		q = q / dqPerVox;
-
 
 		if (InterpolMode == 0) //nearest neighbor interpolation
 		{
@@ -595,15 +588,12 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 			long ValConv1 = 0;
 			long ValConv2 = 0;
-			ValConv1 = (long)(Val*(1 - Sep)*Multiplicator);
-			ValConv2 = (long)(Val*(Sep)*Multiplicator);
+			ValConv1 = (long)(Val * (1 - Sep) * Multiplicator);
+			ValConv2 = (long)(Val * (Sep) * Multiplicator);
 
 			atomic_add(&(CQ[sc1]), ValConv1);
 			atomic_add(&(CQ[sc2]), ValConv2);
 		}
-
-
-
 
 	}//while ((i = (i + 1) % N) != n);
 }
@@ -706,13 +696,11 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 
 
 
-//create AC fore dense HitList
+//create AngularAveraged AC for sparse (dense) HitList
 __kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 	__global const double *Params,
 	__global unsigned long *AC)
 {
-	//printf("Kernel is alive\n");
-
 	unsigned int ind = get_global_id(0);
 	unsigned int HLSize = (unsigned int)Params[0];
 	unsigned int ArraySize = (unsigned int)Params[1]; //vec Size
@@ -724,20 +712,19 @@ __kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 
 	unsigned int MaR_ScanAdd = ((unsigned int)((ind*MapAndReduce) / (HLSize))) * ArraySize;
 
-
-	//Debug Bullshit
-	if (ind == 0)//ind == 0
-	{
-		//printf("Kernel is alive\n");
-		//printf("HitList Size: %d\n", HLSize);
-		//printf("Array Size: %d\n", ArraySize);
-		//printf("MaxQ: %f\n", MaxQ);
-		//printf("dqdx: %f\n", dqdx);
-		//printf("Multiplicator: %f\n", Multiplicator);
-		//printf("MapAndReduce: %d\n", MapAndReduce);
-		//printf("InterpolMode: %d\n", InterpolMode);
-	}
-	//END
+	////Debug Bullshit
+	//if (ind == 0)//ind == 0
+	//{
+	//	//printf("Kernel is alive\n");
+	//	//printf("HitList Size: %d\n", HLSize);
+	//	//printf("Array Size: %d\n", ArraySize);
+	//	//printf("MaxQ: %f\n", MaxQ);
+	//	//printf("dqdx: %f\n", dqdx);
+	//	//printf("Multiplicator: %f\n", Multiplicator);
+	//	//printf("MapAndReduce: %d\n", MapAndReduce);
+	//	//printf("InterpolMode: %d\n", InterpolMode);
+	//}
+	////END
 
 	//Get thread constant k1 and f_Val
 	float k1[3];
@@ -746,7 +733,6 @@ __kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 	k1[1] = HitList[4 * ind + 1];
 	k1[2] = HitList[4 * ind + 2];
 	double INT_ind = (double)HitList[4 * ind + 3];
-
 
 	for (int i = 0; i < HLSize; i++) //Loop over all Pixel //< DetSize
 	{
@@ -759,7 +745,6 @@ __kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 		k2[1] = HitList[4 * i + 1];
 		k2[2] = HitList[4 * i + 2];
 
-
 		float q = sqrt((k1[0] - k2[0]) * (k1[0] - k2[0])
 					 + (k1[1] - k2[1]) * (k1[1] - k2[1])
 					 + (k1[2] - k2[2]) * (k1[2] - k2[2]));
@@ -770,9 +755,8 @@ __kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 		{
 			continue;
 		}
-
+		//scale to pixel
 		q = q / dqdx;
-
 
 		if (InterpolMode == 0) //nearest neighbor interpolation
 		{
@@ -798,9 +782,6 @@ __kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 
 			ValConv1 = (unsigned long)(Val * (1 - Sep) * Multiplicator);
 			ValConv2 = (unsigned long)(Val * Sep * Multiplicator);
-
-			ValConv1 = 1;
-			ValConv2 = 0;
 
 			atomic_add(&(AC[sc1]), ValConv1);
 			atomic_add(&(AC[sc2]), ValConv2);

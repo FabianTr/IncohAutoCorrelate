@@ -266,14 +266,14 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	Simulator::SimulationSettings SimSettings;
 
-	SimSettings.UnitCells[0] = 75;
-	SimSettings.UnitCells[1] = 75;
-	SimSettings.UnitCells[2] = 75;
+	SimSettings.UnitCells[0] = 10;
+	SimSettings.UnitCells[1] = 10;
+	SimSettings.UnitCells[2] = 10;
 
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 10; // 30
+	SimSettings.NumberOfSimulations = 30; // 30
 
 	SimSettings.Modes = 1;
 	SimSettings.AveragePhotonesPerEmitterOnDetector =  1e4 * 0.0275f; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
@@ -284,15 +284,15 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	SimSettings.Value_per_Photon = 1.0f;//6.4
 
-	SimSettings.CrystSettings.FlYield = 0.1f; //0.1
+	SimSettings.CrystSettings.FlYield = 1.0f; //0.1
 	SimSettings.CrystSettings.Incoherent = true;
 	SimSettings.CrystSettings.Isotropie = 1.0f;
 	SimSettings.CrystSettings.RandOrientation = false;
 
 	SimSettings.SaveResults = true;
 
-	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Test_75_2.h5";//Sim20_Fixed_NP_3
-	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Test_75_2.xml";//Sim20_Fixed_NP_3
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP.h5";//Sim20_Fixed_NP_3
+	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP.xml";//Sim20_Fixed_NP_3
 	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.h5";
 	//SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.xml";
 	SimSettings.Dataset = "data";
@@ -1438,7 +1438,7 @@ int main()
 				std::string Prefix = "SCRIPTTEST_AV";
 
 				RunIAC::CreateDataEval_Settings EvalSettings;
-				EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/Test_75_2.xml";
+				EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP.xml";
 
 				EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
 				EvalSettings.PixelMap_DataSet = "data/data";
@@ -1451,7 +1451,7 @@ int main()
 				EvalSettings.FractionalCq = false;
 				EvalSettings.RestrictStackToBoundaries = false;
 				EvalSettings.MeshSize = 1025;
-				EvalSettings.QZoom = 1.0f;
+				EvalSettings.QZoom = 2.0f;
 
 				EvalSettings.PhotonOffset = 0.0f;
 				EvalSettings.PhotonStep = 0.999f;

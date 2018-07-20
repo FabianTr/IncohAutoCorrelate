@@ -90,7 +90,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 		Multiplicator = 1e18;
 
 
-	unsigned int MapAndReduce_Factor = 10000; //Take care of Device Memory !!!!!!!!!
+	unsigned int MapAndReduce_Factor = 10000; //Take care of Device Memory, shouldn't be a problem because its small in comp. to 3d case
 	unsigned int TempArraySize = MapAndReduce_Factor * Shape.Size;
 
 	double Params[8];
@@ -215,7 +215,6 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 	for (unsigned int i = LowerBound; i < UpperBound; i++)
 	{
-		//
 		if (Options.echo)
 		{
 			if ((i - LowerBound) % 100 == 0 && i > LowerBound)
@@ -296,9 +295,8 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 		}
 		else //GPU Mode
 		{
-			double Multiplicator = 100; //1 is sufficient for photon discretised values (only integer possible, nearest neighbour), 10 should be good for linear interpol.
+			double Multiplicator = 100; //1 is sufficient for photon discretised values (only integer possible, nearest neighbour), 100 should be good for linear interpol.
 
-			
 			int MapAndReduce = 10000;
 			int VecSize = (int)ceilf(MaxQ / dqdx) - 1; //the -1 compensates for zeropadding
 			int TempArraySize = MapAndReduce * VecSize;
@@ -316,11 +314,6 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 			
 			uint64_t * TempArray = new uint64_t[TempArraySize]();
 			
-
-		//	std::cout << Params[0] << "; " << Params[1] << "; " << Params[2] << "; "
-		//		<< Params[3] << "; " << Params[4] << "; " << Params[5] << "; " << Params[6] << "\n";
-
-
 			//Setup OpenCL stuff and reserve decvice
 			int OpenCLDeviceNumber = -1;
 			cl_int err;
@@ -338,8 +331,6 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 			Options.checkErr(err, "Setup CommandQueue in AC1D::Calculate_AC_UW_Mapped() ");
 			cl::Event cl_event;
 
-
-
 			//Input Buffer:
 			size_t SparseListSize = sizeof(float) * 4 * Det.SparseHitList.size();
 			cl::Buffer CL_SparseList(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, SparseListSize, (void*)Det.SparseHitList.data(), &err);
@@ -348,7 +339,6 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 			//Output Buffer
 			size_t ACsize = sizeof(uint64_t) * TempArraySize;
 			cl::Buffer CL_AC(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempArray, &err);
-
 
 			//Setup Kernel
 			cl::Kernel kernel(Options.CL_Program, "AutoCorr_sparseHL_AAV", &err);
@@ -360,7 +350,6 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 			kernel.setArg(2, CL_AC);
 			const size_t &global_size = (size_t)Det.SparseHitList.size();
 
-
 			//launch Kernel
 			err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
 			cl_event.wait();
@@ -369,7 +358,6 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 			err = queue.enqueueReadBuffer(CL_AC, CL_TRUE, 0, ACsize, TempArray);
 			Options.checkErr(err, "OpenCL kernel, launched in AC1D::Calculate_AC_UW_Mapped() ");
 
-			
 			//Free Device
 			Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
@@ -387,7 +375,6 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 			//free Memory
 			delete[] TempArray;
-			
 		}
 	}
 
@@ -502,10 +489,12 @@ void AC1D::CreateQVector()
 void AC1D::CalcAC()
 {
 	delete[] AC;
-	AC = new double[Shape.Size];
+	AC = new double[Shape.Size]();
 
 	for (int i = 0; i < Shape.Size; i++)
 	{
 		AC[i] = AC_UW[i] / CQ[i];
+		if (std::isnan(AC[i]))
+			AC[i] = 0;
 	}
 }
