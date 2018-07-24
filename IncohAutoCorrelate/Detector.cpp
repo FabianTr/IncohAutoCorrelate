@@ -31,7 +31,7 @@ Detector::Detector()
 		kMap = new float[1];
 }
 
-Detector::Detector(const Detector &RefDet, bool DeepCopy):Detector(RefDet)
+Detector::Detector(const Detector &RefDet, bool DeepCopy) :Detector(RefDet)
 {
 	PixelMap = new float[DetectorSize[0] * DetectorSize[1] * 3];
 	if (RefDet.Checklist.PixelMap)
@@ -144,19 +144,19 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	//std::cout << "DataSize: " << dataset.getFloatType().getSize() << "\n";
 
 	H5::DataSpace DS = dataset.getSpace();
-	
+
 	//std::cout << "Array shape: " << DS.getSimpleExtentNdims() << "\n";
 
 	if (DS.getSimpleExtentNdims() != 3) //check if shape is [nE][nx][ny] or [ny][nx][nE]  nE =^ Number of Slices(Events)
 	{
-		std::cerr << "ERROR: Intensity data dimension is not 3, but "<< DS.getSimpleExtentNdims()<< " => shape is not (N, nx, ny)\n";
+		std::cerr << "ERROR: Intensity data dimension is not 3, but " << DS.getSimpleExtentNdims() << " => shape is not (N, nx, ny)\n";
 		throw;
 	}
 	hsize_t dims[3];
 	DS.getSimpleExtentDims(dims, NULL);
-//	std::cout << "Intensity data shape: " << dims[0] << " x " << dims[1] << " x " << dims[2] << "\n";
+	//	std::cout << "Intensity data shape: " << dims[0] << " x " << dims[1] << " x " << dims[2] << "\n";
 
-	if ( dims[1] != DetectorSize[0] || dims[2] != DetectorSize[1] )
+	if (dims[1] != DetectorSize[0] || dims[2] != DetectorSize[1])
 	{
 		std::cerr << "ERROR: Intensity size does not match pixle-map size.\n";
 		throw;
@@ -200,7 +200,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	mspace.close();
 
 
-	
+
 	//dataset.vlenReclaim(type.getId(), DS.getId(), mspace.getId(), data);
 
 
@@ -308,7 +308,7 @@ void Detector::Calc_kMap()
 		y = PixelMap[3 * i + 1];
 		z = PixelMap[3 * i + 2];
 
-		r = sqrtf(x*x + y*y + z*z);
+		r = sqrtf(x*x + y * y + z * z);
 
 		x = x / r;
 		y = y / r;
@@ -394,6 +394,28 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 
 			H5::DataSpace mspace(3, dims);
 			dataset.read(PixelMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
+
+
+			float Pmax[3] = { -99999999, -99999999, -99999999 };
+			float Pmin[3] = { 99999999, 99999999, 99999999 };
+
+			for (unsigned int i_y = 0; i_y < dims[1]; i_y++)
+			{
+				for (unsigned int i_x = 0; i_x < dims[0]; i_x++)
+				{
+					for (unsigned int i_d = 0; i_d < 3; i_d++)
+					{
+						if (PixelMap[i_d + 3 * i_y * dims[0] + 3 * i_x] > Pmax[i_d])
+							Pmax[i_d] = PixelMap[i_d + 3 * i_y * dims[0] + 3 * i_x];
+						if (PixelMap[i_d + 3 * i_y * dims[0] + 3 * i_x] < Pmin[i_d])
+							Pmin[i_d] = PixelMap[i_d + 3 * i_y * dims[0] + 3 * i_x];
+					}
+				}
+			}
+
+			std::cout << "PixMap_max = [" << Pmax[0] << "; " << Pmax[1] << "; " << Pmax[2] << "]\n";
+			std::cout << "PixMap_min = [" << Pmin[0] << "; " << Pmin[1] << "; " << Pmin[2] << "]\n";
+
 		}
 		else// [3][nx][ny] //To be considerd as standeart
 		{
@@ -414,36 +436,36 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 					{
 						for (unsigned int i_d = 0; i_d < 3; i_d++)
 						{
-						PixelMap[i_d + 3 * i_x + 3 * dims[1] * i_y] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
-						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] > Pmax[i_d])
-							Pmax[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
-						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] < Pmin[i_d])
-							Pmin[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+							PixelMap[i_d + 3 * i_x + 3 * dims[1] * i_y] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+							if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] > Pmax[i_d])
+								Pmax[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+							if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] < Pmin[i_d])
+								Pmin[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
 						}
 					}
 				}
 			}
-		else//[nx][ny][3]
-		{ 
-			for (unsigned int i_x = 0; i_x < dims[1]; i_x++)
+			else//[nx][ny][3]
 			{
-				for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
+				for (unsigned int i_x = 0; i_x < dims[1]; i_x++)
 				{
-					for (unsigned int i_d = 0; i_d < 3; i_d++)
+					for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
 					{
-					//	PixelMap[i_d + 3 * i_x + 3 * dims[1] * i_y] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+						for (unsigned int i_d = 0; i_d < 3; i_d++)
+						{
+							//	PixelMap[i_d + 3 * i_x + 3 * dims[1] * i_y] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
 
 
-						PixelMap[i_d + 3 * i_y + 3 * dims[2] * i_x] = TmpPixleMap[i_y + i_x * dims[2] + i_d * dims[2] * dims[1]];
+							PixelMap[i_d + 3 * i_y + 3 * dims[2] * i_x] = TmpPixleMap[i_y + i_x * dims[2] + i_d * dims[2] * dims[1]];
 
-						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] > Pmax[i_d])
-							Pmax[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
-						if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] < Pmin[i_d])
-							Pmin[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+							if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] > Pmax[i_d])
+								Pmax[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+							if (TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d] < Pmin[i_d])
+								Pmin[i_d] = TmpPixleMap[i_y + dims[2] * i_x + dims[2] * dims[1] * i_d];
+						}
 					}
 				}
 			}
-		}
 
 			std::cout << "PixMap_max = [" << Pmax[0] << "; " << Pmax[1] << "; " << Pmax[2] << "]\n";
 			std::cout << "PixMap_min = [" << Pmin[0] << "; " << Pmin[1] << "; " << Pmin[2] << "]\n";
@@ -482,7 +504,7 @@ void Detector::GenerateFlatOnesPixelMask()
 {
 	delete[] PixelMask;
 	PixelMask = new int[DetectorSize[0] * DetectorSize[1]];
-	for (unsigned int i = 0; i < DetectorSize[0]* DetectorSize[1]; i++)
+	for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
 	{
 		PixelMask[i] = 1;
 	}
@@ -506,7 +528,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 {
 	LoadAndAverageIntensity(Events, Threshold, PhotonSamplingStep, 0, Events.size());
 }
-void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep,bool Pixelmask)
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, bool Pixelmask)
 {
 	LoadAndAverageIntensity(Events, Threshold, PhotonSamplingStep, 0, Events.size(), Pixelmask);
 }
@@ -514,7 +536,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 {
 	LoadAndAverageIntensity(Events, Threshold, PhotonSamplingStep, LowerBound, UpperBound, false);
 }
-void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound,bool Pixelmask)
+void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold, float PhotonSamplingStep, int LowerBound, int UpperBound, bool Pixelmask)
 {
 	if (Events.size() == 0)
 	{
@@ -531,7 +553,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 	long* IntensityPhotonDiscr = NULL;
 	delete[] Intensity;
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
-	{	
+	{
 		float* tmpIntensity = new float[DetectorSize[1] * DetectorSize[0]]();
 		if (PhotonSamplingStep > 0)
 			IntensityPhotonDiscr = new long[DetectorSize[1] * DetectorSize[0]]();
@@ -540,10 +562,10 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		int t_prog = -1; //for progress indicator only
 		for (int i = LowerBound; i < UpperBound; i++)//get  slides
 		{
-			if ( (((i - LowerBound) * 100) / (UpperBound - LowerBound - 1)) > t_prog)
+			if ((((i - LowerBound) * 100) / (UpperBound - LowerBound - 1)) > t_prog)
 			{
 				std::cout << "Load and Average: " << ((i - LowerBound) * 100) / (UpperBound - LowerBound - 1) << "%\n";
-				t_prog ++;
+				t_prog++;
 			}
 
 			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
@@ -552,20 +574,20 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 			if (Checklist.PixelMask)
 			{
 				//TODO IMPLEMENT Checklist for PixelMask and a LoadPixelmask() method
-				ArrayOperators::ParMultiplyElementwise(tmpIntensity, PixelMask, DetectorSize[0]* DetectorSize[1]);
+				ArrayOperators::ParMultiplyElementwise(tmpIntensity, PixelMask, DetectorSize[0] * DetectorSize[1]);
 			}
 
 			if (PhotonSamplingStep <= 0)// No Photon discretising
 			{
 				ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //add with threshold
-				
+
 				//update Event
 				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float)(DetectorSize[1] * DetectorSize[0]));
 
 			}
 			else// Photon discretising
 			{
-				#pragma omp parallel for
+#pragma omp parallel for
 				for (unsigned int j = 0; j < DetectorSize[1] * DetectorSize[0]; j++)
 				{
 					if (tmpIntensity[j] >= Threshold)
@@ -575,7 +597,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 						IntensityPhotonDiscr[j] += (long)tmpIntensity[j];
 					}
 					else
-					{ 
+					{
 						tmpIntensity[j] = 0;
 					}
 				}
@@ -589,16 +611,16 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 				//	qwertz += (unsigned long) tmpIntensity[w];
 				//}
 				//std::cout << qwertz << "\n";
-				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float) (DetectorSize[1] * DetectorSize[0]));
+				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float)(DetectorSize[1] * DetectorSize[0]));
 
-			//	std::cout << i << ": Mean = " << Events[i].MeanIntensity << " ^= " << Events[i].PhotonCount << " photons\n";
+				//	std::cout << i << ": Mean = " << Events[i].MeanIntensity << " ^= " << Events[i].PhotonCount << " photons\n";
 			}
 		}
 		delete[] tmpIntensity;
 	}
 	if (PhotonSamplingStep > 0)
 	{
-		#pragma omp parallel for
+#pragma omp parallel for
 		for (unsigned int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
 		{
 			Intensity[i] = (float)IntensityPhotonDiscr[i];
@@ -614,7 +636,7 @@ void Detector::LoadIntensityData(Settings::HitEvent * Event)//Load Intensity for
 	DetectorEvent = Event;
 	Checklist.Event = true;
 	LoadIntensityData();
-} 
+}
 void Detector::LoadIntensityData()
 {
 	if (!Checklist.Event)
@@ -627,8 +649,8 @@ void Detector::LoadIntensityData()
 	H5std_string DataSet = DetectorEvent->Dataset;
 
 
-//	std::cerr << Intensity  << " " << *(reinterpret_cast<size_t*>(Intensity-2)) << "  "<< 4 * DetectorSize[1] * DetectorSize[0]<< std::endl;
-	//if (Intensity != NULL)
+	//	std::cerr << Intensity  << " " << *(reinterpret_cast<size_t*>(Intensity-2)) << "  "<< 4 * DetectorSize[1] * DetectorSize[0]<< std::endl;
+		//if (Intensity != NULL)
 	delete[] Intensity;
 
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
@@ -679,8 +701,8 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 	}
 
 	//Temporary Det Parts
-	float * SubDet1 = new float[(DetectorSize[0] / 2 ) * DetectorSize[1]]();
-	float * SubDet2 = new float[(DetectorSize[0] / 2 ) * DetectorSize[1]]();
+	float * SubDet1 = new float[(DetectorSize[0] / 2) * DetectorSize[1]]();
+	float * SubDet2 = new float[(DetectorSize[0] / 2) * DetectorSize[1]]();
 
 	//Get Subset 1
 	hsize_t offset[4], count[4], stride[4], block[4];
@@ -693,7 +715,7 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 
 	count[0] = 1;
 	count[1] = 1;
-	count[2] = DetectorSize[0]/2;
+	count[2] = DetectorSize[0] / 2;
 	count[3] = DetectorSize[1];
 
 	block[0] = 1;
@@ -708,7 +730,7 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 
 	dimsm[0] = 1;
 	dimsm[1] = 1;
-	dimsm[2] = DetectorSize[0]/2;
+	dimsm[2] = DetectorSize[0] / 2;
 	dimsm[3] = DetectorSize[1];
 
 	H5::DataSpace mspace(4, dimsm, NULL);
@@ -718,8 +740,8 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 	offset[1] = 1;
 	DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
 	dataset.read(SubDet2, H5::PredType::NATIVE_FLOAT, mspace, DS);
-	
-	
+
+
 	DS.close();
 	dataset.close();
 	mspace.close();
@@ -727,9 +749,9 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 	file.close();
 
 
-	Intensity = new float[DetectorSize[0]* DetectorSize[1]]();
+	Intensity = new float[DetectorSize[0] * DetectorSize[1]]();
 
-	for (unsigned int i = 0; i < (DetectorSize[0]/2) * DetectorSize[1]; i++)
+	for (unsigned int i = 0; i < (DetectorSize[0] / 2) * DetectorSize[1]; i++)
 	{
 		Intensity[i] = (float)SubDet1[i];
 		Intensity[i + ((DetectorSize[0] / 2) * DetectorSize[1])] = (float)SubDet2[i];
@@ -742,10 +764,10 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 	Checklist.Intensity = true;
 }
 
- 
+
 
 void Detector::CreateSparseHitList(float Threshold)
- {
+{
 	SparseHitList.clear();
 	SparseHitList.reserve(1000);
 
@@ -753,10 +775,10 @@ void Detector::CreateSparseHitList(float Threshold)
 	{
 		float I = Intensity[i];
 
-		if (I < 0)
-		{
-			std::cout << "ERROR: I = " << I << "\n";
-		}
+		//if (I < 0)
+		//{
+		//	std::cout << "ERROR: I = " << I << "\n";
+		//}
 
 		if (I >= Threshold)
 		{
@@ -776,14 +798,10 @@ void Detector::CreateSparseHitList(float Threshold)
 void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
 {
 	CreateSparseHitList(Threshold);
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (unsigned int i = 0; i < SparseHitList.size(); i++)
 	{
 		SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
-		if (SparseHitList[i][3] < 0)
-		{
-			std::cout << "ERROR: I = " << SparseHitList[i][3] << "\n";
-		}
 	}
 }
 
@@ -796,10 +814,6 @@ void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep, bo
 		for (unsigned int i = 0; i < SparseHitList.size(); i++)
 		{
 			SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
-			if (SparseHitList[i][3] < 0)
-			{
-				std::cout << "ERROR: I = " << SparseHitList[i][3] << "\n";
-			}
 		}
 	}
 	else
@@ -807,10 +821,6 @@ void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep, bo
 		for (unsigned int i = 0; i < SparseHitList.size(); i++)
 		{
 			SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
-			if (SparseHitList[i][3] < 0)
-			{
-				std::cout << "ERROR: I = " << SparseHitList[i][3] << "\n";
-			}
 		}
 	}
 }
@@ -829,7 +839,7 @@ float Detector::CalculateMeanIntensity(bool FromSparse)
 	}
 	else
 	{
-		for (unsigned int i = 0; i < DetectorSize[0]* DetectorSize[1]; i++)
+		for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
 		{
 			IntInt += Intensity[i];
 		}
@@ -860,11 +870,11 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		std::cerr << "   ->: Detector::AutoCorrelateSparseList()\n ";
 		throw;
 	}
-	
+
 	float SHLsizeQuot = ((float)SparseHitList.size()) / ((float)(DetectorSize[0] * DetectorSize[1]));
-	if(SHLsizeQuot < 0.0075f) // (switch for SparseHitList.size / DetSize > p(0.0075))
+	if (SHLsizeQuot < 0.0075f) // (switch for SparseHitList.size / DetSize > p(0.0075))
 	{ //Implementation for CPU
-		#pragma omp parallel for
+#pragma omp parallel for
 		for (unsigned int i = 0; i < SparseHitList.size(); i++)
 		{
 			for (unsigned int j = i; j < SparseHitList.size(); j++)
@@ -901,7 +911,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		Params[3] = BigMesh.Shape.Size_C; // Size C
 
 		Params[4] = BigMesh.Shape.Max_Q;
-		
+
 		Params[5] = (double)DoubleMapping;
 
 		Params[6] = Multiplicator; //Multiplicator for conversion to long
@@ -922,7 +932,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 		Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelateSparseList() ");
 		cl::Event cl_event;
-		
+
 		//profiler stuff
 		ProfileTime Profiler;
 
@@ -934,8 +944,8 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		size_t ACsize = sizeof(uint64_t) * (BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB);
 		cl::Buffer CL_AC(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempBigMesh, &err);
 
-		
-		
+
+
 		//Input:
 		size_t SparseListSize = sizeof(float) * 4 * SparseHitList.size();
 		//for (int i = 1000; i < 1500; i++)
@@ -943,12 +953,12 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		//	std::cout << ((float*)SparseHitList.data())[i] << "\n";
 		//}
 		cl::Buffer CL_SparseList(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, SparseListSize, (void*)SparseHitList.data(), &err);
-		
+
 		float RM[9];
 		for (int i = 0; i < 9; i++)
 			RM[i] = DetectorEvent->RotMatrix[i];
-		
-		
+
+
 		cl::Buffer CL_RotM(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(RM), &RM, &err);
 		cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
 
@@ -964,14 +974,14 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		const size_t &global_size = SparseHitList.size();
 
 		//launch Kernel
-	
+
 
 
 		Profiler.Tic();
 
 		err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
 
-	//	Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelateSparseList() ");
+		//	Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelateSparseList() ");
 		cl_event.wait();
 
 		Profiler.Toc(true);
@@ -983,16 +993,16 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
 		//add to Bigmesh
-		#pragma omp parallel for
+#pragma omp parallel for
 		for (unsigned int i = 0; i < BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB; i++)
 		{
 			double t_val = (double)TempBigMesh[i] / (double)Multiplicator;
 			long val;
-			val =  (long)Options.FloatToInt(t_val);
+			val = (long)Options.FloatToInt(t_val);
 
 			if (val < 0)
 			{
-				std::cerr << "ERROR: VAL < 0 : "<< t_val <<"\n";
+				std::cerr << "ERROR: VAL < 0 : " << t_val << "\n";
 			}
 
 			BigMesh.Mesh[i] += (unsigned long)val;
@@ -1070,7 +1080,7 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 		std::cout << Params[i] << "\n";
 	}
 
-	
+
 	//Setup Queue
 	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 	Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelate_CofQ_SmallMesh() ");
@@ -1123,7 +1133,7 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 
 
 	//convert to Double
-	double mean=0;
+	double mean = 0;
 	//#pragma omp parallel for
 	for (unsigned int i = 0; i < SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_C; i++)
 	{
@@ -1162,7 +1172,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	}//Test stuff
 
 
-	double MaxWeight  = 0.0;
+	double MaxWeight = 0.0;
 	float* Rot_and_Weight = new float[10 * (UpperBound - LowerBound)];
 	unsigned int ind = 0;
 	for (unsigned int i = LowerBound; i < UpperBound; i++)
@@ -1182,31 +1192,31 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		if (fabs((Events[i].RotMatrix[0] * Events[i].RotMatrix[0] + Events[i].RotMatrix[3] * Events[i].RotMatrix[3] + Events[i].RotMatrix[6] * Events[i].RotMatrix[6]) - 1.0) > 0.00001 ||
 			fabs((Events[i].RotMatrix[1] * Events[i].RotMatrix[1] + Events[i].RotMatrix[4] * Events[i].RotMatrix[4] + Events[i].RotMatrix[7] * Events[i].RotMatrix[7]) - 1.0) > 0.00001 ||
 			fabs((Events[i].RotMatrix[2] * Events[i].RotMatrix[2] + Events[i].RotMatrix[5] * Events[i].RotMatrix[5] + Events[i].RotMatrix[8] * Events[i].RotMatrix[8]) - 1.0) > 0.00001)
-			{
+		{
 			std::cout << "Invalid rotation matrix: \n";
-				for (int M = 0; M < 9; M++)
-				{
-					std::cout << Events[i].RotMatrix[M] << "\t ";
-					if ((M + 1) % 3 == 0)
-						std::cout << "\n";
-				}
-				std::cout << "=>\n"
-					<< Events[i].RotMatrix[0] * Events[i].RotMatrix[0] + Events[i].RotMatrix[3] * Events[i].RotMatrix[3] + Events[i].RotMatrix[6] * Events[i].RotMatrix[6]
-					<< " \t " <<
-					Events[i].RotMatrix[1] * Events[i].RotMatrix[1] + Events[i].RotMatrix[4] * Events[i].RotMatrix[4] + Events[i].RotMatrix[7] * Events[i].RotMatrix[7]
-					<< " \t " <<
-					Events[i].RotMatrix[2] * Events[i].RotMatrix[2] + Events[i].RotMatrix[5] * Events[i].RotMatrix[5] + Events[i].RotMatrix[8] * Events[i].RotMatrix[8]
-					<< "\n";
+			for (int M = 0; M < 9; M++)
+			{
+				std::cout << Events[i].RotMatrix[M] << "\t ";
+				if ((M + 1) % 3 == 0)
+					std::cout << "\n";
 			}
+			std::cout << "=>\n"
+				<< Events[i].RotMatrix[0] * Events[i].RotMatrix[0] + Events[i].RotMatrix[3] * Events[i].RotMatrix[3] + Events[i].RotMatrix[6] * Events[i].RotMatrix[6]
+				<< " \t " <<
+				Events[i].RotMatrix[1] * Events[i].RotMatrix[1] + Events[i].RotMatrix[4] * Events[i].RotMatrix[4] + Events[i].RotMatrix[7] * Events[i].RotMatrix[7]
+				<< " \t " <<
+				Events[i].RotMatrix[2] * Events[i].RotMatrix[2] + Events[i].RotMatrix[5] * Events[i].RotMatrix[5] + Events[i].RotMatrix[8] * Events[i].RotMatrix[8]
+				<< "\n";
+		}
 
 
 		//weight (mean intensity)
 		Rot_and_Weight[ind + 9] = Events[i].MeanIntensity*Events[i].MeanIntensity;
 
-		if (Events[i].MeanIntensity>MaxWeight)
+		if (Events[i].MeanIntensity > MaxWeight)
 			MaxWeight = Events[i].MeanIntensity;
 
-		
+
 		//if (i < 20)
 		//{
 		//	std::cout << Rot_and_Weight[ind + 0] << "   " << Rot_and_Weight[ind + 1] << "   " << Rot_and_Weight[ind + 2] << "\n";
@@ -1227,12 +1237,12 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	ArrayOperators::Min_Max_Mean_Value(SmallMesh.CQMesh, SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_AB*SmallMesh.Shape.Size_C, Min_Cq, Max_Cq, Mean_Cq);
 
 
-	std::cout << "Small C(q):: Min = " << Min_Cq << "; Max = " << Max_Cq << "; Mean = " << Mean_Cq<<"\n";
+	std::cout << "Small C(q):: Min = " << Min_Cq << "; Max = " << Max_Cq << "; Mean = " << Mean_Cq << "\n";
 
 	double Multiplicator = 1e-15;
-	for(; 1>MaxWeight*MaxWeight*Mean_Cq*Multiplicator;) //Order of magnitude of largest weight //=> goto largest weight^2
-	{ 
-		Multiplicator *=  10;
+	for (; 1 > MaxWeight*MaxWeight*Mean_Cq*Multiplicator;) //Order of magnitude of largest weight //=> goto largest weight^2
+	{
+		Multiplicator *= 10;
 	}
 	uint64_t OOM = 1; //Order of Magnitude (+1) entries in Events
 	for (; OOM < (UpperBound - LowerBound);)
@@ -1265,7 +1275,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		std::cout << Params[i] << "\n";
 	}
 	std::cout << "**************\n";
-	
+
 
 	//reserve OpenCL Device
 	int OpenCLDeviceNumber = -1;
@@ -1279,20 +1289,20 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	//obtain Device
 	cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
 
-	
+
 	//Setup Queue
 	cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 	Options.checkErr(err, "Setup CommandQueue in Detector::AutoCorrelate_CofQ_SmallMesh() ");
 	cl::Event cl_event;
 
-		
+
 
 	//profiler stuff
 	ProfileTime Profiler;
-	
+
 	// KernelBuffer
 	//size_t ACsize = sizeof(uint64_t) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2);
-	size_t ACsize = sizeof(uint64_t) * (SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB );
+	size_t ACsize = sizeof(uint64_t) * (SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB);
 	cl::Buffer CL_CQ(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempBigMesh, &err);
 	//Input:
 	size_t ACsizeSmall = sizeof(double) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
@@ -1301,8 +1311,8 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	cl::Buffer CL_RW(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, RotWeightSize, Rot_and_Weight, &err);
 	cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
 
-	if(Options.echo)
-		std::cout << "Memory needed by kernel: " << (((double)(ACsize+ACsizeSmall+RotWeightSize+ sizeof(Params))) / (1024.0*1024.0*1024.0)) << "Gb\n";
+	if (Options.echo)
+		std::cout << "Memory needed by kernel: " << (((double)(ACsize + ACsizeSmall + RotWeightSize + sizeof(Params))) / (1024.0*1024.0*1024.0)) << "Gb\n";
 
 	//Setup Kernel
 	cl::Kernel kernel(Options.CL_Program, "Merge_CQ", &err);
@@ -1315,7 +1325,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	kernel.setArg(3, CL_CQ);
 	const size_t &global_size = SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
 
-	
+
 
 	//launch Kernel
 	Options.Echo("Launch kernel (Merge C(q)) ... \n");
@@ -1339,17 +1349,17 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 
 	//double * DoubleBigMesh = new double[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2)];
 
-	#pragma omp parallel for
-	for (int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB *  BigMesh.Shape.Size_AB; i++)
+#pragma omp parallel for
+	for (int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB; i++)
 	{
 		//DoubleBigMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
 		BigMesh.CQMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
 		//if (TempBigMesh[i] > 0)
 		//	std::cout << TempBigMesh[i] << "   " << BigMesh.CQMesh[i] << std::endl;
 	}
-	
 
-//Free memory
+
+	//Free memory
 	delete[] Rot_and_Weight;
 	delete[] TempBigMesh;
 

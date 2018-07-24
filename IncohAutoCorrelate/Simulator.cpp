@@ -24,7 +24,7 @@ inline double Simulator::Drand()
 
 void Simulator::WriteIntensityToH5(Detector & Det, std::string Filename, std::string Dataset)
 {
-	#pragma omp critical
+#pragma omp critical
 	{
 		H5::H5File file(Filename, H5F_ACC_RDWR);
 		//H5::DataSet dataset = file.openDataSet(DataSet);
@@ -128,8 +128,8 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 	std::cout << "Pixel Orientation a: " << SimSettings.PixelOrientationVectors[0] << ", " << SimSettings.PixelOrientationVectors[1] << ", " << SimSettings.PixelOrientationVectors[2] << "\n";
 	std::cout << "Pixel Orientation b: " << SimSettings.PixelOrientationVectors[3] << ", " << SimSettings.PixelOrientationVectors[4] << ", " << SimSettings.PixelOrientationVectors[5] << "\n";
 
-	std::cout << "Pixel Size (a x b): " << SimSettings.PixelSize[0] <<" x " << SimSettings.PixelSize[1]<<"\n";
-	
+	std::cout << "Pixel Size (a x b): " << SimSettings.PixelSize[0] << " x " << SimSettings.PixelSize[1] << "\n";
+
 	//
 
 
@@ -164,7 +164,7 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 		RotM << RotMat[0], RotMat[1], RotMat[2], RotMat[3], RotMat[4], RotMat[5], RotMat[6], RotMat[7], RotMat[8];
 		Eigen::Matrix3d RotInv = RotM.inverse();
-		
+
 		curr_Event.RotMatrix[0] = RotInv(0, 0);
 		curr_Event.RotMatrix[1] = RotInv(0, 1);
 		curr_Event.RotMatrix[2] = RotInv(0, 2);
@@ -194,7 +194,7 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		t_Norm = 1.0 / sqrt(SimSettings.PixelOrientationVectors[0] * SimSettings.PixelOrientationVectors[0] + SimSettings.PixelOrientationVectors[1] * SimSettings.PixelOrientationVectors[1] + SimSettings.PixelOrientationVectors[2] * SimSettings.PixelOrientationVectors[2]);
 		//N' = (N*Su) / (2*SuSa + 1)
 		t_Norm = (t_Norm / ((double)(2 * SimSettings.SubSampling + 1)))*SimSettings.PixelSize[0];
-		double u_Step[3]; 
+		double u_Step[3];
 		u_Step[0] = SimSettings.PixelOrientationVectors[0] * t_Norm;
 		u_Step[1] = SimSettings.PixelOrientationVectors[1] * t_Norm;
 		u_Step[2] = SimSettings.PixelOrientationVectors[2] * t_Norm;
@@ -210,28 +210,28 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		float * Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
 		double Params[10];
 		Params[0] = (double)NumEM; // number of Emitters
-		
-		Params[1] = (double)SimSettings.PoissonSample; 
+
+		Params[1] = (double)SimSettings.PoissonSample;
 
 		Params[2] = (double)SimSettings.SubSampling; //Subsampling is only possible if the orientation and size of a pixel is known! 
 		//Pixels are within the plane given by u and v. u and v also represents the orientation (their edges). Here it is assumed, that all pixels are orientated in parallel
-		
+
 		Params[3] = u_Step[0]; //u1 
 		Params[4] = u_Step[1]; //u2
 		Params[5] = u_Step[2]; //u3
 		Params[6] = v_Step[0]; //v1
 		Params[7] = v_Step[1]; //v2
 		Params[8] = v_Step[2]; //v3
-		
+
 		Params[9] = SimSettings.Wavelength;//Wavelength (needed to calculate k)
 
-		
+
 
 
 		for (unsigned int ModeRun = 0; ModeRun < SimSettings.Modes; ModeRun++)
 		{
 			float * t_Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
-			if (ModeRun > 0 )//Roll new Phases if ModeRun != 0 (and keep rotation matrix)
+			if (ModeRun > 0)//Roll new Phases if ModeRun != 0 (and keep rotation matrix)
 			{
 				EmitterList.clear();
 				EmitterList = EmitterCrystal.GetEmitters(SimSettings.CrystSettings, RotMat, true);
@@ -251,15 +251,15 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 			}
 
 
-		//	std::cout << "Number of Emitter: " << NumEM << "\n";
+			//	std::cout << "Number of Emitter: " << NumEM << "\n";
 
-			//obtain Device
+				//obtain Device
 			cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
 			//Setup Queue
 			cl::CommandQueue queue(Options.CL_context, CL_Device, 0, &err);
 			Options.checkErr(err, "Setup CommandQueue in Simulator::Simulate() ");
 			cl::Event cl_event;
-			
+
 
 			//Output 
 			size_t IntSize = sizeof(float) * Det.DetectorSize[0] * Det.DetectorSize[1];
@@ -271,7 +271,7 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 			cl::Buffer CL_EM(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, EMsize, EM, &err);
 			cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
 
-			
+
 			//Setup Kernel
 			cl::Kernel kernel(Options.CL_Program, "SimulateCrystal", &err);
 			Options.checkErr(err, "Setup AutoCorr_CQ in Simulator::Simulate() ");
@@ -323,7 +323,7 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 		//Rescale for expected number of photons
 		float ExpNumOfPhotones = (float)(SimSettings.AveragePhotonesPerEmitterOnDetector * SimSettings.CrystSettings.FlYield * EmitterCrystal.AtomPositions.size());
 		float IntegratedIntensity = 0.0f;
-		for (unsigned int l = 0; l < Det.DetectorSize[0]* Det.DetectorSize[1]; l++)
+		for (unsigned int l = 0; l < Det.DetectorSize[0] * Det.DetectorSize[1]; l++)
 		{ //Reminder: don't even think about to parallelize this!
 			IntegratedIntensity += Intensity[l];
 		}
@@ -412,7 +412,7 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 	if (Options.echo)
 		PrintSimInfos(SimSettings);
-		
+
 }
 
 void Simulator::SaveSimulationOutput(SimulationOutput & Output, std::string HDF5_Path, std::string XML_Path, SimulationSettings SimSettings)
@@ -428,10 +428,10 @@ void Simulator::SaveSimulationOutput(SimulationOutput & Output, std::string HDF5
 	//Annotation: uses only constant Dataset name (Output.HitEvents[0].Dataset), not the most beautiful solution, maybe improve! 
 	H5::DataSet dataset = file.createDataSet(Output.HitEvents[0].Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
 
-	hsize_t start[3] = {0, 0, 0};  // Start of hyperslab, offset
-	hsize_t stride[3] = {1, 1, 1}; // Stride of hyperslab
-	hsize_t count[3] = {1, 1, 1};  // Block count
-	hsize_t block[3] = {1, dims[1], dims[2]}; // Block sizes
+	hsize_t start[3] = { 0, 0, 0 };  // Start of hyperslab, offset
+	hsize_t stride[3] = { 1, 1, 1 }; // Stride of hyperslab
+	hsize_t count[3] = { 1, 1, 1 };  // Block count
+	hsize_t block[3] = { 1, dims[1], dims[2] }; // Block sizes
 
 
 	H5::DataSpace mspace(3, block);
@@ -466,8 +466,8 @@ void Simulator::SaveSimulationOutput(SimulationOutput & Output, std::string HDF5
 	SimInfo["Simulation.Filename_Intensity"] = SimSettings.Filename_Intensity;
 	SimInfo["Simulation.Modes"] = std::to_string(SimSettings.Modes);
 	SimInfo["Simulation.NumberOfSimulations"] = std::to_string(SimSettings.NumberOfSimulations);
-	SimInfo["Simulation.PixelOrientationVectors"] = "(" + std::to_string(SimSettings.PixelOrientationVectors[0]) 
-		+", "+ std::to_string(SimSettings.PixelOrientationVectors[1]) + ", " + std::to_string(SimSettings.PixelOrientationVectors[2]) +
+	SimInfo["Simulation.PixelOrientationVectors"] = "(" + std::to_string(SimSettings.PixelOrientationVectors[0])
+		+ ", " + std::to_string(SimSettings.PixelOrientationVectors[1]) + ", " + std::to_string(SimSettings.PixelOrientationVectors[2]) +
 		");  (" + std::to_string(SimSettings.PixelOrientationVectors[3]) + ", " + std::to_string(SimSettings.PixelOrientationVectors[4]) + ", " + std::to_string(SimSettings.PixelOrientationVectors[4]) + ")";
 	SimInfo["Simulation.PixelSize"] = std::to_string(SimSettings.PixelSize[0]) + " x " + std::to_string(SimSettings.PixelSize[1]);
 	SimInfo["Simulation.PoissonSample"] = std::to_string(SimSettings.PoissonSample);
@@ -485,9 +485,66 @@ void Simulator::SaveSimulationOutput(SimulationOutput & Output, std::string HDF5
 
 
 	Settings tmp_Options;
-	tmp_Options.SafeHitEventListToFile(XML_Path, Output.HitEvents,true, SimInfo);
+	tmp_Options.SafeHitEventListToFile(XML_Path, Output.HitEvents, true, SimInfo);
 
 
+}
+
+void Simulator::GeneratePixelMap(std::string Filename, std::string Dataset, int SizeA, int SizeB, float PixelSize, std::array<float, 3> Center, std::array<float, 3> VecA, std::array<float, 3> VecB)
+{
+	float * PixelMap = new float[3 * SizeA * SizeB];
+
+	//Normalize Vectors
+	float Norm = sqrt(VecA[0] * VecA[0] + VecA[1] * VecA[1] + VecA[2] * VecA[2]);
+	VecA[0] = VecA[0] / Norm;
+	VecA[1] = VecA[1] / Norm;
+	VecA[2] = VecA[2] / Norm;
+
+	Norm = sqrt(VecB[0] * VecB[0] + VecB[1] * VecB[1] + VecB[2] * VecB[2]);
+	VecB[0] = VecB[0] / Norm;
+	VecB[1] = VecB[1] / Norm;
+	VecB[2] = VecB[2] / Norm;
+
+	//Generate PixelMap
+	for (int a = 0; a < SizeA; a++)
+	{
+		for (int b = 0; b < SizeB; b++)
+		{
+			PixelMap[3*a*SizeB + 3*b + 0] = Center[0] + VecA[0] * PixelSize * (a - 0.5 * SizeA) + VecB[0] * PixelSize * (b - 0.5 * SizeB);
+			PixelMap[3*a*SizeB + 3*b + 1] = Center[1] + VecA[1] * PixelSize * (a - 0.5 * SizeA) + VecB[1] * PixelSize * (b - 0.5 * SizeB);
+			PixelMap[3*a*SizeB + 3*b + 2] = Center[2] + VecA[2] * PixelSize * (a - 0.5 * SizeA) + VecB[2] * PixelSize * (b - 0.5 * SizeB);
+		}
+	}
+
+	//Save PixelMap
+	H5::H5File file(Filename, H5F_ACC_TRUNC); //H5F_ACC_TRUNC => overwerite or create if not existing
+
+	hsize_t dims[3];
+	dims[0] = SizeA;
+	dims[1] = SizeB;
+	dims[2] = 3;
+	H5::DataSpace dataspace(3, dims);
+
+	//Annotation: uses only constant Dataset name (Output.HitEvents[0].Dataset), not the most beautiful solution, maybe improve! 
+	H5::DataSet dataset = file.createDataSet(Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
+
+	hsize_t start[3] = { 0, 0, 0 };  // Start of hyperslab, offset
+	hsize_t stride[3] = { 1, 1, 1 }; // Stride of hyperslab
+	hsize_t count[3] = { 1, 1, 1 };  // Block count
+	hsize_t block[3] = { dims[0], dims[1], dims[2] }; // Block sizes
+
+	H5::DataSpace mspace(3, block);
+
+	dataspace.selectHyperslab(H5S_SELECT_SET, count, start, stride, block);
+	dataset.write(PixelMap, H5::PredType::NATIVE_FLOAT, mspace, dataspace);
+
+	mspace.close();
+	dataspace.close();
+	dataset.close();
+	file.close();
+	
+	//clean up
+	delete[] PixelMap;
 }
 
 
@@ -595,8 +652,6 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 	//Start Loop
 	for (unsigned int i = 0; i < N; i++)
 	{
-
-
 		Settings::HitEvent curr_Event;
 		std::vector<float> curr_Intensity;
 		curr_Intensity.resize(Det.DetectorSize[0] * Det.DetectorSize[1]);
@@ -605,13 +660,36 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 
 		//Obtain EmitterList
 		std::array<float, 9> RotMat;
-		EmitterList = EmitterCrystal.GetEmitters(SimSettings.CrystSettings, RotMat,false);
+		EmitterList = EmitterCrystal.GetEmitters(SimSettings.CrystSettings, RotMat, false);
 		unsigned int NumEM = EmitterList.size();
 
-		for (int j = 0; j < 9; j++)//Store Rotation Matrix of current Crystal
-		{
-			curr_Event.RotMatrix[j] = RotMat[j];
+
+
+
+		{ // invert and store rotation matrix
+
+			Eigen::Matrix3d RotM;
+
+			RotM << RotMat[0], RotMat[1], RotMat[2], RotMat[3], RotMat[4], RotMat[5], RotMat[6], RotMat[7], RotMat[8];
+			Eigen::Matrix3d RotInv = RotM.inverse();
+
+			curr_Event.RotMatrix[0] = RotInv(0, 0);
+			curr_Event.RotMatrix[1] = RotInv(0, 1);
+			curr_Event.RotMatrix[2] = RotInv(0, 2);
+			curr_Event.RotMatrix[3] = RotInv(1, 0);
+			curr_Event.RotMatrix[4] = RotInv(1, 1);
+			curr_Event.RotMatrix[5] = RotInv(1, 2);
+			curr_Event.RotMatrix[6] = RotInv(2, 0);
+			curr_Event.RotMatrix[7] = RotInv(2, 1);
+			curr_Event.RotMatrix[8] = RotInv(2, 2);
+
+			//for (int j = 0; j < 9; j++)//Store Rotation Matrix of current Crystal
+			//{
+			//	curr_Event.RotMatrix[j] = RotMat[j];
+			//}
 		}
+
+
 
 		float * EM = new float[4 * NumEM]();
 		for (unsigned int j = 0; j < NumEM; j++)
@@ -745,7 +823,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 
 			//add up intensity (incoherent for mode simulation)
 			ArrayOperators::ParAdd(Intensity, t_Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
-			
+
 			//Clean up
 			delete[] t_Intensity;
 			delete[] EM;
@@ -817,7 +895,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 		//print status
 
 		if (N >= 100) {
-			
+
 			if ((i + 1) % (N / 100) == 0)
 			{
 				g_echo_mutex_Sim.lock();
@@ -880,9 +958,9 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 
 	Detector DetPart[2]{ Detector(Det, true), Detector(Det, true) };
 
-		 
-	SimulationSettings SimSettingsPart[2] = { SimSettings ,SimSettings  };
-	SimSettingsPart[0].NumberOfSimulations = (unsigned int)(SimSettings.NumberOfSimulations/2 );
+
+	SimulationSettings SimSettingsPart[2] = { SimSettings ,SimSettings };
+	SimSettingsPart[0].NumberOfSimulations = (unsigned int)(SimSettings.NumberOfSimulations / 2);
 	SimSettingsPart[1].NumberOfSimulations = SimSettings.NumberOfSimulations - SimSettingsPart[0].NumberOfSimulations;
 	//SimSettingsPart[2].NumberOfSimulations = SimSettings.NumberOfSimulations - SimSettingsPart[0].NumberOfSimulations - SimSettingsPart[1].NumberOfSimulations;
 
@@ -893,12 +971,12 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 	std::thread Thread1(SimulatePart, EmitterCrystal, std::ref(DetPart[0]), SimSettingsPart[0], std::ref(OutputPart[0]), std::ref(Options), 1);
 	std::thread Thread2(SimulatePart, EmitterCrystal, std::ref(DetPart[1]), SimSettingsPart[1], std::ref(OutputPart[1]), std::ref(Options), 2);
 	//std::thread Thread3(SimulatePart, EmitterCrystal, std::ref(DetPart[2]), SimSettingsPart[2], std::ref(OutputPart[2]), std::ref(Options), 3);
-	
+
 	Thread1.join();
 	Thread2.join();
 	//Thread3.join();
 
-	std::cout << "**************\n" << SimSettings.NumberOfSimulations <<" patterns done in ";
+	std::cout << "**************\n" << SimSettings.NumberOfSimulations << " patterns done in ";
 	Profiler.Toc(true);
 
 	Output.HitEvents = OutputPart[0].HitEvents;
@@ -909,7 +987,7 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 	Output.Intensities.insert(Output.Intensities.end(), OutputPart[1].Intensities.begin(), OutputPart[1].Intensities.end());
 	//Output.Intensities.insert(Output.Intensities.end(), OutputPart[2].Intensities.begin(), OutputPart[2].Intensities.end());
 
-	for (int i = 0; i <  SimSettings.NumberOfSimulations; i++)
+	for (int i = 0; i < SimSettings.NumberOfSimulations; i++)
 	{
 		Output.HitEvents[i].Event = i;
 	}

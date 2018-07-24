@@ -21,6 +21,11 @@ void Crystal::RandomGen_ReSeed()
 	mt.seed(std::random_device{}());
 }
 
+std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Settings, std::array<float, 9>& RotationMatrix)
+{
+	return GetEmitters(Settings, RotationMatrix, false);
+}
+
 std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Settings,  std::array<float, 9> & RotationMatrix, bool UseGivenRotation)
 {
 	//Temporary Atom Positions
@@ -114,10 +119,7 @@ std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Setting
 	return Ret;
 }
 
-std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Settings, std::array<float, 9>& RotationMatrix)
-{
-	return GetEmitters(Settings, RotationMatrix, false);
-}
+
 
 
 std::array<float, 9> Crystal::RotateVectors(std::vector<std::array<double, 3>> &Vectors, const double angle, std::array<double, 3> axis)
@@ -129,12 +131,12 @@ std::array<float, 9> Crystal::RotateVectors(std::vector<std::array<double, 3>> &
 	axis[2] = axis[2] / N;
 	//rotation matrix {{a1, a2, a3}, {b1, b2, b3}, {c1, c2, c3}}
 	double a1 = axis[0] * axis[0] * (1 - cos(angle)) + cos(angle);
-	double a2 = axis[0] * axis[1] * (1 - cos(angle)) - axis[2] * sin(angle);
-	double a3 = axis[0] * axis[2] * (1 - cos(angle)) + axis[1] * sin(angle);
+	double a2 = axis[1] * axis[0] * (1 - cos(angle)) - axis[2] * sin(angle);
+	double a3 = axis[2] * axis[0] * (1 - cos(angle)) + axis[1] * sin(angle);
 
 	double b1 = axis[0] * axis[1] * (1 - cos(angle)) + axis[2] * sin(angle);
 	double b2 = axis[1] * axis[1] * (1 - cos(angle)) + cos(angle);
-	double b3 = axis[1] * axis[2] * (1 - cos(angle)) - axis[0] * sin(angle);
+	double b3 = axis[2] * axis[1] * (1 - cos(angle)) - axis[0] * sin(angle);
 
 	double c1 = axis[0] * axis[2] * (1 - cos(angle)) - axis[1] * sin(angle);
 	double c2 = axis[1] * axis[2] * (1 - cos(angle)) + axis[0] * sin(angle);

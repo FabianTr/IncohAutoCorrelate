@@ -10,8 +10,6 @@
 
 namespace PPP
 {
-
-
 	struct DetectorPanel
 	{
 		int FirstInd = 0;
@@ -19,8 +17,6 @@ namespace PPP
 		int Scans[2] = { 1,1 }; //fs, ss
 	};
 
-
-	
 	void PhotonFinder_LargestAdjacentPixel(float * Intensity, std::vector<DetectorPanel> DetectorPanels, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);
 	//Find Photons by considering the adjacent Pixels.
 
@@ -29,6 +25,5 @@ namespace PPP
 	void ProcessData_PF_LAP_SM(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector & Det, int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold, bool Jungfrau);
 
 	void ProcessData_ConvertSM(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector & Det, int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold, bool Jungfrau);
-
 
 }

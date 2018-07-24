@@ -154,21 +154,42 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 		throw std::invalid_argument("PerpSize must be odd");
 	}
 	//Find largest q-axis:
-	if (Det.Max_q[0] > Det.Max_q[1] && Det.Max_q[0] > Det.Max_q[2])
-		Shape.k_A = 0;
-	else if (Det.Max_q[1] > Det.Max_q[2] && Det.Max_q[1] > Det.Max_q[0])
-		Shape.k_A = 1;
-	else if (Det.Max_q[2] > Det.Max_q[0] && Det.Max_q[2] > Det.Max_q[1])
-		Shape.k_A = 2;
-	//Find smallest q-axis:
-	if (Det.Max_q[0] < Det.Max_q[1] && Det.Max_q[0] < Det.Max_q[2])
-		Shape.k_C = 0;
-	else if (Det.Max_q[1] < Det.Max_q[2] && Det.Max_q[1] < Det.Max_q[0])
-		Shape.k_C = 1;
-	else if (Det.Max_q[2] < Det.Max_q[0] && Det.Max_q[2] < Det.Max_q[1])
-		Shape.k_C = 2;
+
+	Shape.k_A = 0;
+	Shape.k_B = 1;
+	Shape.k_C = 2;
+
+	if (Det.Max_q[Shape.k_B] > Det.Max_q[Shape.k_A])
+	{
+		std::swap(Shape.k_A,Shape.k_B);
+	}
+
+	if (Det.Max_q[Shape.k_C] > Det.Max_q[Shape.k_B])
+	{
+		std::swap(Shape.k_C, Shape.k_B);
+	}
+
+	if (Det.Max_q[Shape.k_B] > Det.Max_q[Shape.k_A])
+	{
+		std::swap(Shape.k_A, Shape.k_B);
+	}
+
+
+	//if      (Det.Max_q[0] > Det.Max_q[1] && Det.Max_q[0] > Det.Max_q[2])
+	//	Shape.k_A = 0;
+	//else if (Det.Max_q[1] > Det.Max_q[2] && Det.Max_q[1] > Det.Max_q[0])
+	//	Shape.k_A = 1;
+	//else if (Det.Max_q[2] > Det.Max_q[0] && Det.Max_q[2] > Det.Max_q[1])
+	//	Shape.k_A = 2;
+	////Find smallest q-axis:
+	//if      (Det.Max_q[0] < Det.Max_q[1] && Det.Max_q[0] < Det.Max_q[2])
+	//	Shape.k_C = 0;
+	//else if (Det.Max_q[1] < Det.Max_q[2] && Det.Max_q[1] < Det.Max_q[0])
+	//	Shape.k_C = 1;
+	//else if (Det.Max_q[2] < Det.Max_q[0] && Det.Max_q[2] < Det.Max_q[1])
+	//	Shape.k_C = 2;
 	// calculate the second largest q-axis
-	Shape.k_B = 3 - Shape.k_A - Shape.k_C;
+	//Shape.k_B = 3 - Shape.k_A - Shape.k_C;
 	//Set Size
 	Shape.Size_AB = PerpSize + 2;//+2 padding
 
@@ -176,7 +197,12 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 
 	if (q_Zoom == 1)
 	{
-		Shape.Size_C = (int)floor((Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A])*PerpSize + 2.5); //+ 2 padding
+		float t_1 = Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A];
+		float t_2 = t_1 * PerpSize + 2.5;
+		float t_3 = floor(t_2);
+		int t_4 = (int)t_3;
+
+		Shape.Size_C = (int)floor( (Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A]) *PerpSize + 2.5); //+ 2 padding
 	}
 	else
 	{
@@ -232,34 +258,12 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 		ss_l = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
 
 
-		//float q0 = q_local[0];
-		//float q1 = q_local[1];
-		//float q2 = q_local[2];
-
 		q_local[0] = (float)(fs_l - Shape.Center[0]);
 		q_local[1] = (float)(ms_l - Shape.Center[1]);
 		q_local[2] = (float)(ss_l - Shape.Center[2]);
 
-		//float qs0 = q_local[0];
-		//float qs1 = q_local[1];
-		//float qs2 = q_local[2];
-
-		//float r1 = RotationM[0];
-		//float r2 = RotationM[1];
-		//float r3 = RotationM[2];
-		//float r4 = RotationM[3];
-		//float r5 = RotationM[4];
-		//float r6 = RotationM[5];
-		//float r7 = RotationM[6];
-		//float r8 = RotationM[7];
-		//float r9 = RotationM[8];
-
-
 		ArrayOperators::Rotate(q_local, RotationM);
 
-		//float qr0 = q_local[0];
-		//float qr1 = q_local[1];
-		//float qr2 = q_local[2];
 		
 		//second binning
 		int fs, ms, ss;
@@ -272,7 +276,7 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 		unsigned int val;
 		val = Options->FloatToInt(Value);
 
-#pragma omp atomic
+		#pragma omp atomic
 		Mesh[fs + ms * s + ss * s*s] += val;
 	}
 	else
@@ -288,7 +292,7 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 
 
 	//Check if q is in Range
-	if (sqrtf(q[0] * q[0] + q[3] * q[3] + q[2] * q[2]) > Shape.Max_Q)
+	if (sqrtf(q[0] * q[0] + q[1] * q[1] + q[2] * q[2]) > Shape.Max_Q)
 	{
 		return;
 	}

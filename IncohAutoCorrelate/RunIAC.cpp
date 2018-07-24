@@ -9,9 +9,6 @@
 
 namespace RunIAC
 {
-
-
-
 	void Create_CQ_Mesh(ACMesh & CQ, CreateCQ_Settings CQ_Settings, Settings & PrgSettings)
 	{
 		Create_CQ_Mesh(CQ, CQ_Settings, PrgSettings, 0, PrgSettings.HitEvents.size());
@@ -288,6 +285,14 @@ namespace RunIAC
 
 			//Load Hit event list from xml-file
 			PrgSettings.LoadHitEventListFromFile(EvalSettings.XML_Path);
+
+			if (EvalSettings.InvertRotMatrix)
+			{
+				if (EvalSettings.EchoLevel > 0)
+					std::cout << "Invert rotation matrices from Hit_Event_List\n";
+				PrgSettings.InvertRotationMatrices();
+			}
+
 			if (EvalSettings.RestrictStackToBoundaries)
 			{
 				if (EvalSettings.UpperBoundary > PrgSettings.HitEvents.size())

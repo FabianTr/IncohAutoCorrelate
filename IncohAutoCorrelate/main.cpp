@@ -15,6 +15,9 @@
 #include <CL/cl.hpp>
 #include <thread>
 
+//QD Test incl
+#include <Eigen/SVD>
+
 
 //my Classes
 #include "Detector.h"
@@ -261,7 +264,7 @@ void CombineStuff(std::string Fr_AC_UW, std::string Fr_CQ, std::string Fw_AC, in
 }
 
 
-void Simulate(Settings & Options, std::string PixelMap_Path)
+void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapDataSet )
 {
 
 	Simulator::SimulationSettings SimSettings;
@@ -273,10 +276,10 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 30; // 30
+	SimSettings.NumberOfSimulations = 500; // 30
 
 	SimSettings.Modes = 1;
-	SimSettings.AveragePhotonesPerEmitterOnDetector =  1e4 * 0.0275f; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
+	SimSettings.AveragePhotonesPerEmitterOnDetector =  5e2 * 0.0275f; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
 	SimSettings.PoissonSample = true;
 	SimSettings.SubSampling = 1; // 3 => (2*3+1)^2 = 49
 
@@ -287,12 +290,12 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 	SimSettings.CrystSettings.FlYield = 1.0f; //0.1
 	SimSettings.CrystSettings.Incoherent = true;
 	SimSettings.CrystSettings.Isotropie = 1.0f;
-	SimSettings.CrystSettings.RandOrientation = false;
+	SimSettings.CrystSettings.RandOrientation = true;
 
 	SimSettings.SaveResults = true;
 
-	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP.h5";//Sim20_Fixed_NP_3
-	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP.xml";//Sim20_Fixed_NP_3
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestPixMa.h5";//Sim20_Fixed_NP_3
+	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestPixMa.xml";//Sim20_Fixed_NP_3
 	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.h5";
 	//SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Sim_Jf_1000ppe_Y01_rdO_I1_1.xml";
 	SimSettings.Dataset = "data";
@@ -342,7 +345,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 
 	Detector Sim_Det;
 
-	Sim_Det.LoadPixelMap(PixelMap_Path, "data/data");
+	Sim_Det.LoadPixelMap(PixelMap_Path, PixMapDataSet );
 	Sim_Det.Calc_kMap();
 
 	Simulator Sim;
@@ -355,11 +358,88 @@ void Simulate(Settings & Options, std::string PixelMap_Path)
 }
 
 
+void QDTests()
+{
+	std::array<double, 3> axis;
+	
+	double angle = 0.733*M_PIl;
+	axis[0] = 1;
+	axis[2] = 2;
+	axis[3] = -1;
 
+	//normalize axis vector
+	double N = sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
+	axis[0] = axis[0] / N;
+	axis[1] = axis[1] / N;
+	axis[2] = axis[2] / N;
+	//rotation matrix {{a1, a2, a3}, {b1, b2, b3}, {c1, c2, c3}}
+	double a1 = axis[0] * axis[0] * (1 - cos(angle)) + cos(angle);
+	double a2 = axis[1] * axis[0] * (1 - cos(angle)) - axis[2] * sin(angle);
+	double a3 = axis[2] * axis[0] * (1 - cos(angle)) + axis[1] * sin(angle);
+
+	double b1 = axis[0] * axis[1] * (1 - cos(angle)) + axis[2] * sin(angle);
+	double b2 = axis[1] * axis[1] * (1 - cos(angle)) + cos(angle);
+	double b3 = axis[2] * axis[1] * (1 - cos(angle)) - axis[0] * sin(angle);
+
+	double c1 = axis[0] * axis[2] * (1 - cos(angle)) - axis[1] * sin(angle);
+	double c2 = axis[1] * axis[2] * (1 - cos(angle)) + axis[0] * sin(angle);
+	double c3 = axis[2] * axis[2] * (1 - cos(angle)) + cos(angle);
+
+
+	Eigen::Matrix3d RotM;
+
+	RotM << a1, a2, a3,	b1, b2, b3, c1, c2, c3;
+	
+
+	std::cout << "\n";
+	std::cout << "\n";
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			std::cout << RotM(i, j) << "  ";
+		}
+		std::cout << "\n";
+	}
+
+	std::cout << "\n\n*************\n\n";
+	Eigen::Matrix3d RotInv = RotM.inverse();
+
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			std::cout << RotInv(i, j) << "  ";
+		}
+		std::cout << "\n";
+	}
+
+	std::cout << "\n";
+	std::cout << "\n";
+
+	Eigen::Matrix3d E = RotM * RotInv;
+
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			std::cout << E(i, j) << "  ";
+		}
+		std::cout << "\n";
+	}
+
+
+	std::cout << "Ended\n";
+	int x;
+	std::cin >> x;
+}
 
 
 int main()
 {
+	//QDTests();
+	//return 0;
+
 	std::cout << "\n\n\n===================\n     IncohAutoCorrelate\n===================\n\n";
 	//omp_set_nested(1);
 	//omp_set_max_active_levels(2);
@@ -378,7 +458,7 @@ int main()
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 
 	bool Panelwise = false;
-	int RunMode = 20;
+	int RunMode = 1;
 
 	int N_autorun = 1;
 	if (Panelwise)
@@ -405,106 +485,142 @@ int main()
 		case 1: //Autocorrelate Hb Jungfrau 3fs
 			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for Jungfrau\n******************************\n";
 			{
-				const bool HitsFromXml = true; //otherwise from stream
 
-				if (HitsFromXml)
-				{
-					Options.Echo("Load Events from XML");
-					Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml");
-				}
-				else
-				{
-					Options.Echo("Load Streamfile");
-					Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/3fs_JF.stream", "entry_1/instrument_1/detector_2/detector_corrected/data", false);
-				}
+				std::string Prefix = "3fs_invRot";
 
-				//Further Settings
+				RunIAC::CreateDataEval_Settings EvalSettings;
+				EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml";
 
-				RunIAC::CreateCQ_Settings CQ_Settings;
-				RunIAC::CreateAC_Settings AC_Settings;
-				{
-					CQ_Settings.AC_Merge_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-					CQ_Settings.AC_Small_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-
-					CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF.bin";
-					//CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF_Seg" + std::to_string(i_autorun) + ".bin";
-
-					CQ_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
-					CQ_Settings.PixelMap_DataSet = "data/data";
-
-
-
-					CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
-					//CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
-
-
-
-					CQ_Settings.echo = true;
-
-					CQ_Settings.MeshSize = 501;
-					CQ_Settings.QZoom = 2.0f;
-
-					CQ_Settings.SaveSmall_CQ = false;
-					CQ_Settings.SaveBig_CQ = true;
-
-
-					CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z2_Big.bin";
-					//CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
-
-					//ac shared settings
-					AC_Settings.AC_FirstMap_Flags = CQ_Settings.AC_Small_Flags;
-					AC_Settings.AC_SecondMap_Flags = CQ_Settings.AC_Merge_Flags;
-					AC_Settings.MeshSize = CQ_Settings.MeshSize;
-					AC_Settings.QZoom = CQ_Settings.QZoom;
-					AC_Settings.PixelMap_Path = CQ_Settings.PixelMap_Path;
-					AC_Settings.PixelMap_DataSet = CQ_Settings.PixelMap_DataSet;
-					AC_Settings.PixelMask_Path = CQ_Settings.PixelMask_Path;
-
-					//ac further settings
-					AC_Settings.SaveBig_AC = true;
-					AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z2_Big.bin";
-					//AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
-
-
-					AC_Settings.DoubleMap = true;
-					AC_Settings.echo = true;
-					AC_Settings.PhotonOffset = 3.2f;
-					AC_Settings.PhotonStep = 6.4f;
-				}
-
+				EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
+				EvalSettings.PixelMap_DataSet = "data/data";
+				EvalSettings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
 				//
+				EvalSettings.EchoLevel = 3;
+				//
+				EvalSettings.InvertRotMatrix = true;
+				//
+				EvalSettings.AngularAveraged = false;
+				EvalSettings.DoubleMap = true;
+				EvalSettings.FractionalCq = false;
+				EvalSettings.RestrictStackToBoundaries = false;
+				EvalSettings.MeshSize = 501;
+				EvalSettings.QZoom = 2.0f;
 
-				ACMesh CQ;
-				ACMesh AC;
-
-				profiler.Tic();
-
-				Options.Echo("Launch threads");
-
-				//RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options,0,1000);
-				//RunIAC::Run_AC_UW(AC, AC_Settings, Options,0,1000);
-
-				RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
-				RunIAC::Run_AC_UW(AC, AC_Settings, Options);
-
-				Options.Echo("Merge Stuff");
-
-				double * FinalAC = new double[CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB];
-
-				RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
-
-				ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z2.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
-				std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z2.bin \n";
-
-				//ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
-				//std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin \n";
-
-				delete[] FinalAC;
+				EvalSettings.PhotonOffset = 3.2f;
+				EvalSettings.PhotonStep = 6.4;
 
 
-				std::cout << "\n\n Finished in ";
-				profiler.Toc(true);
+				EvalSettings.Out_AvIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/" + Prefix + "_avIntensity_.bin";
+				EvalSettings.Out_ACuw_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/" + Prefix + "_uwAC.bin";
+				EvalSettings.Out_Cq_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/" + Prefix + "_CQ.bin";
+				EvalSettings.Out_Cq_small_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/" + Prefix + "_CQsmall.bin";
+				EvalSettings.Out_Final_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/" + Prefix + "_AC.bin";
+				EvalSettings.Out_Q_Vector = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/" + Prefix + "_Q.bin";
 
+				RunIAC::Run_AutoCorr_DataEval(Options, EvalSettings);
+
+				//old style
+				{
+				//const bool HitsFromXml = true; //otherwise from stream
+
+				//if (HitsFromXml)
+				//{
+				//	Options.Echo("Load Events from XML");
+				//	Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml");
+				//}
+				//else
+				//{
+				//	Options.Echo("Load Streamfile");
+				//	Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/3fs_JF.stream", "entry_1/instrument_1/detector_2/detector_corrected/data", false);
+				//}
+
+				////Further Settings
+
+				//RunIAC::CreateCQ_Settings CQ_Settings;
+				//RunIAC::CreateAC_Settings AC_Settings;
+				//{
+				//	CQ_Settings.AC_Merge_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+				//	CQ_Settings.AC_Small_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
+
+				//	CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF.bin";
+				//	//CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_JF_Seg" + std::to_string(i_autorun) + ".bin";
+
+				//	CQ_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
+				//	CQ_Settings.PixelMap_DataSet = "data/data";
+
+
+
+				//	CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin";
+				//	//CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_Jungfr_Seg" + std::to_string(i_autorun) + ".bin";
+
+
+
+				//	CQ_Settings.echo = true;
+
+				//	CQ_Settings.MeshSize = 501;
+				//	CQ_Settings.QZoom = 2.0f;
+
+				//	CQ_Settings.SaveSmall_CQ = false;
+				//	CQ_Settings.SaveBig_CQ = true;
+
+
+				//	CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z2_Big.bin";
+				//	//CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/Cq_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+
+				//	//ac shared settings
+				//	AC_Settings.AC_FirstMap_Flags = CQ_Settings.AC_Small_Flags;
+				//	AC_Settings.AC_SecondMap_Flags = CQ_Settings.AC_Merge_Flags;
+				//	AC_Settings.MeshSize = CQ_Settings.MeshSize;
+				//	AC_Settings.QZoom = CQ_Settings.QZoom;
+				//	AC_Settings.PixelMap_Path = CQ_Settings.PixelMap_Path;
+				//	AC_Settings.PixelMap_DataSet = CQ_Settings.PixelMap_DataSet;
+				//	AC_Settings.PixelMask_Path = CQ_Settings.PixelMask_Path;
+
+				//	//ac further settings
+				//	AC_Settings.SaveBig_AC = true;
+				//	AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z2_Big.bin";
+				//	//AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503-Z4_Big_Seg" + std::to_string(i_autorun) + ".bin";
+
+
+				//	AC_Settings.DoubleMap = true;
+				//	AC_Settings.echo = true;
+				//	AC_Settings.PhotonOffset = 3.2f;
+				//	AC_Settings.PhotonStep = 6.4f;
+				//}
+
+				////
+
+				//ACMesh CQ;
+				//ACMesh AC;
+
+				//profiler.Tic();
+
+				//Options.Echo("Launch threads");
+
+				////RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options,0,1000);
+				////RunIAC::Run_AC_UW(AC, AC_Settings, Options,0,1000);
+
+				//RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
+				//RunIAC::Run_AC_UW(AC, AC_Settings, Options);
+
+				//Options.Echo("Merge Stuff");
+
+				//double * FinalAC = new double[CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB];
+
+				//RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
+
+				//ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z2.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
+				//std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z2.bin \n";
+
+				////ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
+				////std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_Final_503-Z4_Seg" + std::to_string(i_autorun) + ".bin \n";
+
+				//delete[] FinalAC;
+
+
+				//std::cout << "\n\n Finished in ";
+				//profiler.Toc(true);
+			}
 			}
 			break;
 		case 2: //Autocorrelate Hb ePix 3fs
@@ -1422,8 +1538,26 @@ int main()
 		{
 			std::cout << "\n******************************\nRun IncohAutoCorrelate in Simulation-mode\n******************************\n";
 			{
-				std::string PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
-				Simulate(Options, PixelMap_Path);
+				bool NewPixelMap = true;
+
+				if (NewPixelMap)
+				{
+					Simulator Sim;
+					std::array<float, 3> C = {-200000.0f,0,0};
+					std::array<float, 3> Va = { 0,0,1.0f };
+					std::array<float, 3> Vb = { 0,1.0f,0 };
+
+					std::string PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Sim_200_q300_50mu.h5";
+
+					Sim.GeneratePixelMap(PixelMap_Path, "data",300,300,50.0f,C,Va,Vb);
+
+					Simulate(Options, PixelMap_Path, "data");
+				}
+				else
+				{
+					std::string PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
+					Simulate(Options, PixelMap_Path, "data/data");
+				}
 			}
 		}
 		//break;
@@ -1435,23 +1569,25 @@ int main()
 
 			if(true)
 			{
-				std::string Prefix = "SCRIPTTEST_AV";
+				std::string Prefix = "PixMa_TEST";
 
 				RunIAC::CreateDataEval_Settings EvalSettings;
-				EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestTMP.xml";
+				EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestPixMa.xml";
 
-				EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
-				EvalSettings.PixelMap_DataSet = "data/data";
+				//EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
+				//EvalSettings.PixelMap_DataSet = "data/data";
+				EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Sim_200_q300_50mu.h5";
+				EvalSettings.PixelMap_DataSet = "data";
 				EvalSettings.PixelMask_Path = "";
 				//
 				EvalSettings.EchoLevel = 3;
 				//
-				EvalSettings.AngularAveraged = true;
+				EvalSettings.AngularAveraged = false;
 				EvalSettings.DoubleMap = true;
 				EvalSettings.FractionalCq = false;
 				EvalSettings.RestrictStackToBoundaries = false;
-				EvalSettings.MeshSize = 1025;
-				EvalSettings.QZoom = 2.0f;
+				EvalSettings.MeshSize = 301;
+				EvalSettings.QZoom = 1.0f;
 
 				EvalSettings.PhotonOffset = 0.0f;
 				EvalSettings.PhotonStep = 0.999f;

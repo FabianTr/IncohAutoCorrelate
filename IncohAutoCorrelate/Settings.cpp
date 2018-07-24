@@ -561,3 +561,26 @@ void Settings::LoadHitEventListFromFile(std::string Filename)
 
 
 }
+
+void Settings::InvertRotationMatrices()
+{
+
+	for (unsigned int i = 0; i < HitEvents.size(); i++)
+	{
+		Eigen::Matrix3d RotM;
+		RotM << HitEvents[i].RotMatrix[0], HitEvents[i].RotMatrix[1], HitEvents[i].RotMatrix[2], HitEvents[i].RotMatrix[3], HitEvents[i].RotMatrix[4], HitEvents[i].RotMatrix[5], HitEvents[i].RotMatrix[6], HitEvents[i].RotMatrix[7], HitEvents[i].RotMatrix[8];
+	
+		Eigen::Matrix3d RotInv = RotM.inverse();
+
+		HitEvents[i].RotMatrix[0] = RotInv(0, 0);
+		HitEvents[i].RotMatrix[1] = RotInv(0, 1);
+		HitEvents[i].RotMatrix[2] = RotInv(0, 2);
+		HitEvents[i].RotMatrix[3] = RotInv(1, 0);
+		HitEvents[i].RotMatrix[4] = RotInv(1, 1);
+		HitEvents[i].RotMatrix[5] = RotInv(1, 2);
+		HitEvents[i].RotMatrix[6] = RotInv(2, 0);
+		HitEvents[i].RotMatrix[7] = RotInv(2, 1);
+		HitEvents[i].RotMatrix[8] = RotInv(2, 2);
+	}
+
+}

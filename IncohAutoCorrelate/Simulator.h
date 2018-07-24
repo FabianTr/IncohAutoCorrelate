@@ -68,6 +68,9 @@ public:
 
 	void SaveSimulationOutput(SimulationOutput &Output, std::string HDF5_Path, std::string XML_Path, SimulationSettings SimSettings);
 
+
+	void GeneratePixelMap(std::string Filename, std::string Dataset,int SizeA, int SizeB, float PixelSize, std::array<float,3> Center, std::array<float, 3> VecA, std::array<float, 3> VecB);
+
 private: 
 	static void SimulatePart(Crystal  EmitterCrystal, Detector & Det, SimulationSettings  SimSettings, SimulationOutput & Output, Settings & Options, int ThreadNum);
 	void PrintSimInfos(const SimulationSettings & SimSettings);

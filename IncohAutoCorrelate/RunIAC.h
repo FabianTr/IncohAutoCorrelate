@@ -90,6 +90,8 @@ namespace RunIAC
 		bool FractionalCq = false; //Generate new CQ for each stack of X events (=> set SizeOfCqFraction accordingly)
 		unsigned int SizeOfCqFraction = 100;
 
+		bool InvertRotMatrix = false;
+
 		//Input Paths
 		std::string XML_Path = "";
 		std::string PixelMap_Path = "";//H5

@@ -334,7 +334,6 @@ namespace PPP
 		dataset.close();
 		file.close();
 
-
 		//Save XML File
 		OptionsOut.SafeHitEventListToFile(XML_Out);
 

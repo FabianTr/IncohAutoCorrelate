@@ -67,6 +67,7 @@ public:
 	void LoadHitEventListFromFile(char* Filename);
 	void LoadHitEventListFromFile(std::string Filename);
 
+	void InvertRotationMatrices();
 
 	// AC Settings
 	int halfACMeshEdgeLength = 100; //half EdgeLength of (cube) 3D Volume for auto-correlation without padding (intern +1 zeropadding)
