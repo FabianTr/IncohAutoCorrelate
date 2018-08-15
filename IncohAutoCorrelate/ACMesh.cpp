@@ -4,14 +4,17 @@
 #include <omp.h>
 #include "ArrayOperators.h"
 
-ACMesh::ACMesh()
+
+
+
+ACMesh::ACMesh(Settings *PrgSettings)
 {
 	if (CQMesh == nullptr)
 		CQMesh = new double[1];
 	if (Mesh == nullptr)
 		Mesh = new unsigned long[1];
+	Options = PrgSettings;
 }
-
 
 ACMesh::~ACMesh()
 {

@@ -71,6 +71,8 @@ public:
 
 	void GeneratePixelMap(std::string Filename, std::string Dataset,int SizeA, int SizeB, float PixelSize, std::array<float,3> Center, std::array<float, 3> VecA, std::array<float, 3> VecB);
 
+	void DisturbePixelMap(Detector &Det, double Translation, double Roatation); //Rotation in Degree [0, 360)
+
 private: 
 	static void SimulatePart(Crystal  EmitterCrystal, Detector & Det, SimulationSettings  SimSettings, SimulationOutput & Output, Settings & Options, int ThreadNum);
 	void PrintSimInfos(const SimulationSettings & SimSettings);

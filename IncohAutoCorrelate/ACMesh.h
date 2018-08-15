@@ -10,7 +10,7 @@ private:
 	
 
 public:
-	ACMesh();
+	ACMesh(Settings* PrgSettings);
 	~ACMesh();
 
 	double* CQMesh = nullptr;

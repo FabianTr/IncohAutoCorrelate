@@ -547,6 +547,104 @@ void Simulator::GeneratePixelMap(std::string Filename, std::string Dataset, int 
 	delete[] PixelMap;
 }
 
+void Simulator::DisturbePixelMap(Detector & Det, double Translation, double Roatation)
+{
+	//Roll rotation
+	std::array<float, 9> RotationMatrix;
+	{
+		//Roll rotation axis
+		std::array<double, 3> V;
+		V[0] = Drand() * 2. - 1.;
+		V[1] = (Drand() * 2. - 1.);
+		V[2] = (Drand() * 2. - 1.);
+
+		while (V[0] * V[0] + V[1] * V[1] + V[2] * V[2] > 1)
+		{
+			V[0] = Drand() * 2. - 1.;
+			V[1] = (Drand() * 2. - 1.);
+			V[2] = (Drand() * 2. - 1.);
+		}
+		//Set rotation Angle
+		double angle = 2 * M_PIl * (Roatation/360);
+
+		//calc rotation Matrix
+
+		double N = sqrt(V[0] * V[0] + V[1] * V[1] + V[2] * V[2]); //Normalization
+		V[0] = V[0] / N;
+		V[1] = V[1] / N;
+		V[2] = V[2] / N;
+
+		RotationMatrix[0] = V[0] * V[0] * (1 - cos(angle)) + cos(angle);
+		RotationMatrix[1] = V[1] * V[0] * (1 - cos(angle)) - V[2] * sin(angle);
+		RotationMatrix[2] = V[2] * V[0] * (1 - cos(angle)) + V[1] * sin(angle);
+
+		RotationMatrix[3] = V[0] * V[1] * (1 - cos(angle)) + V[2] * sin(angle);
+		RotationMatrix[4] = V[1] * V[1] * (1 - cos(angle)) + cos(angle);
+		RotationMatrix[5] = V[2] * V[1] * (1 - cos(angle)) - V[0] * sin(angle);
+
+		RotationMatrix[6] = V[0] * V[2] * (1 - cos(angle)) - V[1] * sin(angle);
+		RotationMatrix[7] = V[1] * V[2] * (1 - cos(angle)) + V[0] * sin(angle);
+		RotationMatrix[8] = V[2] * V[2] * (1 - cos(angle)) + cos(angle);
+	}
+
+	//Get initial translatation
+	std::array<double, 3> InitTrans;
+	{
+		InitTrans[0] = 0.0;
+		InitTrans[1] = 0.0;
+		InitTrans[2] = 0.0;
+		for (unsigned int i = 0; i < Det.DetectorSize[0] * Det.DetectorSize[1]; i++)
+		{
+			double WeightFak = 1.0/((double)(Det.DetectorSize[0] * Det.DetectorSize[1]));
+
+			InitTrans[0] = InitTrans[0] + WeightFak * Det.PixelMap[3 * i + 0];
+			InitTrans[1] = InitTrans[1] + WeightFak * Det.PixelMap[3 * i + 1];
+			InitTrans[2] = InitTrans[2] + WeightFak * Det.PixelMap[3 * i + 2];
+		}
+	}
+
+	//Roll translation direction
+	std::array<double, 3> RandTrans;
+	{
+		RandTrans[0] = Drand() - 0.5;
+		RandTrans[1] = Drand() - 0.5;
+		RandTrans[2] = Drand() - 0.5;
+
+		double N = Translation / sqrt(RandTrans[0] * RandTrans[0] + RandTrans[1] * RandTrans[1] + RandTrans[2] * RandTrans[2]);
+
+
+
+		RandTrans[0] = RandTrans[0] * N;
+		RandTrans[1] = RandTrans[1] * N;
+		RandTrans[2] = RandTrans[2] * N;
+	}
+
+	//Disturbe detector Position
+	for (unsigned int i = 0; i < Det.DetectorSize[0] * Det.DetectorSize[1]; i++)
+	{
+		float * t_V = new float[3]();
+		t_V[0] = Det.PixelMap[3 * i + 0];
+		t_V[1] = Det.PixelMap[3 * i + 1];
+		t_V[2] = Det.PixelMap[3 * i + 2];
+
+		//Translate to centered Position
+		t_V[0] = t_V[0] - InitTrans[0];
+		t_V[1] = t_V[1] - InitTrans[1];
+		t_V[2] = t_V[2] - InitTrans[2];
+
+		//Rotate
+		ArrayOperators::Rotate(t_V, RotationMatrix.data());
+
+		//Translate
+		Det.PixelMap[3 * i + 0] = t_V[0] + InitTrans[0] + RandTrans[0];
+		Det.PixelMap[3 * i + 1] = t_V[1] + InitTrans[1] + RandTrans[1];
+		Det.PixelMap[3 * i + 2] = t_V[2] + InitTrans[2] + RandTrans[2];
+
+		delete[] t_V;
+	}
+
+}
+
 
 void Simulator::PrintSimInfos(const SimulationSettings & SimSettings)
 {

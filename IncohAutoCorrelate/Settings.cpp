@@ -347,34 +347,6 @@ void Settings::SafeHitEventListToFile(char * Filename)
 void Settings::SafeHitEventListToFile(std::string Filename)
 {
 	SafeHitEventListToFile(Filename, HitEvents);
-	////HitEventList is stored in xml format
-	//using boost::property_tree::ptree;
-	//ptree pt;
-
-	//pt.put("root.Info.Size", HitEvents.size());
-	//for (unsigned int i = 0; i < HitEvents.size(); i++)
-	//{
-	//	std::string path = "root.content.";
-	//	path = path + std::to_string(i);
-
-	//	pt.put(path + ".Filename", HitEvents[i].Filename);
-	//	pt.put(path + ".Dataset", HitEvents[i].Dataset);
-	//	pt.put(path + ".Event", HitEvents[i].Event);
-	//	pt.put(path + ".SerialNumber", HitEvents[i].SerialNumber);
-	//	pt.put(path + ".MeanIntensity", HitEvents[i].MeanIntensity);
-	//	pt.put(path + ".PhotonCount", HitEvents[i].PhotonCount);
-
-	//	pt.put(path + ".R0", HitEvents[i].RotMatrix[0]);
-	//	pt.put(path + ".R1", HitEvents[i].RotMatrix[1]);
-	//	pt.put(path + ".R2", HitEvents[i].RotMatrix[2]);
-	//	pt.put(path + ".R3", HitEvents[i].RotMatrix[3]);
-	//	pt.put(path + ".R4", HitEvents[i].RotMatrix[4]);
-	//	pt.put(path + ".R5", HitEvents[i].RotMatrix[5]);
-	//	pt.put(path + ".R6", HitEvents[i].RotMatrix[6]);
-	//	pt.put(path + ".R7", HitEvents[i].RotMatrix[7]);
-	//	pt.put(path + ".R8", HitEvents[i].RotMatrix[8]);
-	//}
-	//boost::property_tree::write_xml(Filename, pt);
 }
 
 

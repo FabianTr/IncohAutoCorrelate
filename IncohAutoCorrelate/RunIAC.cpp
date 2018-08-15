@@ -6,6 +6,7 @@
 #include "ArrayOperators.h"
 #include"ProfileTime.h"
 #include "H5Cpp.h"
+#include "Simulator.h"
 
 namespace RunIAC
 {
@@ -45,7 +46,7 @@ namespace RunIAC
 		if (CQ_Settings.echo)
 			std::cout << CQ_Settings.ThreadName << ": Start dense autocorrelating (small Mesh) ...\n";
 
-		ACMesh smallMesh;
+		ACMesh smallMesh(&PrgSettings);
 		smallMesh.CreateSmallMesh_CofQ_ForDetector(Det, CQ_Settings.MeshSize, CQ_Settings.QZoom);
 
 		if (CQ_Settings.echo)
@@ -253,8 +254,8 @@ namespace RunIAC
 		// <Output Field> (used on demand)
 		AC1D Vector_AC;
 
-		ACMesh Mesh_CurrAC;
-		ACMesh Mesh_CQ;
+		ACMesh Mesh_CurrAC(&PrgSettings);
+		ACMesh Mesh_CQ(&PrgSettings);
 
 		// </Output Field>
 
@@ -271,8 +272,16 @@ namespace RunIAC
 			
 			//load pixelmap and if existing pixel mask
 			Det.LoadPixelMap(EvalSettings.PixelMap_Path, EvalSettings.PixelMap_DataSet);
-			Det.LoadPixelMask(EvalSettings.PixelMask_Path);
+			if (EvalSettings.DetDisturb) //Disturbation of Pixelmap for simulated data
+			{
+				Simulator Sim;
+				Sim.DisturbePixelMap(Det, EvalSettings.DetDisturb_Shift, EvalSettings.DetDisturb_Rot);
+			}
 			Det.Calc_kMap();
+			Det.LoadPixelMask(EvalSettings.PixelMask_Path);
+			
+
+
 
 			if (EvalSettings.XML_Path == "")
 			{
@@ -437,7 +446,7 @@ namespace RunIAC
 				// <C(q)>
 				// -> <C(q)_small>
 				ProfileLevel_1.Tic();
-				ACMesh smallMesh;
+				ACMesh smallMesh(&PrgSettings);
 				smallMesh.CreateSmallMesh_CofQ_ForDetector(Det, EvalSettings.MeshSize, EvalSettings.QZoom);
 
 				Detector::AutoCorrFlags Flags;
@@ -490,7 +499,7 @@ namespace RunIAC
 
 				// <AC uw>
 				ProfileLevel_1.Tic();
-				ACMesh AC_uw;
+				ACMesh AC_uw(&PrgSettings);
 				//Setup  Correlation
 				AC_uw.CreateBigMeshForDetector(Det, EvalSettings.MeshSize, EvalSettings.QZoom);
 
@@ -568,6 +577,7 @@ namespace RunIAC
 					ProfileLevel_0.Toc(true);
 				}
 				//end of eval
+
 				return;
 			}
 

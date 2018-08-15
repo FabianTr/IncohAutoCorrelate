@@ -115,6 +115,12 @@ namespace RunIAC
 
 		Detector::AutoCorrFlags AC_SecondMap_Flags; //to Implement
 		Detector::AutoCorrFlags AC_FirstMap_Flags;
+		
+		// For simulative data, detector disturbtion
+		bool DetDisturb = false;
+		double DetDisturb_Shift = 0.0;
+		double DetDisturb_Rot = 0.0; //in degree
+
 	};
 	void Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings);
 

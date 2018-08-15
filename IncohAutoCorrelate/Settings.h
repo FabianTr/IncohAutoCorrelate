@@ -55,8 +55,10 @@ public:
 		int Event;
 		int SerialNumber;
 
-		float MeanIntensity = -1;
+		float MeanIntensity = -1.0f;
 		int PhotonCount = -1;
+
+		float HitsPixelRatio = -1.0f; // Number of Pixels with hits / Number of Pixel
 	};
 
 	std::vector<HitEvent> HitEvents;
@@ -77,8 +79,8 @@ public:
 	//conversion for ACMesh and Rounding
 	struct FloatIntConversion
 	{
-		float Offset = 0; //shift before rounding to int
-		float Step = 1; //steps for discretization
+		float Offset = 0.0f; //shift before rounding to int
+		float Step = 1.0f; //steps for discretization
 	};
 	FloatIntConversion F_I_Conversion;
 	inline long FloatToInt(float f)

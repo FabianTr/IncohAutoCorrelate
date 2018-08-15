@@ -114,6 +114,52 @@ namespace Statistics
 	}
 
 
+	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector & RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound, double & StDev)
+	{
+		if (UpperBound - LowerBound < 1)
+			return 0.0;
+
+		std::vector<double> MeanVal;
+		MeanVal.resize(UpperBound - LowerBound);
+
+		for (unsigned int ind = 0; ind < UpperBound - LowerBound; ind++)
+		{
+			RefDet.LoadIntensityData(&Options.HitEvents[ind + LowerBound]);
+
+			//Count Pixel with value >= Offset
+			unsigned int Counter = 0;
+			for (int i = 0; i < RefDet.DetectorSize[0] * RefDet.DetectorSize[1]; i++)
+			{
+				if (RefDet.Intensity[i] >= Offset)
+					Counter++;
+			}
+
+			//Get ratio
+			MeanVal[ind] = ((double)Counter) / ((double)(RefDet.DetectorSize[0] * RefDet.DetectorSize[1]));
+		}
+
+
+
+
+		return 0.0;
+	}
+	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector & RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound)
+	{
+		double temp;
+		return GetAverageRatioOfPixelsWithHits(Options, RefDet, Offset, LowerBound, UpperBound, *&temp);
+	}
+	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector & RefDet, float Offset, double & StDev)
+	{
+		return GetAverageRatioOfPixelsWithHits(Options, RefDet, Offset, 0, Options.HitEvents.size(), StDev);
+	}
+	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector & RefDet, float Offset)
+	{
+		double temp;
+		return GetAverageRatioOfPixelsWithHits(Options,RefDet,Offset,0,Options.HitEvents.size(), *&temp);
+	}
+
+
+
 
 
 	Histogram::Histogram(unsigned int size, double binSize, double firstBin)

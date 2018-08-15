@@ -45,4 +45,13 @@ namespace Statistics
 
 	std::vector<Histogram> MakePixelHistogramStack(Settings & Options, Detector &RefDet, unsigned int Bins, double SmallestVal, double HighestVal);
 
+
+
+	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound, double & StDev);
+	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound);
+	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset, double & StDev);
+	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset);
+	
+
+
 }
