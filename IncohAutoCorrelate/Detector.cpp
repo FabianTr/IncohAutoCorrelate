@@ -396,8 +396,8 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 			dataset.read(PixelMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
 
 
-			float Pmax[3] = { -99999999, -99999999, -99999999 };
-			float Pmin[3] = { 99999999, 99999999, 99999999 };
+			float Pmax[3] = { -1e9, -1e9, -1e9 };
+			float Pmin[3] = { 1e9, 1e9, 1e9 };
 
 			for (unsigned int i_y = 0; i_y < dims[1]; i_y++)
 			{
@@ -426,8 +426,8 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 			H5::DataSpace mspace(3, dims);
 			dataset.read(TmpPixleMap, H5::PredType::NATIVE_FLOAT, mspace, DS);
 
-			float Pmax[3] = { -99999999, -99999999, -99999999 };
-			float Pmin[3] = { 99999999, 99999999, 99999999 };
+			float Pmax[3] = { -1e9, -1e9, -1e9 };
+			float Pmin[3] = { 1e9, 1e9, 1e9 };
 			if (!swaped)//[ny][nx][3]
 			{
 				for (unsigned int i_y = 0; i_y < dims[2]; i_y++)
