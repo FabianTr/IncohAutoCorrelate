@@ -682,69 +682,69 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 
 	Output.DetectorSize[0] = Det.DetectorSize[0];
 	Output.DetectorSize[1] = Det.DetectorSize[1];
-
-	//
-	if (SimSettings.AutoPixelOrientation) //Guess PixelOrientation under assumption that all pixel are of same size and orientations are always parallel
 	{
-		SimSettings.PixelOrientationVectors[0] = Det.PixelMap[0 + 3] - Det.PixelMap[0 + 0];
-		SimSettings.PixelOrientationVectors[1] = Det.PixelMap[1 + 3] - Det.PixelMap[1 + 0];
-		SimSettings.PixelOrientationVectors[2] = Det.PixelMap[2 + 3] - Det.PixelMap[2 + 0];
+		//
+		//if (SimSettings.AutoPixelOrientation) //Guess PixelOrientation under assumption that all pixel are of same size and orientations are always parallel
+		//{
+		//	SimSettings.PixelOrientationVectors[0] = Det.PixelMap[0 + 3] - Det.PixelMap[0 + 0];
+		//	SimSettings.PixelOrientationVectors[1] = Det.PixelMap[1 + 3] - Det.PixelMap[1 + 0];
+		//	SimSettings.PixelOrientationVectors[2] = Det.PixelMap[2 + 3] - Det.PixelMap[2 + 0];
 
-		SimSettings.PixelOrientationVectors[3] = Det.PixelMap[0 + 3 * Det.DetectorSize[1]] - Det.PixelMap[0 + 0];
-		SimSettings.PixelOrientationVectors[4] = Det.PixelMap[1 + 3 * Det.DetectorSize[1]] - Det.PixelMap[1 + 0];
-		SimSettings.PixelOrientationVectors[5] = Det.PixelMap[2 + 3 * Det.DetectorSize[1]] - Det.PixelMap[2 + 0];
+		//	SimSettings.PixelOrientationVectors[3] = Det.PixelMap[0 + 3 * Det.DetectorSize[1]] - Det.PixelMap[0 + 0];
+		//	SimSettings.PixelOrientationVectors[4] = Det.PixelMap[1 + 3 * Det.DetectorSize[1]] - Det.PixelMap[1 + 0];
+		//	SimSettings.PixelOrientationVectors[5] = Det.PixelMap[2 + 3 * Det.DetectorSize[1]] - Det.PixelMap[2 + 0];
 
-		double Norm[2];
+		//	double Norm[2];
 
-		Norm[0] = sqrt(SimSettings.PixelOrientationVectors[0] * SimSettings.PixelOrientationVectors[0] + SimSettings.PixelOrientationVectors[1] * SimSettings.PixelOrientationVectors[1] + SimSettings.PixelOrientationVectors[2] * SimSettings.PixelOrientationVectors[2]);
-		Norm[1] = sqrt(SimSettings.PixelOrientationVectors[3] * SimSettings.PixelOrientationVectors[3] + SimSettings.PixelOrientationVectors[4] * SimSettings.PixelOrientationVectors[4] + SimSettings.PixelOrientationVectors[5] * SimSettings.PixelOrientationVectors[5]);
+		//	Norm[0] = sqrt(SimSettings.PixelOrientationVectors[0] * SimSettings.PixelOrientationVectors[0] + SimSettings.PixelOrientationVectors[1] * SimSettings.PixelOrientationVectors[1] + SimSettings.PixelOrientationVectors[2] * SimSettings.PixelOrientationVectors[2]);
+		//	Norm[1] = sqrt(SimSettings.PixelOrientationVectors[3] * SimSettings.PixelOrientationVectors[3] + SimSettings.PixelOrientationVectors[4] * SimSettings.PixelOrientationVectors[4] + SimSettings.PixelOrientationVectors[5] * SimSettings.PixelOrientationVectors[5]);
 
-		if (SimSettings.AutoPixelSize)
-		{
-			SimSettings.PixelSize[0] = Norm[0];
-			SimSettings.PixelSize[1] = Norm[1];
-		}
+		//	if (SimSettings.AutoPixelSize)
+		//	{
+		//		SimSettings.PixelSize[0] = Norm[0];
+		//		SimSettings.PixelSize[1] = Norm[1];
+		//	}
 
-		SimSettings.PixelOrientationVectors[0] = SimSettings.PixelOrientationVectors[0] / Norm[0];
-		SimSettings.PixelOrientationVectors[1] = SimSettings.PixelOrientationVectors[1] / Norm[0];
-		SimSettings.PixelOrientationVectors[2] = SimSettings.PixelOrientationVectors[2] / Norm[0];
+		//	SimSettings.PixelOrientationVectors[0] = SimSettings.PixelOrientationVectors[0] / Norm[0];
+		//	SimSettings.PixelOrientationVectors[1] = SimSettings.PixelOrientationVectors[1] / Norm[0];
+		//	SimSettings.PixelOrientationVectors[2] = SimSettings.PixelOrientationVectors[2] / Norm[0];
 
-		SimSettings.PixelOrientationVectors[3] = SimSettings.PixelOrientationVectors[3] / Norm[1];
-		SimSettings.PixelOrientationVectors[4] = SimSettings.PixelOrientationVectors[4] / Norm[1];
-		SimSettings.PixelOrientationVectors[5] = SimSettings.PixelOrientationVectors[5] / Norm[1];
+		//	SimSettings.PixelOrientationVectors[3] = SimSettings.PixelOrientationVectors[3] / Norm[1];
+		//	SimSettings.PixelOrientationVectors[4] = SimSettings.PixelOrientationVectors[4] / Norm[1];
+		//	SimSettings.PixelOrientationVectors[5] = SimSettings.PixelOrientationVectors[5] / Norm[1];
+		//}
+		//else
+		//{
+		//	if (SimSettings.AutoPixelSize)
+		//	{
+		//		double tmpPixelOrient[6];
+
+		//		tmpPixelOrient[0] = Det.PixelMap[0 + 3] - Det.PixelMap[0 + 0];
+		//		tmpPixelOrient[1] = Det.PixelMap[1 + 3] - Det.PixelMap[1 + 0];
+		//		tmpPixelOrient[2] = Det.PixelMap[2 + 3] - Det.PixelMap[2 + 0];
+
+		//		tmpPixelOrient[3] = Det.PixelMap[0 + 3 * Det.DetectorSize[1]] - Det.PixelMap[0 + 0];
+		//		tmpPixelOrient[4] = Det.PixelMap[1 + 3 * Det.DetectorSize[1]] - Det.PixelMap[1 + 0];
+		//		tmpPixelOrient[5] = Det.PixelMap[2 + 3 * Det.DetectorSize[1]] - Det.PixelMap[2 + 0];
+
+		//		double Norm[2];
+
+		//		Norm[0] = sqrt(tmpPixelOrient[0] * tmpPixelOrient[0] + tmpPixelOrient[1] * tmpPixelOrient[1] + tmpPixelOrient[2] * tmpPixelOrient[2]);
+		//		Norm[1] = sqrt(tmpPixelOrient[3] * tmpPixelOrient[3] + tmpPixelOrient[4] * tmpPixelOrient[4] + tmpPixelOrient[5] * tmpPixelOrient[5]);
+
+		//		SimSettings.PixelSize[0] = Norm[0];
+		//		SimSettings.PixelSize[1] = Norm[1];
+		//	}
+		//}
+
+
+		////Debug Bullshit
+		//std::cout << "Pixel Orientation a: " << SimSettings.PixelOrientationVectors[0] << ", " << SimSettings.PixelOrientationVectors[1] << ", " << SimSettings.PixelOrientationVectors[2] << "\n";
+		//std::cout << "Pixel Orientation b: " << SimSettings.PixelOrientationVectors[3] << ", " << SimSettings.PixelOrientationVectors[4] << ", " << SimSettings.PixelOrientationVectors[5] << "\n";
+
+		//std::cout << "Pixel Size (a x b): " << SimSettings.PixelSize[0] << " x " << SimSettings.PixelSize[1] << "\n";
+
 	}
-	else
-	{
-		if (SimSettings.AutoPixelSize)
-		{
-			double tmpPixelOrient[6];
-
-			tmpPixelOrient[0] = Det.PixelMap[0 + 3] - Det.PixelMap[0 + 0];
-			tmpPixelOrient[1] = Det.PixelMap[1 + 3] - Det.PixelMap[1 + 0];
-			tmpPixelOrient[2] = Det.PixelMap[2 + 3] - Det.PixelMap[2 + 0];
-
-			tmpPixelOrient[3] = Det.PixelMap[0 + 3 * Det.DetectorSize[1]] - Det.PixelMap[0 + 0];
-			tmpPixelOrient[4] = Det.PixelMap[1 + 3 * Det.DetectorSize[1]] - Det.PixelMap[1 + 0];
-			tmpPixelOrient[5] = Det.PixelMap[2 + 3 * Det.DetectorSize[1]] - Det.PixelMap[2 + 0];
-
-			double Norm[2];
-
-			Norm[0] = sqrt(tmpPixelOrient[0] * tmpPixelOrient[0] + tmpPixelOrient[1] * tmpPixelOrient[1] + tmpPixelOrient[2] * tmpPixelOrient[2]);
-			Norm[1] = sqrt(tmpPixelOrient[3] * tmpPixelOrient[3] + tmpPixelOrient[4] * tmpPixelOrient[4] + tmpPixelOrient[5] * tmpPixelOrient[5]);
-
-			SimSettings.PixelSize[0] = Norm[0];
-			SimSettings.PixelSize[1] = Norm[1];
-		}
-	}
-
-
-	//Debug Bullshit
-	std::cout << "Pixel Orientation a: " << SimSettings.PixelOrientationVectors[0] << ", " << SimSettings.PixelOrientationVectors[1] << ", " << SimSettings.PixelOrientationVectors[2] << "\n";
-	std::cout << "Pixel Orientation b: " << SimSettings.PixelOrientationVectors[3] << ", " << SimSettings.PixelOrientationVectors[4] << ", " << SimSettings.PixelOrientationVectors[5] << "\n";
-
-	std::cout << "Pixel Size (a x b): " << SimSettings.PixelSize[0] << " x " << SimSettings.PixelSize[1] << "\n";
-
-
 
 	Profiler.Tic();
 	//Start Loop
@@ -932,14 +932,15 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 
 
 		//Rescale for expected number of photons
-		float ExpNumOfPhotones = (float)(SimSettings.AveragePhotonesPerEmitterOnDetector * SimSettings.CrystSettings.FlYield * EmitterCrystal.AtomPositions.size());
-		double IntegratedIntensity = 0.0f;
+		double ExpNumOfPhotones = ((double)SimSettings.AveragePhotonesPerEmitterOnDetector * (double)SimSettings.CrystSettings.FlYield * (double)EmitterCrystal.AtomPositions.size());
+		double IntegratedIntensity = 0.0;
 		for (unsigned int l = 0; l < Det.DetectorSize[0] * Det.DetectorSize[1]; l++)
 		{ //Reminder: don't even think about to parallelize this!
 			IntegratedIntensity += Intensity[l];
 		}
 		double t_IntFactor = ExpNumOfPhotones / IntegratedIntensity;
 		ArrayOperators::ParMultiplyScalar(Intensity, t_IntFactor, Det.DetectorSize[0] * Det.DetectorSize[1]);
+
 
 		//Poisson Sample (if required)
 		if (SimSettings.PoissonSample)
@@ -1057,10 +1058,76 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 	Detector DetPart[2]{ Detector(Det, true), Detector(Det, true) };
 
 
+	if (SimSettings.AutoPixelOrientation) //Guess PixelOrientation under assumption that all pixel are of same size and orientations are always parallel
+	{
+		SimSettings.PixelOrientationVectors[0] = Det.PixelMap[0 + 3] - Det.PixelMap[0 + 0];
+		SimSettings.PixelOrientationVectors[1] = Det.PixelMap[1 + 3] - Det.PixelMap[1 + 0];
+		SimSettings.PixelOrientationVectors[2] = Det.PixelMap[2 + 3] - Det.PixelMap[2 + 0];
+
+		SimSettings.PixelOrientationVectors[3] = Det.PixelMap[0 + 3 * Det.DetectorSize[1]] - Det.PixelMap[0 + 0];
+		SimSettings.PixelOrientationVectors[4] = Det.PixelMap[1 + 3 * Det.DetectorSize[1]] - Det.PixelMap[1 + 0];
+		SimSettings.PixelOrientationVectors[5] = Det.PixelMap[2 + 3 * Det.DetectorSize[1]] - Det.PixelMap[2 + 0];
+
+		double Norm[2];
+
+		Norm[0] = sqrt(SimSettings.PixelOrientationVectors[0] * SimSettings.PixelOrientationVectors[0] + SimSettings.PixelOrientationVectors[1] * SimSettings.PixelOrientationVectors[1] + SimSettings.PixelOrientationVectors[2] * SimSettings.PixelOrientationVectors[2]);
+		Norm[1] = sqrt(SimSettings.PixelOrientationVectors[3] * SimSettings.PixelOrientationVectors[3] + SimSettings.PixelOrientationVectors[4] * SimSettings.PixelOrientationVectors[4] + SimSettings.PixelOrientationVectors[5] * SimSettings.PixelOrientationVectors[5]);
+
+		if (SimSettings.AutoPixelSize)
+		{
+			SimSettings.PixelSize[0] = Norm[0];
+			SimSettings.PixelSize[1] = Norm[1];
+		}
+
+		SimSettings.PixelOrientationVectors[0] = SimSettings.PixelOrientationVectors[0] / Norm[0];
+		SimSettings.PixelOrientationVectors[1] = SimSettings.PixelOrientationVectors[1] / Norm[0];
+		SimSettings.PixelOrientationVectors[2] = SimSettings.PixelOrientationVectors[2] / Norm[0];
+
+		SimSettings.PixelOrientationVectors[3] = SimSettings.PixelOrientationVectors[3] / Norm[1];
+		SimSettings.PixelOrientationVectors[4] = SimSettings.PixelOrientationVectors[4] / Norm[1];
+		SimSettings.PixelOrientationVectors[5] = SimSettings.PixelOrientationVectors[5] / Norm[1];
+	}
+	else
+	{
+		if (SimSettings.AutoPixelSize)
+		{
+			double tmpPixelOrient[6];
+
+			tmpPixelOrient[0] = Det.PixelMap[0 + 3] - Det.PixelMap[0 + 0];
+			tmpPixelOrient[1] = Det.PixelMap[1 + 3] - Det.PixelMap[1 + 0];
+			tmpPixelOrient[2] = Det.PixelMap[2 + 3] - Det.PixelMap[2 + 0];
+
+			tmpPixelOrient[3] = Det.PixelMap[0 + 3 * Det.DetectorSize[1]] - Det.PixelMap[0 + 0];
+			tmpPixelOrient[4] = Det.PixelMap[1 + 3 * Det.DetectorSize[1]] - Det.PixelMap[1 + 0];
+			tmpPixelOrient[5] = Det.PixelMap[2 + 3 * Det.DetectorSize[1]] - Det.PixelMap[2 + 0];
+
+			double Norm[2];
+
+			Norm[0] = sqrt(tmpPixelOrient[0] * tmpPixelOrient[0] + tmpPixelOrient[1] * tmpPixelOrient[1] + tmpPixelOrient[2] * tmpPixelOrient[2]);
+			Norm[1] = sqrt(tmpPixelOrient[3] * tmpPixelOrient[3] + tmpPixelOrient[4] * tmpPixelOrient[4] + tmpPixelOrient[5] * tmpPixelOrient[5]);
+
+			SimSettings.PixelSize[0] = Norm[0];
+			SimSettings.PixelSize[1] = Norm[1];
+		}
+	}
+
+
 	SimulationSettings SimSettingsPart[2] = { SimSettings ,SimSettings };
 	SimSettingsPart[0].NumberOfSimulations = (unsigned int)(SimSettings.NumberOfSimulations / 2);
 	SimSettingsPart[1].NumberOfSimulations = SimSettings.NumberOfSimulations - SimSettingsPart[0].NumberOfSimulations;
 	//SimSettingsPart[2].NumberOfSimulations = SimSettings.NumberOfSimulations - SimSettingsPart[0].NumberOfSimulations - SimSettingsPart[1].NumberOfSimulations;
+
+
+	//Get PixelStuff Right (Orienatation and size, if auto)
+
+
+
+		//Debug Bullshit
+	std::cout << "Pixel Orientation a: " << SimSettings.PixelOrientationVectors[0] << ", " << SimSettings.PixelOrientationVectors[1] << ", " << SimSettings.PixelOrientationVectors[2] << "\n";
+	std::cout << "Pixel Orientation b: " << SimSettings.PixelOrientationVectors[3] << ", " << SimSettings.PixelOrientationVectors[4] << ", " << SimSettings.PixelOrientationVectors[5] << "\n";
+
+	std::cout << "Pixel Size (a x b): " << SimSettings.PixelSize[0] << " x " << SimSettings.PixelSize[1] << "\n";
+
 
 	//launch threads
 	std::cout << "Launch 2 Threads\n";

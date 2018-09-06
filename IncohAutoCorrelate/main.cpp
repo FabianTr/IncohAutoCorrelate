@@ -264,35 +264,43 @@ void CombineStuff(std::string Fr_AC_UW, std::string Fr_CQ, std::string Fw_AC, in
 }
 
 
-void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapDataSet )
+void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapDataSet, int CrystSize)
 {
 
 	Simulator::SimulationSettings SimSettings;
 
-	SimSettings.UnitCells[0] = 20;
-	SimSettings.UnitCells[1] = 20;
-	SimSettings.UnitCells[2] = 20;
+	SimSettings.UnitCells[0] = CrystSize;
+	SimSettings.UnitCells[1] = CrystSize;
+	SimSettings.UnitCells[2] = CrystSize;
 
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 500000; // 250000
+	SimSettings.NumberOfSimulations = 5000; // 250000
 
 	SimSettings.Modes = 1;
 	//Detector coverage factor lib:   (see Wirkungsgrad.nb: SqDetCoverage[l_ (edge), dist_] := ArcTan[l ^ 2 / (2 * dist*Sqrt[4 * dist ^ 2 + 2 * l ^ 2])] / Pi; )
+	//
+	//     ******** - Jungfrau - ********
 	// 0.0275 = 2.75% ~= Jungfr coverage at 120mm
+	//     ******** - 350^2 - ********
 	// 0.000152243 <= 350x350 50mum at 400mm
 	// 0.000270554 <= 350x350 50mum at 300mm
 	// 0.00241857  <= 350x350 50mum at 100mm
 	// 0.00945996 <= 350x350 50mum at 50mm
+	//     ******** - 250^2 - ********
+	// 0.000198819 <= 250x250 50mum at 250mm
+	// 0.000138095 <= 250x250 50mum at 300mm
+	//     ******** - 500^2 - ********
+	// 0.0187349 <= 500x500 100mum at 100mm
 	//
-	float NG = 1.0f;
+	float NG = 100.0; //1.0
 
-	SimSettings.AveragePhotonesPerEmitterOnDetector = NG * 0.000152243; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
+	SimSettings.AveragePhotonesPerEmitterOnDetector = NG * 0.0187349; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
 	SimSettings.PoissonSample = true;
 	SimSettings.SubSampling = 1; // 3 => (2*3+1)^2 = 49
 
-	SimSettings.Wavelength = 1.94; //1.94A = 194pm 
+	SimSettings.Wavelength = 1.94; //1.94A = 194pm Fe ;; 1.44A Zn
 
 	SimSettings.Value_per_Photon = 1.0f;//6.4
 
@@ -307,11 +315,11 @@ void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapD
 	//SimSettings.Filename_XML       = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/HB_UC=" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) +  "_NG=" + std::to_string((int)NG) + "_NP=" + std::to_string(SimSettings.NumberOfSimulations) + ".xml";
 
 	
-	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/PlacementTest/Sim_HB_UC=" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) +  "_NG=" + std::to_string((int)NG) + "_NP=" + std::to_string(SimSettings.NumberOfSimulations) + "_1.h5";
-	SimSettings.Filename_XML       = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/PlacementTest/Sim_HB_UC=" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) +  "_NG=" + std::to_string((int)NG) + "_NP=" + std::to_string(SimSettings.NumberOfSimulations) + "_1.xml";
+	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/PlacementTest/165_MOF_UC=" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) +  "_NG=" + std::to_string((int)NG) + "_NP=" + std::to_string(SimSettings.NumberOfSimulations) + ".h5";
+	//SimSettings.Filename_XML       = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/PlacementTest/165_MOF_UC=" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) +  "_NG=" + std::to_string((int)NG) + "_NP=" + std::to_string(SimSettings.NumberOfSimulations) + ".xml";
 
-	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/realistic/Sim_HB_UC=" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) + "_NG=" + std::to_string((int)NG) + "_NP=" + std::to_string(SimSettings.NumberOfSimulations) + "_2.h5";
-	//SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/realistic/Sim_HB_UC=" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) + "_NG=" + std::to_string((int)NG) + "_NP=" + std::to_string(SimSettings.NumberOfSimulations) + "_2.xml";
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/SNR_NG100_" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) + ".h5";
+	      SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/SNR_NG100_" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) + ".xml";
 
 
 	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestPixMa.h5";//Sim20_Fixed_NP_3
@@ -338,15 +346,40 @@ void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapD
 	}
 	std::vector<std::array<double, 3>> UnitCell; //Hardcode unitcell for Hb (1gzx)
 	std::array<double, 3> t_pos;
-	//Hardcoded Hb
-	t_pos = { 15.817 , 16.279 , 14.682 };
-	UnitCell.push_back(t_pos);
-	t_pos = { -10.262, -4.051 , -0.010 };
-	UnitCell.push_back(t_pos);
-	t_pos = { 6.437 , -16.819 , 12.649 };
-	UnitCell.push_back(t_pos);
-	t_pos = { 2.097 , 11.532 , 34.460 };
-	UnitCell.push_back(t_pos);
+	
+	{
+		//Hardcoded Simple
+		t_pos = { 0 , 0 , 0 };
+		UnitCell.push_back(t_pos);
+	}
+	//{
+	//	//Hardcoded Hb
+	//	t_pos = { 15.817 , 16.279 , 14.682 };
+	//	UnitCell.push_back(t_pos);
+	//	t_pos = { -10.262, -4.051 , -0.010 };
+	//	UnitCell.push_back(t_pos);
+	//	t_pos = { 6.437 , -16.819 , 12.649 };
+	//	UnitCell.push_back(t_pos);
+	//	t_pos = { 2.097 , 11.532 , 34.460 };
+	//	UnitCell.push_back(t_pos);
+	//}
+	//{
+	//	//Hardcoded MOF dummy
+	//	t_pos = { 0 ,0 , 0 };
+	//	UnitCell.push_back(t_pos);
+	//	t_pos = { 10, 5 , 2 };
+	//	UnitCell.push_back(t_pos);
+	//	t_pos = { 7 , 4 , 5 };
+	//	UnitCell.push_back(t_pos);
+	//	t_pos = { 2.097 , 1.532 , 3.460 };
+	//	UnitCell.push_back(t_pos);
+	//	t_pos = { 5.817 , 6.279 , 4.682 };
+	//	UnitCell.push_back(t_pos);
+	//	//t_pos = { -1.262, -4.051 , -0.010 };
+	//	//UnitCell.push_back(t_pos);
+	//	//t_pos = { 6.437 , -6.819 , 2.649 };
+	//	//UnitCell.push_back(t_pos);
+	//}
 
 	//t_pos = { 15.817 / 10000.0, 16.279 / 10000.0, 14.682 / 10000.0 }; //convert anström to microns
 	//UnitCell.push_back(t_pos);
@@ -455,14 +488,25 @@ void QDTests()
 }
 
 
-int main()
+int main(int argc, char** argv)
 {
+
+
+	 
 	//QDTests();
 	//return 0;
 
 	std::cout << "\n\n\n===================\n     IncohAutoCorrelate\n===================\n\n";
 	//omp_set_nested(1);
 	//omp_set_max_active_levels(2);
+
+	int CrystSize = 10;
+	if (argc > 1)
+	{
+		CrystSize = std::stoi(argv[1]);
+	}
+	std::cout << "Unitcells: " << CrystSize << "^3\n";
+
 
 
 	ProfileTime profiler;
@@ -475,8 +519,13 @@ int main()
 
 	Options.F_I_Conversion.Step = 0.01f;
 	Options.F_I_Conversion.Offset = 0.0f;
-	//Hb reference-unit-cell in nm
-	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
+	////Hb reference-unit-cell in nm
+	//Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
+
+	//Simple
+	Options.MReference << 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0;
+	////MOF
+	//Options.MReference << 2.6, 0, 0, 0, 2.6, 0, 0, 0, 0.7;
 
 	bool Panelwise = false;
 	int RunMode = 10;
@@ -1474,25 +1523,22 @@ int main()
 				if (NewPixelMap)
 				{
 					Simulator Sim;
-					std::array<float, 3> C = {-200000.0f,0,0};
-					std::array<float, 3> Va = { 0, 0, 1.0f };
-					std::array<float, 3> Vb = { 0, 1.0f, 0 };
 
-					std::string PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_350x350_50mu_400mm_SIM.h5";
+					std::string PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_500x500_100mu_100mm_SIM.h5";
 
-					//Sim.GeneratePixelMap(PixelMap_Path, "PixelMap",300,300,50.0f,C,Va,Vb);
-					Sim.GeneratePixelMap(PixelMap_Path, "PixelMap", 350, 350, 50, { -4.0e5, 0, 0 }, {0 , 0, 1.0f }, { 0, 1.0f, 0 });
 
-					Simulate(Options, PixelMap_Path, "PixelMap");
+					Sim.GeneratePixelMap(PixelMap_Path, "PixelMap", 500, 500, 100, { -1.0e5, 0, 0 }, {0 , 0, 1.0f }, { 0, 1.0f, 0 });
+
+					Simulate(Options, PixelMap_Path, "PixelMap", CrystSize);
 				}
 				else
 				{
 					std::string PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
-					Simulate(Options, PixelMap_Path, "data/data");
+					Simulate(Options, PixelMap_Path, "data/data", CrystSize);
 				}
 			}
 		}
-		break;
+		//break;
 
 		case 20: //Evaluate simulated data Block (Hb)
 		{
@@ -1500,17 +1546,23 @@ int main()
 
 			// / NEAR100_HB_UC =
 
-			std::string Prefix = "NEAR50_HB_UC=20_NP=100_NG=1e4";
+			//std::string Prefix = "165_MOFro_UC=30_NP=1000_NG=1e4";
+
+		//	std::string Prefix = "SNR_24x24x24";//
+			std::string Prefix = "SNR_NG100_"+ std::to_string(CrystSize) +"x" + std::to_string(CrystSize) + "x" + std::to_string(CrystSize) + "";//
 
 			RunIAC::CreateDataEval_Settings EvalSettings;
 			//EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestPixMa.xml";
 
-			EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/PlacementTest/NEAR50_HB_UC=20x20x20_NG=10000_NP=100.xml";
+			//EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/PlacementTest/165_MOF_UC=30x30x30_NG=10000_NP=1000.xml";
+			EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/SNR_NG100_" + std::to_string(CrystSize) + "x" + std::to_string(CrystSize) + "x" + std::to_string(CrystSize) + ".xml";
+
+			//EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/realistic/Stack100k_1.xml";
 
 			//EvalSettings.XML_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/HB_UC=15x15x15_NG=10_NP=250000.xml";
 
 
-			EvalSettings.DetDisturb = true;
+			EvalSettings.DetDisturb = false;
 			EvalSettings.DetDisturb_Shift = 2000;
 			EvalSettings.DetDisturb_Rot = 1;
 
@@ -1519,7 +1571,10 @@ int main()
 
 			//EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5";
 			//EvalSettings.PixelMap_DataSet = "data/data";
-			EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_350x350_50mu_400mm_SIM.h5";
+
+			//EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_250x250_50mu_300mm_SIM.h5";
+
+			EvalSettings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_500x500_100mu_100mm_SIM.h5";
 			EvalSettings.PixelMap_DataSet = "PixelMap";
 			EvalSettings.PixelMask_Path = "";
 			//
@@ -1529,11 +1584,13 @@ int main()
 			EvalSettings.DoubleMap = true;
 			EvalSettings.FractionalCq = false;
 			EvalSettings.RestrictStackToBoundaries = false;
-			EvalSettings.MeshSize = 401;
+			EvalSettings.MeshSize = 501;
 			EvalSettings.QZoom = 1.0f;
 
-			EvalSettings.PhotonOffset = 0.001f;
-			EvalSettings.PhotonStep = 0.999f;
+			EvalSettings.PhotonOffset = 0.000000001f;
+			EvalSettings.PhotonStep =   1.0f;
+
+			
 
 				
 			//EvalSettings.Out_AvIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_avIntensity_.bin";
@@ -1543,18 +1600,32 @@ int main()
 			//EvalSettings.Out_Final_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_AC_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
 			//EvalSettings.Out_Q_Vector = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/Eval/" + Prefix + "_Q_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
 
-			EvalSettings.Out_AvIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_avIntensity_.bin";
-			EvalSettings.Out_ACuw_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_uwAC_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
-			EvalSettings.Out_Cq_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_CQ_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
-			EvalSettings.Out_Cq_small_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_CQsmall_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
-			EvalSettings.Out_Final_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_AC_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
-			EvalSettings.Out_Q_Vector = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_Q_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			//EvalSettings.Out_AvIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_avIntensity_.bin";
+			//EvalSettings.Out_ACuw_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_uwAC_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			//EvalSettings.Out_Cq_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_CQ_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			//EvalSettings.Out_Cq_small_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_CQsmall_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			//EvalSettings.Out_Final_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_AC_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			//EvalSettings.Out_Q_Vector = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_Q_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+
+			//EvalSettings.Out_AvIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_avIntensity_.bin";
+			//EvalSettings.Out_ACuw_Path = "";// "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_uwAC_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			//EvalSettings.Out_Cq_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_CQ_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			//EvalSettings.Out_Cq_small_Path = "";// v"/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_CQsmall_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			//EvalSettings.Out_Final_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_AC_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+			//EvalSettings.Out_Q_Vector = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/" + Prefix + "_Q_" + std::to_string(EvalSettings.MeshSize) + "-Z" + std::to_string(EvalSettings.QZoom) + ".bin";
+
+			EvalSettings.Out_AvIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/" + Prefix + "_avIntensity_.bin";
+			EvalSettings.Out_ACuw_Path = "";
+			EvalSettings.Out_Cq_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/" + Prefix + "_CQ.bin";
+			EvalSettings.Out_Cq_small_Path = "";
+			EvalSettings.Out_Final_AC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/" + Prefix + "_AC.bin";
+			EvalSettings.Out_Q_Vector = "";
+
 
 
 			RunIAC::Run_AutoCorr_DataEval(Options, EvalSettings);
 
 			return 0;
-			
 		}
 
 		//break;
