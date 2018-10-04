@@ -27,9 +27,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{f0fd0e5b-a41f-4601-a98a-2952673aedbc}</ProjectGuid>
+    <ProjectGuid>{cad130be-9dc4-4aa8-bbae-25cfc18b0872}</ProjectGuid>
     <Keyword>Linux</Keyword>
-    <RootNamespace>IncohAutoCorrelate</RootNamespace>
+    <RootNamespace>IcaXmlGen</RootNamespace>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <ApplicationType>Linux</ApplicationType>
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
@@ -60,70 +60,12 @@
   <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Linux Include\eigen3;C:\Linux Include;$(IncludePath)</IncludePath>
-    <AdditionalSourcesToCopyMapping>kernel.cl;$(AdditionalSourcesToCopyMapping)</AdditionalSourcesToCopyMapping>
-  </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="AC1D.cpp" />
-    <ClCompile Include="ACMesh.cpp" />
-    <ClCompile Include="Crystal.cpp" />
-    <ClCompile Include="Detector.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MainRunModes.cpp" />
-    <ClCompile Include="PPP.cpp" />
-    <ClCompile Include="ProfileTime.cpp" />
-    <ClCompile Include="RunIAC.cpp" />
-    <ClCompile Include="Settings.cpp" />
-    <ClCompile Include="ArrayOperators.cpp" />
-    <ClCompile Include="Simulator.cpp" />
-    <ClCompile Include="Statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AC1D.h" />
-    <ClInclude Include="ACMesh.h" />
-    <ClInclude Include="ArrayOperators.h" />
-    <ClInclude Include="Crystal.h" />
-    <ClInclude Include="Detector.h" />
-    <ClInclude Include="Forward.h" />
-    <ClInclude Include="MainRunModes.h" />
-    <ClInclude Include="PPP.h" />
-    <ClInclude Include="ProfileTime.h" />
-    <ClInclude Include="RunIAC.h" />
-    <ClInclude Include="Settings.h" />
-    <ClInclude Include="Simulator.h" />
-    <ClInclude Include="Statistics.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\.gitignore" />
-    <None Include="kernel.cl" />
-    <None Include="Overview.cd" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\Readme.txt" />
-    <Text Include="CMakeLists.txt" />
-  </ItemGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>/usr/include/eigen3;/usr/lib64 /opt/opencl/intel/lib64;$(RemoteRootDir)/opt/opencl/intel/include/;$(RemoteRootDir)/usr/lib64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShowIncludes>true</ShowIncludes>
-      <AdditionalOptions>-lOpenCL -fopenmp %(AdditionalOptions)</AdditionalOptions>
-      <CAdditionalWarning />
-      <CppAdditionalWarning />
-      <WarningLevel>EnableAllWarnings</WarningLevel>
-    </ClCompile>
-    <Link>
-      <AdditionalLibraryDirectories>/opt/opencl/intel/lib64;/usr/lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>/opt/opencl/intel/lib64/libOpenCL.so;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>-lgomp -lz -lm -lsz -ldl -lhdf5 -lhdf5_cpp -lpthread %(AdditionalOptions)</AdditionalOptions>
-    </Link>
-    <PostBuildEvent>
-      <Command>copy "$(ProjectDir)\kernel.cl" "$(TargetDir)\kernel.cl" </Command>
-    </PostBuildEvent>
-    <RemotePostBuildEvent>
-      <Command>cp $(RemoteProjectDir)/IncohAutoCorrelate/kernel.cl $(RemoteOutDir)/kernel.cl</Command>
-    </RemotePostBuildEvent>
-  </ItemDefinitionGroup>
+  <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

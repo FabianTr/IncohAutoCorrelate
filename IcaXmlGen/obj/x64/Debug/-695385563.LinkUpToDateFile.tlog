@@ -1,0 +1,1 @@
+g++ -o "/home/trostfab/projects/IcaXmlGen/bin/x64/Debug/IcaXmlGen.out" -Wl,--no-undefined -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack /home/trostfab/projects/IcaXmlGen/obj/x64/Debug/main.o

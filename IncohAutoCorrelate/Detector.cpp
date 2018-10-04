@@ -74,8 +74,6 @@ Detector::Detector(const Detector &RefDet, bool DeepCopy) :Detector(RefDet)
 	}
 }
 
-
-
 Detector::~Detector()
 {
 	delete[] Intensity;
@@ -139,6 +137,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	if (dataset.getTypeClass() != H5T_FLOAT)
 	{
 		std::cerr << "ERROR: Intensity data is not stored as floating point numbers.\n";
+		std::cerr << "     -> in Detector::GetSliceOutOfHDFCuboid()\n";
 		throw;
 	}
 	//std::cout << "DataSize: " << dataset.getFloatType().getSize() << "\n";
@@ -150,6 +149,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	if (DS.getSimpleExtentNdims() != 3) //check if shape is [nE][nx][ny] or [ny][nx][nE]  nE =^ Number of Slices(Events)
 	{
 		std::cerr << "ERROR: Intensity data dimension is not 3, but " << DS.getSimpleExtentNdims() << " => shape is not (N, nx, ny)\n";
+		std::cerr << "     -> in Detector::GetSliceOutOfHDFCuboid()\n";
 		throw;
 	}
 	hsize_t dims[3];
@@ -159,6 +159,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	if (dims[1] != DetectorSize[0] || dims[2] != DetectorSize[1])
 	{
 		std::cerr << "ERROR: Intensity size does not match pixle-map size.\n";
+		std::cerr << "     -> in Detector::GetSliceOutOfHDFCuboid()\n";
 		throw;
 	}
 

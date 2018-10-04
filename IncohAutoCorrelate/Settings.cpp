@@ -5,13 +5,11 @@
 #include <math.h>
 #include <Eigen/SVD>
 #include <fstream>
-
+#include "H5Cpp.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
 #include <set>
-
-
 
 #include "ArrayOperators.h"
 
@@ -84,10 +82,6 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 				Mprime(0, i) = x;
 				Mprime(1, i) = y;
 				Mprime(2, i) = z;
-
-				
-
-
 			}
 			//Kabsch algorithm, see https://en.wikipedia.org/wiki/Kabsch_algorithm 
 			Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3>> svd(Mprime.transpose() * MReference.inverse(), Eigen::ComputeFullU | Eigen::ComputeFullV);
@@ -159,6 +153,117 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 	}
 	Echo("Done reading stream-file.\n");
 }
+
+
+std::array<unsigned int, 2> Settings::ScanH5Files(std::vector<std::string> Filenames, std::vector<std::string> Datasets, bool ResumeOnError)
+{
+	if (Filenames.size() != Datasets.size())
+	{
+		std::cerr << "ERROR: Filenames and Datasets must have the same amount of Entries\n";
+		std::cerr << "     -> in Settings::ScanH5Files()\n";
+		throw;
+	}
+
+	std::vector<HitEvent> tmpHitEvents;
+	std::array<unsigned int,2> DetectorSize = { 0, 0 };
+
+	unsigned int EventCount = 0;
+	//Crawl through H5 Files and Create Events
+	for (unsigned int i = 0; i < (unsigned int)Filenames.size(); i++)
+	{
+		H5::H5File file(Filenames[i], H5F_ACC_RDONLY);
+		H5::DataSet dataset = file.openDataSet(Datasets[i]);
+
+		//Check plausibility
+		if (dataset.getTypeClass() != H5T_FLOAT)
+		{
+			std::cerr << "ERROR: Intensity data is not stored as floating point numbers.\n";
+			std::cerr << "     -> in Settings::ScanH5Files()\n";
+			throw;
+		}
+		H5::DataSpace DS = dataset.getSpace();
+		if (DS.getSimpleExtentNdims() != 3) //check if shape is [nE][nx][ny] ( or [ny][nx][nE] ) nE =^ Number of Slices(Events) // here only [nE][nx][ny] will be accepted
+		{
+			std::cerr << "ERROR: Intensity data dimension is not 3, but " << DS.getSimpleExtentNdims() << " => shape is not (N, nx, ny)\n";
+			std::cerr << "     -> in Settings::ScanH5Files()\n";
+			throw;
+		}
+
+		hsize_t dims[3];
+		DS.getSimpleExtentDims(dims, NULL);
+
+		if (i == 0)
+		{
+			//Set Detector size
+			DetectorSize[0] = (unsigned int)dims[1];
+			DetectorSize[1] = (unsigned int)dims[2];
+		}
+		else
+		{
+			//Check Detector size
+			if (DetectorSize[0] != (unsigned int)dims[1] || DetectorSize[1] != (unsigned int)dims[2])
+			{
+				if (ResumeOnError)
+				{
+					std::cerr << "WARNING: Detector Size needs to be constant for all Files.\n";
+					std::cerr << "     -> Ignore File \"" << Filenames[i] << "\" and continue\n";
+					continue;
+				}
+				else
+				{
+					std::cerr << "ERROR: Detector Size needs to be constant for all Files.\n";
+					std::cerr << "     -> in Settings::ScanH5Files()\n";
+					throw;
+				}
+			}
+		}
+
+
+		for (unsigned int j = 0; j < (unsigned int)dims[0]; j++)
+		{
+			HitEvent newEvent;
+			newEvent.Filename = Filenames[i];
+			newEvent.Dataset = Datasets[i];
+
+			newEvent.Event = j;
+			newEvent.SerialNumber = j;
+
+			newEvent.RotMatrix[0] = 1.0f;
+			newEvent.RotMatrix[1] = 0.0f;
+			newEvent.RotMatrix[2] = 0.0f;
+			newEvent.RotMatrix[3] = 0.0f;
+			newEvent.RotMatrix[4] = 1.0f;
+			newEvent.RotMatrix[5] = 0.0f;
+			newEvent.RotMatrix[6] = 0.0f;
+			newEvent.RotMatrix[7] = 0.0f;
+			newEvent.RotMatrix[8] = 1.0f;
+
+			tmpHitEvents.push_back(newEvent);
+
+			EventCount++;
+		}
+
+		DS.close();
+
+	}
+
+
+	if (EventCount > 0)
+	{
+		HitEvents = tmpHitEvents;
+		if (echo)
+			std::cout << EventCount << " events found\n";
+	}
+	else
+	{
+		std::cout << "No Events found\n";
+	}
+
+	return DetectorSize;
+
+}
+
+
 
 
 
@@ -367,6 +472,7 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 	ptree pt;
 
 	pt.put("root.Info.Size", HitEventList.size());
+	pt.put("root.Info.Version", XML_HITLIST_VERSION);   //ACTIVATE for Version 0.02
 
 	if (AdditionalInformations)
 	{
@@ -383,7 +489,7 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 
 	for (unsigned int i = 0; i < HitEventList.size(); i++)
 	{
-		std::string path = "root.content.N";
+		std::string path = "root.content.N"; //std::string path = "root.Content.N"; //ACTIVATE for Version 0.02
 		path = path + std::to_string(i);
 
 		pt.put(path + ".Filename", HitEventList[i].Filename);
@@ -393,15 +499,25 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 		pt.put(path + ".MeanIntensity", HitEventList[i].MeanIntensity);
 		pt.put(path + ".PhotonCount", HitEventList[i].PhotonCount);
 
-		pt.put(path + ".R0", HitEventList[i].RotMatrix[0]);
-		pt.put(path + ".R1", HitEventList[i].RotMatrix[1]);
-		pt.put(path + ".R2", HitEventList[i].RotMatrix[2]);
-		pt.put(path + ".R3", HitEventList[i].RotMatrix[3]);
-		pt.put(path + ".R4", HitEventList[i].RotMatrix[4]);
-		pt.put(path + ".R5", HitEventList[i].RotMatrix[5]);
-		pt.put(path + ".R6", HitEventList[i].RotMatrix[6]);
-		pt.put(path + ".R7", HitEventList[i].RotMatrix[7]);
-		pt.put(path + ".R8", HitEventList[i].RotMatrix[8]);
+		////Version 0.01
+		//pt.put(path + ".R0", HitEventList[i].RotMatrix[0]);
+		//pt.put(path + ".R1", HitEventList[i].RotMatrix[1]);
+		//pt.put(path + ".R2", HitEventList[i].RotMatrix[2]);
+		//pt.put(path + ".R3", HitEventList[i].RotMatrix[3]);
+		//pt.put(path + ".R4", HitEventList[i].RotMatrix[4]);
+		//pt.put(path + ".R5", HitEventList[i].RotMatrix[5]);
+		//pt.put(path + ".R6", HitEventList[i].RotMatrix[6]);
+		//pt.put(path + ".R7", HitEventList[i].RotMatrix[7]);
+		//pt.put(path + ".R8", HitEventList[i].RotMatrix[8]);
+		////
+
+		std::string RMOutput = std::to_string(HitEventList[i].RotMatrix[0]);
+		for (int i = 1; i < 9; i++)
+		{
+			RMOutput += "; " + std::to_string(HitEventList[i].RotMatrix[i]);
+		}
+		pt.put(path + ".Rotation", RMOutput);
+
 	}
 	boost::property_tree::write_xml(Filename, pt);
 }
@@ -412,127 +528,13 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 
 void Settings::LoadHitEventListFromFile(char * Filename)
 {
-	using boost::property_tree::ptree;
-	ptree pt;
-	boost::property_tree::read_xml(Filename, pt);
-	
-	unsigned int Size = 0;
-	Size = pt.get<unsigned int>("root.Info.Size", -1);
-
-	if (Size == -1)
-	{
-		std::cerr << "ERROR: Empty or not readable xml HitEvents File\n";
-		std::cerr << "    -> in  Settings::LoadHitEventListFromFile()\n";
-		throw;
-	}
-
-
-	HitEvents.clear();
-
-	if (Size == 0)
-		return;
-
-	std::string pathbase;
-	if ( pt.get<std::string>("root.content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER")
-	{
-		pathbase = "root.content.";
-	}
-	else
-	{
-		pathbase = "root.content.N";
-	}
-
-
-	for (unsigned int i = 0; i < Size; i++)
-	{
-
-		std::string path = pathbase + std::to_string(i);
-
-		HitEvent tmp;
-		tmp.Filename = pt.get<std::string>(path + ".Filename");
-		tmp.Dataset = pt.get<std::string>(path + ".Dataset");
-		tmp.Event = pt.get<int>(path + ".Event");
-		tmp.SerialNumber = pt.get<int>(path + ".SerialNumber");
-		tmp.MeanIntensity = pt.get<float>(path + ".MeanIntensity");
-		tmp.PhotonCount = pt.get<int>(path + ".PhotonCount");
-
-		tmp.RotMatrix[0] = pt.get<float>(path + ".R0");
-		tmp.RotMatrix[1] = pt.get<float>(path + ".R1");
-		tmp.RotMatrix[2] = pt.get<float>(path + ".R2");
-		tmp.RotMatrix[3] = pt.get<float>(path + ".R3");
-		tmp.RotMatrix[4] = pt.get<float>(path + ".R4");
-		tmp.RotMatrix[5] = pt.get<float>(path + ".R5");
-		tmp.RotMatrix[6] = pt.get<float>(path + ".R6");
-		tmp.RotMatrix[7] = pt.get<float>(path + ".R7");
-		tmp.RotMatrix[8] = pt.get<float>(path + ".R8");
-
-		HitEvents.push_back(tmp);
-	}
-
-
-
-
-
+	std::string Path;
+	Path = Filename;
+	LoadHitEventListFromFile(Path);
 }
 
 
-void Settings::LoadHitEventListFromFile(std::string Filename)
-{
-	using boost::property_tree::ptree;
-	ptree pt;
-	boost::property_tree::read_xml(Filename, pt);
 
-	unsigned int Size = 0;
-	Size = pt.get<unsigned int>("root.Info.Size", -1);
-
-	if (Size == -1)
-	{
-		std::cerr << "ERROR: Empty or not readable xml HitEvents File\n";
-		std::cerr << "    -> in  Settings::LoadHitEventListFromFile()\n";
-		throw;
-	}
-	if (Size == 0)
-		return;
-
-	HitEvents.clear();
-
-	std::string pathbase;
-	if (pt.get<std::string>("root.content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER")
-	{
-		pathbase = "root.content.";
-	}
-	else
-	{
-		pathbase = "root.content.N";
-	}
-
-	for (unsigned int i = 0; i < Size; i++)
-	{
-		std::string path = pathbase + std::to_string(i);
-
-		HitEvent tmp;
-		tmp.Filename = pt.get<std::string>(path + ".Filename");
-		tmp.Dataset = pt.get<std::string>(path + ".Dataset");
-		tmp.Event = pt.get<int>(path + ".Event");
-		tmp.SerialNumber = pt.get<int>(path + ".SerialNumber");
-		tmp.MeanIntensity = pt.get<float>(path + ".MeanIntensity");
-		tmp.PhotonCount = pt.get<int>(path + ".PhotonCount");
-
-		tmp.RotMatrix[0] = pt.get<float>(path + ".R0");
-		tmp.RotMatrix[1] = pt.get<float>(path + ".R1");
-		tmp.RotMatrix[2] = pt.get<float>(path + ".R2");
-		tmp.RotMatrix[3] = pt.get<float>(path + ".R3");
-		tmp.RotMatrix[4] = pt.get<float>(path + ".R4");
-		tmp.RotMatrix[5] = pt.get<float>(path + ".R5");
-		tmp.RotMatrix[6] = pt.get<float>(path + ".R6");
-		tmp.RotMatrix[7] = pt.get<float>(path + ".R7");
-		tmp.RotMatrix[8] = pt.get<float>(path + ".R8");
-
-		HitEvents.push_back(tmp);
-	}
-
-
-}
 
 void Settings::InvertRotationMatrices()
 {
@@ -555,4 +557,187 @@ void Settings::InvertRotationMatrices()
 		HitEvents[i].RotMatrix[8] = RotInv(2, 2);
 	}
 
+}
+
+
+void Settings::LoadHitEventListFromFile(std::string Filename)
+{
+	using boost::property_tree::ptree;
+	ptree pt;
+	boost::property_tree::read_xml(Filename, pt);
+
+	unsigned int Size = 0;
+	unsigned int Version = 1;
+	Size = pt.get<unsigned int>("root.Info.Size", -1);
+	Version = pt.get<unsigned int>("root.Info.Version", 1);
+
+	if (Size == -1)
+	{
+		std::cerr << "ERROR: Empty or not readable xml HitEvents File\n";
+		std::cerr << "    -> in  Settings::LoadHitEventListFromFile()\n";
+		throw;
+	}
+	if (Size == 0)
+		return;
+
+	HitEvents.clear();
+
+	std::string pathbase;
+	if (pt.get<std::string>("root.content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER")
+	{
+		pathbase = "root.content.";
+	}
+	else
+	{
+		pathbase = "root.content.N";
+		if (Version >= 2)
+			pathbase = "root.Content.N";
+	}
+
+	for (unsigned int i = 0; i < Size; i++)
+	{
+		std::string path = pathbase + std::to_string(i);
+
+		HitEvent tmp;
+		tmp.Filename = pt.get<std::string>(path + ".Filename");
+		tmp.Dataset = pt.get<std::string>(path + ".Dataset");
+		tmp.Event = pt.get<int>(path + ".Event");
+		tmp.SerialNumber = pt.get<int>(path + ".SerialNumber");
+		tmp.MeanIntensity = pt.get<float>(path + ".MeanIntensity");
+		tmp.PhotonCount = pt.get<int>(path + ".PhotonCount");
+
+		switch (Version)
+		{
+		case 1:
+			tmp.RotMatrix[0] = pt.get<float>(path + ".R0",1.0);
+			tmp.RotMatrix[1] = pt.get<float>(path + ".R1",0.0);
+			tmp.RotMatrix[2] = pt.get<float>(path + ".R2",0.0);
+			tmp.RotMatrix[3] = pt.get<float>(path + ".R3",0.0);
+			tmp.RotMatrix[4] = pt.get<float>(path + ".R4",1.0);
+			tmp.RotMatrix[5] = pt.get<float>(path + ".R5",0.0);
+			tmp.RotMatrix[6] = pt.get<float>(path + ".R6",0.0);
+			tmp.RotMatrix[7] = pt.get<float>(path + ".R7",0.0);
+			tmp.RotMatrix[8] = pt.get<float>(path + ".R8",1.0);
+			break;
+		case 2:
+		default:
+			std::string RotationMatrixInput = "";
+			RotationMatrixInput = pt.get<std::string>(path + ".Rotation", "1.0; 0.0; 0.0; 0.0; 1.0; 0.0; 0.0; 0.0; 1.0");
+
+			std::string delimiter = ";";
+
+
+			float Val[9];
+
+			size_t pos = 0;
+			std::string token;
+			int count = 0;
+			bool ParsingAlive = true;
+			while ((pos = RotationMatrixInput.find(delimiter)) != std::string::npos) 
+			{
+
+				if (count > 7)
+				{
+					std::cerr << "WARNING: Invalid rotation matrix format! use \"a1; a2; a3; b1; b2; b3; c1; c2; c3\" \n";
+					std::cerr << "    -> Rotation matrix is set to \"1.0; 0.0; 0.0; 0.0; 1.0; 0.0; 0.0; 0.0; 1.0 \"\n";
+					ParsingAlive = false;
+					continue;
+				}
+
+				token = RotationMatrixInput.substr(0, pos);
+
+				Val[count] = atof(token.data());
+
+				//std::cout << count << " :" << Val << std::endl;
+				RotationMatrixInput.erase(0, pos + delimiter.length());
+				count++;
+			}
+			if (ParsingAlive)
+			{
+				Val[count] = atof(RotationMatrixInput.data());
+				for (int i = 0; i < 9; i++)
+				{
+					tmp.RotMatrix[i] = Val[i];
+				}
+			}
+			else
+			{
+				tmp.RotMatrix[0] = 1.0;
+				tmp.RotMatrix[1] = 0.0;
+				tmp.RotMatrix[2] = 0.0;
+				tmp.RotMatrix[3] = 0.0;
+				tmp.RotMatrix[4] = 1.0;
+				tmp.RotMatrix[5] = 0.0;
+				tmp.RotMatrix[6] = 0.0;
+				tmp.RotMatrix[7] = 0.0;
+				tmp.RotMatrix[8] = 1.0;
+			}
+			//std::cout << count << " :" << Val << std::endl;
+
+		}
+
+		HitEvents.push_back(tmp);
+	}
+
+	//Old Versions
+	{
+		////Version 0.01
+		//void Settings::LoadHitEventListFromFile(std::string Filename)
+		//{
+		//	using boost::property_tree::ptree;
+		//	ptree pt;
+		//	boost::property_tree::read_xml(Filename, pt);
+
+		//	unsigned int Size = 0;
+		//	Size = pt.get<unsigned int>("root.Info.Size", -1);
+
+		//	if (Size == -1)
+		//	{
+		//		std::cerr << "ERROR: Empty or not readable xml HitEvents File\n";
+		//		std::cerr << "    -> in  Settings::LoadHitEventListFromFile()\n";
+		//		throw;
+		//	}
+		//	if (Size == 0)
+		//		return;
+
+		//	HitEvents.clear();
+
+		//	std::string pathbase;
+		//	if (pt.get<std::string>("root.content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER")
+		//	{
+		//		pathbase = "root.content.";
+		//	}
+		//	else
+		//	{
+		//		pathbase = "root.content.N";
+		//	}
+
+		//	for (unsigned int i = 0; i < Size; i++)
+		//	{
+		//		std::string path = pathbase + std::to_string(i);
+
+		//		HitEvent tmp;
+		//		tmp.Filename = pt.get<std::string>(path + ".Filename");
+		//		tmp.Dataset = pt.get<std::string>(path + ".Dataset");
+		//		tmp.Event = pt.get<int>(path + ".Event");
+		//		tmp.SerialNumber = pt.get<int>(path + ".SerialNumber");
+		//		tmp.MeanIntensity = pt.get<float>(path + ".MeanIntensity");
+		//		tmp.PhotonCount = pt.get<int>(path + ".PhotonCount");
+
+		//		tmp.RotMatrix[0] = pt.get<float>(path + ".R0");
+		//		tmp.RotMatrix[1] = pt.get<float>(path + ".R1");
+		//		tmp.RotMatrix[2] = pt.get<float>(path + ".R2");
+		//		tmp.RotMatrix[3] = pt.get<float>(path + ".R3");
+		//		tmp.RotMatrix[4] = pt.get<float>(path + ".R4");
+		//		tmp.RotMatrix[5] = pt.get<float>(path + ".R5");
+		//		tmp.RotMatrix[6] = pt.get<float>(path + ".R6");
+		//		tmp.RotMatrix[7] = pt.get<float>(path + ".R7");
+		//		tmp.RotMatrix[8] = pt.get<float>(path + ".R8");
+
+		//		HitEvents.push_back(tmp);
+		//	}
+
+
+		//}
+	}
 }

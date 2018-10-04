@@ -10,10 +10,12 @@
 #include <array>
 #include <omp.h>
 #include <cmath>
-#include "PPP.h"
+#include <algorithm>
 
 #include <CL/cl.hpp>
 #include <thread>
+
+
 
 //QD Test incl
 #include <Eigen/SVD>
@@ -29,6 +31,11 @@
 #include "RunIAC.h"
 #include "Crystal.h"
 #include "Simulator.h"
+#include "PPP.h"
+#include "MainRunModes.h"
+
+
+
 
 
 void Test_CQ_small(Settings &Options, Detector &Det)
@@ -276,7 +283,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapD
 	SimSettings.AutoPixelOrientation = true;
 	SimSettings.AutoPixelSize = true;
 
-	SimSettings.NumberOfSimulations = 5000; // 250000
+	SimSettings.NumberOfSimulations = 1; // 250000
 
 	SimSettings.Modes = 1;
 	//Detector coverage factor lib:   (see Wirkungsgrad.nb: SqDetCoverage[l_ (edge), dist_] := ArcTan[l ^ 2 / (2 * dist*Sqrt[4 * dist ^ 2 + 2 * l ^ 2])] / Pi; )
@@ -294,7 +301,7 @@ void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapD
 	//     ******** - 500^2 - ********
 	// 0.0187349 <= 500x500 100mum at 100mm
 	//
-	float NG = 100.0; //1.0
+	float NG = 10000.0; //1.0
 
 	SimSettings.AveragePhotonesPerEmitterOnDetector = NG * 0.0187349; // *0.0275f;//0.0275 = 2.75% ~= Jungfr coverage at 120mm
 	SimSettings.PoissonSample = true;
@@ -318,8 +325,13 @@ void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapD
 	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/PlacementTest/165_MOF_UC=" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) +  "_NG=" + std::to_string((int)NG) + "_NP=" + std::to_string(SimSettings.NumberOfSimulations) + ".h5";
 	//SimSettings.Filename_XML       = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/PlacementTest/165_MOF_UC=" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) +  "_NG=" + std::to_string((int)NG) + "_NP=" + std::to_string(SimSettings.NumberOfSimulations) + ".xml";
 
-	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/SNR_NG100_" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) + ".h5";
-	      SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/SNR_NG100_" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) + ".xml";
+	//**********************
+	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/SNR_NG100_" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) + ".h5";
+	//      SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/SNR/100mm/SNR_NG100_" + std::to_string(SimSettings.UnitCells[0]) + "x" + std::to_string(SimSettings.UnitCells[1]) + "x" + std::to_string(SimSettings.UnitCells[2]) + ".xml";
+	//**********************
+
+	SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/EXAMPLE_Incoherent.h5";
+	SimSettings.Filename_XML = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/EXAMPLE_Incoherent.xml";
 
 
 	//SimSettings.Filename_Intensity = "/gpfs/cfel/cxi/scratch/user/trostfab/Simulation/HbTest1/TestPixMa.h5";//Sim20_Fixed_NP_3
@@ -488,19 +500,72 @@ void QDTests()
 }
 
 
+
 int main(int argc, char** argv)
 {
+	std::cout << "\n\n\n===================\n     IncohAutoCorrelate (IAC)\n===================\n\n";
+	Settings Options;
+
+	//Parse Arg for Run-Mode-Fork
+	std::string Arg1= "";
+	if (argc > 1)
+	{
+		Arg1 = argv[1];
+	}
+
+	if (Arg1 == "h" || Arg1 == "help" || Arg1 == "-help" || Arg1 == "-h" || Arg1 == "?" || Arg1 == "-?")
+	{
+		if (argc = 2)
+		{
+			std::cout << "This is a list of valid arguments. Use \"-h Arg\" to obtain more detailed information about \"Arg\". \n";
+
+			std::cout << "\n---   General stuff   ---\n";
+			std::cout << "help [h] \t: Displays a List of valid arguments.\n";
+
+
+			std::cout << "\n---   Evaluation mode   ---\n";
+
+
+			std::cout << "\n---   Simulation mode   ---\n";
+
+		}
+		else
+		{
+			std::cout << "To be Implemented\n";
+		}
+		return 0;
+	}
+	else if (Arg1 == "xmlfromh5" || Arg1 == "-xmlfromh5")
+	{
+		if (argc < 4)
+		{
+			std::cerr << "-XMLfromH5 requires two additional arguments (\"H5path1, Dataset1; H5path2, ...\" \"Output.xml\")\n";
+			return -1;
+		}
+		else 
+		{
+			std::string Arg2 = argv[2];
+			std::string Arg3 = argv[3];
+			return MainRunModes::Create_XMLHitlist_from_H5Stack_script(Arg2, Arg3, Options);
+		}
+	}
+	else
+	{
+		//default
+	}
+
+
 
 
 	 
 	//QDTests();
-	//return 0;
+	return 0;
 
-	std::cout << "\n\n\n===================\n     IncohAutoCorrelate\n===================\n\n";
+	
 	//omp_set_nested(1);
 	//omp_set_max_active_levels(2);
 
-	int CrystSize = 10;
+	int CrystSize = 100;
 	if (argc > 1)
 	{
 		CrystSize = std::stoi(argv[1]);
@@ -510,7 +575,6 @@ int main(int argc, char** argv)
 
 
 	ProfileTime profiler;
-	Settings Options;
 	Options.echo = true;
 
 	Options.Echo("Set up OpenCl Devices");
@@ -1524,10 +1588,10 @@ int main(int argc, char** argv)
 				{
 					Simulator Sim;
 
-					std::string PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_500x500_100mu_100mm_SIM.h5";
+					std::string PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_1000x1000_100mu_100mm_SIM.h5";
 
 
-					Sim.GeneratePixelMap(PixelMap_Path, "PixelMap", 500, 500, 100, { -1.0e5, 0, 0 }, {0 , 0, 1.0f }, { 0, 1.0f, 0 });
+					Sim.GeneratePixelMap(PixelMap_Path, "PixelMap", 1000, 1000, 100, { -1.0e5, 0, 0 }, {0 , 0, 1.0f }, { 0, 1.0f, 0 });
 
 					Simulate(Options, PixelMap_Path, "PixelMap", CrystSize);
 				}
@@ -1538,7 +1602,7 @@ int main(int argc, char** argv)
 				}
 			}
 		}
-		//break;
+		break;
 
 		case 20: //Evaluate simulated data Block (Hb)
 		{

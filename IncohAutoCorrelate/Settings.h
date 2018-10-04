@@ -21,11 +21,14 @@
 class Settings
 {
 	//Class containing all parameters the program has and its helpers functions
+private:
+	const int XML_HITLIST_VERSION = 2; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
 public:
 	Settings();
 	~Settings();
 
 	void LoadStreamFile(char * Filename, char* DatasetFIntensity, bool InclMultiHits); //Filename for StreamFile, DatasetFIntensity for the Intensity in CXIFile, include Hits with multiple segmented crystals
+	std::array<unsigned int,2> ScanH5Files(std::vector<std::string> Filenames, std::vector<std::string> Datasets, bool ResumeOnError = false); //Loads all entrys out of H5 files, returns the 2x2 DetectorSize
 	void Echo(std::string output);
 
 	//OpenCL Stuff
@@ -71,6 +74,8 @@ public:
 
 	void InvertRotationMatrices();
 
+
+
 	// AC Settings
 	int halfACMeshEdgeLength = 100; //half EdgeLength of (cube) 3D Volume for auto-correlation without padding (intern +1 zeropadding)
 	enum Interpolation { NearestNeighbour = 0, Linear = 1 };
@@ -109,6 +114,8 @@ public:
 	};
 
 	SettingsChecklist  Checklist;
+
+	//
 
 
 	Eigen::Matrix<float, 3, 3> MReference;

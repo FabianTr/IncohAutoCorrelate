@@ -1,0 +1,9 @@
+﻿  Cleaning remote project directory
+  Validating architecture
+  Validating sources
+  Copying sources remotely to 'max-cfelg002'
+  Starting remote build
+  Compiling sources:
+  main.cpp
+  Linking objects
+  IcaXmlGen.vcxproj -> C:\Users\trostfab\source\repos\IncohAutoCorrelate\IcaXmlGen\bin\x64\Debug\IcaXmlGen.out
