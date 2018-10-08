@@ -97,6 +97,7 @@ namespace RunIAC
 		std::string PixelMap_Path = "";//H5
 		std::string PixelMap_DataSet = "";//H5
 		std::string PixelMask_Path = "";//Binary int
+		std::string PixelMask_Dataset = "";
 
 		//Output Paths
 		std::string Out_AvIntensity_Path = "";
@@ -136,6 +137,7 @@ namespace RunIAC
 		std::string PixelMap_DataSet = "";//H5
 
 		std::string PixelMask_Path = "";//Binary
+		std::string PixelMask_Dataset = "";
 
 		std::string Output_AV_Int_Path = "";//Binary
 		std::string Output_CQ_Path = "";//Binary
@@ -156,7 +158,7 @@ namespace RunIAC
 	void Run_AC_SM_fractionalCQ(AC1D & AC, CreateSM_Settings SM_Settings, Settings & PrgSettings, unsigned int FractionSize, bool PPPdata);
 
 	//General
-	void Load_and_average_Intensities(Settings &Options, Detector &Det, float PhotonThreshold, float PhotonStep, std::string XML_Filename, std::string AvInt_Filename);
+	void Load_and_average_Intensities(Settings &Options, Detector &Det, float PhotonThreshold, float PhotonStep, std::string XML_Filename, std::string AvInt_Filename, bool UpdateXML = true);
 
 
 	//Helpers

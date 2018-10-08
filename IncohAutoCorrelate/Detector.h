@@ -58,7 +58,7 @@ public:
 
 	void LoadPixelMap(H5std_string Path, H5std_string DataSet);
 
-	void LoadPixelMask(std::string Path);
+	void LoadPixelMask(std::string Path, std::string DataSet = "");//can be provided as binary or HDF5, If Binary, DataSet must be ""
 	void GenerateFlatOnesPixelMask();
 	void ApplyPixelMask();
 	

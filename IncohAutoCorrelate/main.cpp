@@ -425,78 +425,18 @@ void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapD
 
 void QDTests()
 {
-	std::array<double, 3> axis;
-	
-	double angle = 0.733*M_PIl;
-	axis[0] = 1;
-	axis[2] = 2;
-	axis[3] = -1;
+	Detector Det;
+	Det.LoadPixelMap("/home/trostfab/scratch/LU56/PixelMap_ePix_LU56_V1.h5","PixelMap");
+	Det.LoadPixelMask("/home/trostfab/scratch/LU56/PixelMask_ePix_V1.h5", "data/data");
 
-	//normalize axis vector
-	double N = sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
-	axis[0] = axis[0] / N;
-	axis[1] = axis[1] / N;
-	axis[2] = axis[2] / N;
-	//rotation matrix {{a1, a2, a3}, {b1, b2, b3}, {c1, c2, c3}}
-	double a1 = axis[0] * axis[0] * (1 - cos(angle)) + cos(angle);
-	double a2 = axis[1] * axis[0] * (1 - cos(angle)) - axis[2] * sin(angle);
-	double a3 = axis[2] * axis[0] * (1 - cos(angle)) + axis[1] * sin(angle);
-
-	double b1 = axis[0] * axis[1] * (1 - cos(angle)) + axis[2] * sin(angle);
-	double b2 = axis[1] * axis[1] * (1 - cos(angle)) + cos(angle);
-	double b3 = axis[2] * axis[1] * (1 - cos(angle)) - axis[0] * sin(angle);
-
-	double c1 = axis[0] * axis[2] * (1 - cos(angle)) - axis[1] * sin(angle);
-	double c2 = axis[1] * axis[2] * (1 - cos(angle)) + axis[0] * sin(angle);
-	double c3 = axis[2] * axis[2] * (1 - cos(angle)) + cos(angle);
-
-
-	Eigen::Matrix3d RotM;
-
-	RotM << a1, a2, a3,	b1, b2, b3, c1, c2, c3;
-	
-
-	std::cout << "\n";
-	std::cout << "\n";
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			std::cout << RotM(i, j) << "  ";
-		}
-		std::cout << "\n";
-	}
-
-	std::cout << "\n\n*************\n\n";
-	Eigen::Matrix3d RotInv = RotM.inverse();
-
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			std::cout << RotInv(i, j) << "  ";
-		}
-		std::cout << "\n";
-	}
-
-	std::cout << "\n";
-	std::cout << "\n";
-
-	Eigen::Matrix3d E = RotM * RotInv;
-
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			std::cout << E(i, j) << "  ";
-		}
-		std::cout << "\n";
-	}
-
-
-	std::cout << "Ended\n";
-	int x;
-	std::cin >> x;
+	//for (int i = 0; i < Det.DetectorSize[0]; i++)
+	//{
+	//	for (int j = 0; j < Det.DetectorSize[1]; j++)
+	//	{
+	//		std::cout << Det.PixelMask[Det.DetectorSize[1] * i + j] << " ";
+	//	}
+	//	std::cout << "\n";
+	//}
 }
 
 
@@ -507,12 +447,13 @@ int main(int argc, char** argv)
 	Settings Options;
 
 	//Parse Arg for Run-Mode-Fork
-	std::string Arg1= "";
+	std::string Arg1= "h";
 	if (argc > 1)
 	{
 		Arg1 = argv[1];
+		std::transform(Arg1.begin(), Arg1.end(), Arg1.begin(), tolower);
 	}
-
+	
 	if (Arg1 == "h" || Arg1 == "help" || Arg1 == "-help" || Arg1 == "-h" || Arg1 == "?" || Arg1 == "-?")
 	{
 		if (argc = 2)
@@ -526,12 +467,26 @@ int main(int argc, char** argv)
 			std::cout << "\n---   Evaluation mode   ---\n";
 
 
+			std::cout << "\n   --->   Scan Data   ---\n";
+			std::cout << "-XMLfromH5 \t: -XMLfromH5 \"H5path1, Dataset1; H5path2, ...\" \"Output.xml\" \n";
+
 			std::cout << "\n---   Simulation mode   ---\n";
 
 		}
 		else
 		{
-			std::cout << "To be Implemented\n";
+			std::string Arg2 = argv[2];
+			std::transform(Arg2.begin(), Arg2.end(), Arg2.begin(), tolower);
+			if (Arg2 == "h" || Arg2 == "help" || Arg2 == "-help" || Arg2 == "-h" || Arg2 == "?" || Arg2 == "-?")
+			{
+				std::cout << "Are you f... kidding me?\n";
+			}
+			else if (Arg2 == "xmlfromh5" || Arg2 == "-xmlfromh5")
+			{
+				std::cout << "-xmlfromh5 \"h5path1.h5,h5path2.h5,...;dataset1,dataset2,...\" \"XMLOutputPath.xml\" \n";
+				std::cout << "Crawls through a list of hdf5-files and creates an xml-event entry for each data-slide found in the according dataset. As no orientation information is stored in a xml-file.\n";
+			}
+
 		}
 		return 0;
 	}
@@ -549,9 +504,59 @@ int main(int argc, char** argv)
 			return MainRunModes::Create_XMLHitlist_from_H5Stack_script(Arg2, Arg3, Options);
 		}
 	}
+	else if (Arg1 == "evaluate" || Arg1 == "-evaluate" || Arg1 == "e" || Arg1 == "-e")
+	{
+		std::cout << "TO be Implemented!!!!\n";
+	}
+	else if (Arg1 == "exampleconfig" || Arg1 == "-exampleconfig" || Arg1 == "ec" || Arg1 == "-ec")
+	{
+		if (argc < 3)
+		{
+			std::cerr << "-EvaluateConfig requires one additional argument (\"ExampleEvaluationSettings.xml\")\n";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			return MainRunModes::Create_Example_Config_File(Arg2, Options);
+		}
+	}
+	else if (Arg1 == "exampleevaluationconfig" || Arg1 == "-exampleevaluationconfig" || Arg1 == "eec" || Arg1 == "-eec")
+	{
+		if (argc < 3)
+		{
+			std::cerr << "-ExampleEvaluateConfig requires one additional argument (\"ExampleEvaluationSettings.xml\")\n";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			return MainRunModes::Create_Example_Evaluation_Config_File(Arg2, Options);
+		}
+	}
+	else if (Arg1 == "averageintensity" || Arg1 == "-averageintensity" || Arg1 == "avi" || Arg1 == "-avi")
+	{
+		if (argc < 3)
+		{
+			std::cerr << "-AverageIntensity requires one additional argument (\"EvaluationSettings.xml\")\n";
+			std::cerr << "Additional Info: -AverageIntensity uses Photon thresholding, ensure you set it in \"EvaluationSettings.xml\" accordingly.\n";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			return MainRunModes::AverageIntensity(Arg2, Options);
+		}
+	}
+	else if (Arg1 == "qdtest" || Arg1 == "-qdtest" )
+	{
+		QDTests();
+		return 0;
+	}
 	else
 	{
-		//default
+		std::cout << "Invalid argument: \"" << Arg1 << "\"\n";
+		return 0;
 	}
 
 

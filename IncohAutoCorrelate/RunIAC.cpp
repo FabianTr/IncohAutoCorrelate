@@ -1025,7 +1025,7 @@ namespace RunIAC
 
 
 	//General
-	void Load_and_average_Intensities(Settings &Options, Detector &Det, float PhotonThreshold, float PhotonStep, std::string XML_Filename, std::string AvInt_Filename)
+	void Load_and_average_Intensities(Settings &Options, Detector &Det, float PhotonThreshold, float PhotonStep, std::string XML_Filename, std::string AvInt_Filename, bool UpdateXML)
 	{
 		ProfileTime profiler;
 		Options.Echo("Load and average intensities (all)");
@@ -1037,8 +1037,11 @@ namespace RunIAC
 		profiler.Toc(true);
 		std::cout << "done.\n";
 
-		Options.Echo("Save EventList as XML");
-		Options.SafeHitEventListToFile(XML_Filename);
+		if (UpdateXML)
+		{
+			Options.Echo("Save EventList as XML");
+			Options.SafeHitEventListToFile(XML_Filename);
+		}
 		Options.Echo("Save averaged Intensity");
 		ArrayOperators::SafeArrayToFile(AvInt_Filename, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::FileType::Binary);
 

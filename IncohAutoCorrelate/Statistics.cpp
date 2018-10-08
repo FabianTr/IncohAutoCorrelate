@@ -113,6 +113,40 @@ namespace Statistics
 		return HistStack;
 	}
 
+	void CreateAndSaveAllPixelHistograms(Create_PixelHistogramSettings HistSettings, Detector & RefDet, Settings & Options)
+	{
+		std::vector<Statistics::Histogram> HistStack = Statistics::MakePixelHistogramStack(Options, RefDet, HistSettings.Bins, HistSettings.SmalestValue, HistSettings.LargestValue);
+		
+		double * FinalHistStack = new double[HistSettings.Bins * RefDet.DetectorSize[0] * RefDet.DetectorSize[1]]();
+	
+		for (unsigned int i = 0; i < RefDet.DetectorSize[0] * RefDet.DetectorSize[1]; i++)
+		{
+			unsigned long AllBinCount = 0;
+			for (unsigned int j = 0; j < HistSettings.Bins; j++) //sum up all Bins (without over and underflow)
+			{
+				AllBinCount += HistStack[i].HistogramContent[j];
+			}
+			if (AllBinCount > 0)
+			{
+				for (unsigned int j = 0; j < HistSettings.Bins; j++) //normalize
+				{
+					if (HistSettings.Normalized)
+					{
+						FinalHistStack[HistSettings.Bins*i + j] = ((double)HistStack[i].HistogramContent[j] / ((double)AllBinCount));
+					}
+					else
+					{
+						FinalHistStack[HistSettings.Bins*i + j] = (double)HistStack[i].HistogramContent[j];
+					}
+				}
+			}
+		}
+
+		ArrayOperators::SafeArrayToFile(HistSettings.OutputPath, FinalHistStack, HistSettings.Bins * RefDet.DetectorSize[0] * RefDet.DetectorSize[1], ArrayOperators::Binary);
+
+		delete[] FinalHistStack;
+	}
+
 
 	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector & RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound, double & StDev)
 	{

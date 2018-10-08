@@ -480,13 +480,91 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 	}
 }
 
-void Detector::LoadPixelMask(std::string Path)
+void Detector::LoadPixelMask(std::string Path, std::string DataSet )
 {
 	delete[] PixelMask;
 	PixelMask = new int[DetectorSize[0] * DetectorSize[1]]();
 	if (Path != "")
 	{
-		ArrayOperators::LoadArrayFromFile<int>(Path, PixelMask, DetectorSize[0] * DetectorSize[1]);
+		if (DataSet != "")
+		{
+			std::cout << "Load pixel - mask from H5-file\n";
+
+			H5::H5File file(Path, H5F_ACC_RDONLY);
+			H5::DataSet dataset = file.openDataSet(DataSet);
+
+
+			if (dataset.getTypeClass() != H5T_INTEGER)
+			{
+				std::cerr << "ERROR: Pixel-mask is not stored as integer array.\n";
+				std::cerr << "     -> in Detector::LoadPixelMask()\n";
+				throw;
+			}
+
+			H5::DataSpace DS = dataset.getSpace();
+			if (DS.getSimpleExtentNdims() != 2) //check if shape is [nE][nx][ny] or [ny][nx][nE]  nE =^ Number of Slices(Events)
+			{
+				std::cerr << "ERROR: Pixel-mask data dimension is not 2, but " << DS.getSimpleExtentNdims() << " => shape is not (nx, ny)\n";
+				std::cerr << "     -> in Detector::LoadPixelMask()\n";
+				throw;
+			}
+			hsize_t dims[2];
+			DS.getSimpleExtentDims(dims, NULL);
+			//	std::cout << "Intensity data shape: " << dims[0] << " x " << dims[1] << " x " << dims[2] << "\n";
+
+			if (dims[0] != DetectorSize[0] || dims[1] != DetectorSize[1])
+			{
+				std::cerr << "ERROR: Intensity size does not match pixle-map size.\n";
+				std::cerr << "     -> in Detector::LoadPixelMask()\n";
+				throw;
+			}
+
+			//Get Subset 
+			hsize_t offset[2], count[2], stride[2], block[2];
+			hsize_t dimsm[2];
+
+			offset[0] = 0;
+			offset[1] = 0;
+
+			count[0] = DetectorSize[0];
+			count[1] = DetectorSize[1];
+
+			block[0] = 1;
+			block[1] = 1;
+
+			stride[0] = 1;
+			stride[1] = 1;
+
+			dimsm[0] = DetectorSize[0];
+			dimsm[1] = DetectorSize[1];
+
+
+			H5::DataSpace mspace(3, dimsm, NULL);
+			DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
+
+			H5::PredType type = H5::PredType::NATIVE_INT;
+			dataset.read(PixelMask, type, mspace, DS);
+
+
+			//DetectorEvent->SerialNumber
+
+			DS.close();
+			dataset.close();
+			mspace.close();
+
+
+
+			//dataset.vlenReclaim(type.getId(), DS.getId(), mspace.getId(), data);
+
+
+
+			file.close();
+		}
+		else
+		{
+			std::cout << "Load pixel - mask from binary-file\n";
+			ArrayOperators::LoadArrayFromFile<int>(Path, PixelMask, DetectorSize[0] * DetectorSize[1]);
+		}
 	}
 	else
 	{

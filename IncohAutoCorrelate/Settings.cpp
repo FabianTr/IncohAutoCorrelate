@@ -427,7 +427,7 @@ void Settings::SafeHitEventListToFile(char * Filename)
 	pt.put("root.Info.Size", HitEvents.size());
 	for (unsigned int i = 0; i < HitEvents.size(); i++)
 	{
-		std::string path = "root.content.";
+		std::string path = "root.Content.";
 		path = path + std::to_string(i);
 
 		pt.put(path + ".Filename", HitEvents[i].Filename);
@@ -489,7 +489,7 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 
 	for (unsigned int i = 0; i < HitEventList.size(); i++)
 	{
-		std::string path = "root.content.N"; //std::string path = "root.Content.N"; //ACTIVATE for Version 0.02
+		std::string path = "root.Content.N"; //std::string path = "root.Content.N"; //ACTIVATE for Version 0.02
 		path = path + std::to_string(i);
 
 		pt.put(path + ".Filename", HitEventList[i].Filename);
@@ -583,7 +583,7 @@ void Settings::LoadHitEventListFromFile(std::string Filename)
 	HitEvents.clear();
 
 	std::string pathbase;
-	if (pt.get<std::string>("root.content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER")
+	if (pt.get<std::string>("root.content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER" && pt.get<std::string>("root.Content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER")
 	{
 		pathbase = "root.content.";
 	}

@@ -12,6 +12,24 @@
 
 namespace Statistics
 {
+
+	
+	struct Create_PixelHistogramSettings
+	{
+		unsigned int Bins = 100;
+		double SmalestValue = 0;
+		double LargestValue = 100;
+
+		bool Normalized = true;
+
+		std::string OutputPath = "";
+	};
+
+	struct StatisticsSettings
+	{
+		Statistics::Create_PixelHistogramSettings PixelHistogramSettings;
+	};
+
 	void Get_OrientationSphere(float*& Vectors, std::vector<Settings::HitEvent> EventList);
 
 
@@ -42,9 +60,10 @@ namespace Statistics
 
 
 	Histogram Make_AllPixel_Histogram(Settings & Options, Detector &RefDet, unsigned int Bins, double SmallestVal, double HighestVal);
-
 	std::vector<Histogram> MakePixelHistogramStack(Settings & Options, Detector &RefDet, unsigned int Bins, double SmallestVal, double HighestVal);
 
+	void CreateAndSaveAllPixelHistograms(Create_PixelHistogramSettings HistSettings, Detector &RefDet, Settings & Options);
+	
 
 
 	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound, double & StDev);

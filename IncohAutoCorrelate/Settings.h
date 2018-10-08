@@ -22,8 +22,11 @@ class Settings
 {
 	//Class containing all parameters the program has and its helpers functions
 private:
-	const int XML_HITLIST_VERSION = 2; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
+	
 public:
+	const int XML_HITLIST_VERSION = 2; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
+	const int INTERNAL_VERSION = 2; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
+
 	Settings();
 	~Settings();
 
@@ -48,7 +51,7 @@ public:
 
 
 
-	bool echo = false;
+	bool echo = true;
 
 	struct HitEvent
 	{
