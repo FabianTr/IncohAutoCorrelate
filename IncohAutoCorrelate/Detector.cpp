@@ -683,16 +683,8 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 
 				//update Event
 				Events[i].PhotonCount = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]);
-				//long yxc = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]);
-				//unsigned long qwertz = 0;
-				//for (int w = 0; w < DetectorSize[1] * DetectorSize[0]; w++)
-				//{
-				//	qwertz += (unsigned long) tmpIntensity[w];
-				//}
-				//std::cout << qwertz << "\n";
-				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float)(DetectorSize[1] * DetectorSize[0]));
 
-				//	std::cout << i << ": Mean = " << Events[i].MeanIntensity << " ^= " << Events[i].PhotonCount << " photons\n";
+				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float)(DetectorSize[1] * DetectorSize[0]));
 			}
 		}
 		delete[] tmpIntensity;

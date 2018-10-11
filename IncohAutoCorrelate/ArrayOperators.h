@@ -114,6 +114,7 @@ namespace ArrayOperators
 		}
 	}
 
+
 	inline void MultiplyElementwise(float* Array, float* Factor, unsigned int Size)
 	{
 		for (unsigned int i = 0; i < Size; i++)

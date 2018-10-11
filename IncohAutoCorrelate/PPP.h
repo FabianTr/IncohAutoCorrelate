@@ -12,18 +12,37 @@ namespace PPP
 {
 	struct DetectorPanel
 	{
-		int FirstInd = 0;
-		int Size = 2;
-		int Scans[2] = { 1,1 }; //fs, ss
+		unsigned int FirstInd = 0;
+		unsigned int Scans[2] = { 2,2 }; //fs, ss
 	};
 
-	void PhotonFinder_LargestAdjacentPixel(float * Intensity, std::vector<DetectorPanel> DetectorPanels, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);
+	struct Create_LAPSettings
+	{
+		unsigned int DetPanels_Num = 1;
+		std::vector<DetectorPanel> DetectorPanels;
+
+
+		float ADU_perPhoton = 1.0f;
+		float SeedThershold = 0.5f;
+		float CombinedThershold = 0.9f;
+
+		std::string Output_Path = "";
+		std::string Output_Dataset = "";
+
+		std::string Output_NewXML = "";
+
+		std::string GainMapPath = "";
+		std::string DatasetOffset = "offset";
+		std::string DatasetGain = "gain";
+	};
+
+	
 	//Find Photons by considering the adjacent Pixels.
+	void PhotonFinder_LargestAdjacentPixel(float * Intensity, std::vector<DetectorPanel> DetectorPanels, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);
 
 	void ProcessData_PF_LAP(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector &Det, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);
+	void ProcessData_PF_LAP(Detector &Det, Create_LAPSettings LAPSettings, std::string XML_In);
 
-	void ProcessData_PF_LAP_SM(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector & Det, int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold, bool Jungfrau);
-
-	void ProcessData_ConvertSM(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector & Det, int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold, bool Jungfrau);
-
+	void GainCorrection(Detector & Det, std::string GainCorr_Path, std::string Dataset_Offset, std::string Dataset_Gain, Settings & Options);
+	
 }

@@ -8,36 +8,7 @@
 namespace RunIAC
 {
 
-	struct CreateCQ_Settings
-	{
-	private:
 
-	public:
-		int MeshSize = 501; // Size without ZeroPadding 
-		float QZoom = 1.0f;
-
-		std::string PixelMap_Path = "";//H5
-		std::string PixelMap_DataSet = "";//H5
-
-		std::string PixelMask_Path = "";//Binary
-
-		std::string AVIntensity_Path = "";
-
-		bool SaveSmall_CQ = false;
-		std::string SmallCQ_Path = "";
-
-		bool SaveBig_CQ = false;
-		std::string BigCQ_Path = "";
-
-		bool echo = false;
-		std::string ThreadName = "CQ-Thread";
-
-		Detector::AutoCorrFlags AC_Small_Flags;
-		Detector::AutoCorrFlags AC_Merge_Flags;
-	};
-
-	void Create_CQ_Mesh(ACMesh& CQ, CreateCQ_Settings CQ_Settings, Settings& PrgSettings);
-	void Create_CQ_Mesh(ACMesh& CQ, CreateCQ_Settings CQ_Settings, Settings& PrgSettings, unsigned int LowerBound, unsigned int UpperBound);
 
 
 	struct CreateAC_Settings
@@ -78,6 +49,7 @@ namespace RunIAC
 	class CreateDataEval_Settings
 	{
 	public:
+
 		int MeshSize = 501; // Size without ZeroPadding 
 		float QZoom = 1.0f;
 
@@ -116,11 +88,16 @@ namespace RunIAC
 
 		Detector::AutoCorrFlags AC_SecondMap_Flags; //to Implement
 		Detector::AutoCorrFlags AC_FirstMap_Flags;
+
+		//use already calculated AveragedIntensity
+		bool UseExistingAvInt = false;
 		
 		// For simulative data, detector disturbtion
 		bool DetDisturb = false;
 		double DetDisturb_Shift = 0.0;
 		double DetDisturb_Rot = 0.0; //in degree
+
+
 
 	};
 	void Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings);

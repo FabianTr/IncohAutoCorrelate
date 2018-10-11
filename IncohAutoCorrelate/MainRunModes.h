@@ -10,6 +10,7 @@
 #include "RunIAC.h"
 #include "Statistics.h"
 #include "Simulator.h"
+#include "PPP.h"
 
 namespace MainRunModes
 {
@@ -24,6 +25,8 @@ namespace MainRunModes
 		Simulator::SimulationSettings SimulationSettings;
 		//Statistics
 		Statistics::StatisticsSettings StatisticsSettings;
+		//PPP.LAP
+		PPP::Create_LAPSettings PPPLAPSettings;
 
 	};
 
@@ -37,21 +40,28 @@ namespace MainRunModes
 	//single mode
 	RunIAC::CreateDataEval_Settings LoadEvaluationSettings(std::string Filename, Settings &Options);
 	Statistics::StatisticsSettings LoadStatisticSettings(std::string Filename, Settings &Options);
+	PPP::Create_LAPSettings LoadPPPLAPSettings(std::string Filename, Settings &Options);
 	//combined
 	MainRunModes::AllSettings LoadSettings(std::string Filename, Settings &Options);
 
 	int Create_Example_Evaluation_Config_File(std::string Filename, Settings &Options);
 	int Create_Example_Config_File(std::string Filename, Settings &Options);
 
-	//partial Settings
+	//partial Example Settings
 	boost::property_tree::ptree Example_Evaluation_Config_PT(boost::property_tree::ptree pt, Settings &Options);
 	boost::property_tree::ptree Example_Statistics_Config_PT(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
-	
+	boost::property_tree::ptree Example_PatternPreProcessing_LAP(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
 
 	//->Data Evaluation
 	int AverageIntensity(std::string EvaluationConfigFile, Settings &Options, bool UpdateEventXML = false);
 
+	//DataProcessing
+	int GainCorrectionAndLAP(std::string Arg1, Settings &Options);
+
 	//->Statistics
 	int CreateAllPixelHistograms(std::string ConfigFile, Settings &Options);
 
+
+	//EVALUATE - AUTOCORRELATION mode
+	int AutoCorrelateData(std::string ConfigFile, Settings &Options);
 }

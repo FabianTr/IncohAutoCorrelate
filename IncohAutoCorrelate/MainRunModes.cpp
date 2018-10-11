@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-
+#include "ProfileTime.h"
 #include "Detector.h"
 
 
@@ -24,6 +24,8 @@ std::vector<std::string> MainRunModes::CSV_Splitter(std::string Input, std::stri
 	return Output;
 }
 
+
+//Load settings
 RunIAC::CreateDataEval_Settings MainRunModes::LoadEvaluationSettings(std::string Filename, Settings &Options)
 {
 	//Load Evaluation settings from XML-File
@@ -41,6 +43,9 @@ RunIAC::CreateDataEval_Settings MainRunModes::LoadEvaluationSettings(std::string
 	EVS.PixelMap_DataSet = pt.get<std::string>("root.EvalSettings.InputFiles.PixelMap_Dataset", "");
 	EVS.PixelMask_Path = pt.get<std::string>("root.EvalSettings.InputFiles.PixelMask_Path", "");
 	EVS.PixelMask_Dataset = pt.get<std::string>("root.EvalSettings.InputFiles.PixelMask_Dataset", "");
+
+	//EVS.UseExistingAvInt requires EVS.Out_AvIntensity_Path also requires the right mean intensity and photon count in xml-event list
+	EVS.UseExistingAvInt = pt.get<bool>("root.EvalSettings.InputFiles.UseExistingAvInt", false); // requires EVS.Out_AvIntensity_Path also requires the right mean intensity and photon count in xml-event list
 	
 	//->Output Files
 	EVS.Out_Final_AC_Path = pt.get<std::string>("root.EvalSettings.OutputFiles.AC_Final_Path", "");
@@ -96,27 +101,70 @@ Statistics::StatisticsSettings MainRunModes::LoadStatisticSettings(std::string F
 		StatSet.PixelHistogramSettings.Bins = pt.get<unsigned int>("root.StatisticsSettings.PixelHistograms.Bins", 100);
 		StatSet.PixelHistogramSettings.SmalestValue = pt.get<double>("root.StatisticsSettings.PixelHistograms.SmallestValue", 0.0);
 		StatSet.PixelHistogramSettings.LargestValue = pt.get<double>("root.StatisticsSettings.PixelHistograms.LargestValue", 100.0);
+
+		StatSet.PixelHistogramSettings.Normalized = pt.get<bool>("root.StatisticsSettings.PixelHistograms.Normalize", true);
 	}
 
 	return StatSet;
+}
+
+PPP::Create_LAPSettings MainRunModes::LoadPPPLAPSettings(std::string Filename, Settings & Options)
+{
+	PPP::Create_LAPSettings LAPS;
+
+	using boost::property_tree::ptree;
+	ptree pt;
+	boost::property_tree::read_xml(Filename, pt);
+
+	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
+
+	//LAP
+	{
+		//Load general content
+		LAPS.ADU_perPhoton = pt.get<float>("root.PatternPreProcessing.LargestAdjacentPixel.ADUperPhoton", 100);
+		LAPS.SeedThershold = pt.get<float>("root.PatternPreProcessing.LargestAdjacentPixel.SeedThershold", 0.5f);
+		LAPS.CombinedThershold = pt.get<float>("root.PatternPreProcessing.LargestAdjacentPixel.CombinedThershold", 0.9f);
+
+		LAPS.Output_NewXML = pt.get<std::string>("root.PatternPreProcessing.LargestAdjacentPixel.Output_NewXML", "");
+		LAPS.Output_Path = pt.get<std::string>("root.PatternPreProcessing.LargestAdjacentPixel.Output_Path", "");
+		LAPS.Output_Dataset = pt.get<std::string>("root.PatternPreProcessing.LargestAdjacentPixel.Output_Dataset", "");
+
+		LAPS.DetPanels_Num = pt.get<unsigned int>("root.PatternPreProcessing.LargestAdjacentPixel.DetPanels_Num", 1);
+
+		LAPS.GainMapPath = pt.get<std::string>("root.PatternPreProcessing.LargestAdjacentPixel.GainMapPath", "");
+		LAPS.DatasetGain = pt.get<std::string>("root.PatternPreProcessing.LargestAdjacentPixel.DatasetGain", "");
+		LAPS.DatasetOffset = pt.get<std::string>("root.PatternPreProcessing.LargestAdjacentPixel.DatasetOffset", "");
+
+		//Load detector panels
+		for (unsigned int i = 0; i < LAPS.DetPanels_Num; i++)
+		{
+			PPP::DetectorPanel currPan;
+			std::string XMLKey = "root.PatternPreProcessing.LargestAdjacentPixel.DetPanels.N" + std::to_string(i);
+			currPan.FirstInd = pt.get<unsigned int>(XMLKey + ".FirstInd", 0);
+			currPan.Scans[0] = pt.get<unsigned int>(XMLKey + ".FastScan", 0);
+			currPan.Scans[1] = pt.get<unsigned int>(XMLKey + ".SlowScan", 0);
+
+			LAPS.DetectorPanels.push_back(currPan);
+		}
+
+	}
+
+	return LAPS;
 }
 
 MainRunModes::AllSettings MainRunModes::LoadSettings(std::string Filename, Settings & Options)
 {
 	MainRunModes::AllSettings SettingsStack;
 
-	SettingsStack.EvaluationSettings = MainRunModes::LoadEvaluationSettings(Filename, Options);
-	SettingsStack.StatisticsSettings = MainRunModes::LoadStatisticSettings(Filename, Options);
+	SettingsStack.EvaluationSettings = MainRunModes::LoadEvaluationSettings(Filename, Options); //Evaluation & General
+	SettingsStack.StatisticsSettings = MainRunModes::LoadStatisticSettings(Filename, Options); //Statistics
+	SettingsStack.PPPLAPSettings = MainRunModes::LoadPPPLAPSettings(Filename, Options); //PPP.LAP
 
 	return SettingsStack;
 }
 
 
-
-//Functions
-//->Data handling
-
-
+//Create and save example settings
 int MainRunModes::Create_Example_Evaluation_Config_File(std::string Filename, Settings &Options)
 {
 	//saves a example evaluations settings file
@@ -147,7 +195,7 @@ int MainRunModes::Create_Example_Config_File(std::string Filename, Settings & Op
 	ptree pt;
 	pt = Example_Evaluation_Config_PT(pt, Options);
 	pt = Example_Statistics_Config_PT(pt, Options);
-
+	pt = Example_PatternPreProcessing_LAP(pt, Options);
 	//save to File
 	boost::property_tree::write_xml(Filename, pt);
 
@@ -174,6 +222,8 @@ boost::property_tree::ptree MainRunModes::Example_Evaluation_Config_PT(boost::pr
 		EES.PixelMap_DataSet = "Pixelmap";
 		EES.PixelMask_Path = "Pixelmask.h5";
 		EES.PixelMap_DataSet = "";
+
+		EES.UseExistingAvInt = false;
 
 		//->Output Files
 		EES.Out_Final_AC_Path = "AC_Final.bin";
@@ -225,7 +275,7 @@ boost::property_tree::ptree MainRunModes::Example_Evaluation_Config_PT(boost::pr
 		pt.put("root.EvalSettings.InputFiles.PixelMap_Dataset", EES.PixelMap_DataSet);
 		pt.put("root.EvalSettings.InputFiles.PixelMask_Path", EES.PixelMask_Path);
 		pt.put("root.EvalSettings.InputFiles.PixelMask_Dataset", EES.PixelMask_Dataset);
-
+		pt.put("root.EvalSettings.InputFiles.UseExistingAvInt", EES.UseExistingAvInt);
 		//->Output Files
 		pt.put("root.EvalSettings.OutputFiles.AC_Final_Path", EES.Out_Final_AC_Path);
 		pt.put("root.EvalSettings.OutputFiles.AvIntensity_Path", EES.Out_AvIntensity_Path);
@@ -269,6 +319,8 @@ boost::property_tree::ptree MainRunModes::Example_Statistics_Config_PT(boost::pr
 		EPHS.SmalestValue = 0.0;
 		EPHS.LargestValue = 100.0;
 		EPHS.OutputPath = "PixelwiseHistograms.bin";
+
+		EPHS.Normalized = true;
 	}
 	//Store Statistic Settings in PT
 	{
@@ -276,6 +328,59 @@ boost::property_tree::ptree MainRunModes::Example_Statistics_Config_PT(boost::pr
 		pt.put("root.StatisticsSettings.PixelHistograms.Bins", EPHS.Bins);
 		pt.put("root.StatisticsSettings.PixelHistograms.SmallestValue", EPHS.SmalestValue);
 		pt.put("root.StatisticsSettings.PixelHistograms.LargestValue", EPHS.LargestValue);
+		pt.put("root.StatisticsSettings.PixelHistograms.Normalize", EPHS.Normalized);
+
+
+	}
+	return pt;
+}
+
+boost::property_tree::ptree MainRunModes::Example_PatternPreProcessing_LAP(boost::property_tree::ptree pt, Settings & Options)
+{
+	//Example PPP_LAP Settings
+	PPP::Create_LAPSettings LAPS;
+	PPP::DetectorPanel SamplePanel;
+	{
+		LAPS.ADU_perPhoton = 100.0f;
+		LAPS.SeedThershold = 0.5f;
+		LAPS.CombinedThershold = 0.9f;
+
+		LAPS.Output_NewXML = "NewEventList.xml";
+		LAPS.Output_Path = "NewH5_File.h5";
+		LAPS.Output_Dataset = "data";
+
+		LAPS.DetPanels_Num = 1;
+
+		LAPS.GainMapPath = "";
+		LAPS.DatasetGain = "gain";
+		LAPS.DatasetOffset = "offset";
+
+		// Detector Panels
+		SamplePanel.FirstInd = 0;
+		SamplePanel.Scans[0] = 100;
+		SamplePanel.Scans[1] = 100;
+	}
+	//Store Statistic Settings in PT
+	{
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.ADUperPhoton", LAPS.ADU_perPhoton);
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.SeedThershold", LAPS.SeedThershold);
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.CombinedThershold", LAPS.CombinedThershold);
+
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.Output_NewXML", LAPS.Output_NewXML);
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.Output_Path", LAPS.Output_Path);
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.Output_Dataset", LAPS.Output_Dataset);
+
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.DetPanels_Num", LAPS.DetPanels_Num);
+
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.GainMapPath", LAPS.GainMapPath);
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.DatasetGain", LAPS.DatasetGain);
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.DatasetOffset", LAPS.DatasetOffset);
+
+
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.DetPanels.N0.FirstInd", SamplePanel.FirstInd);
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.DetPanels.N0.FastScan", SamplePanel.Scans[0]);
+		pt.put("root.PatternPreProcessing.LargestAdjacentPixel.DetPanels.N0.SlowScan", SamplePanel.Scans[1]);
+
 	}
 	return pt;
 }
@@ -336,6 +441,23 @@ int MainRunModes::AverageIntensity(std::string EvaluationConfigFile, Settings &O
 	return 0;
 }
 
+int MainRunModes::GainCorrectionAndLAP(std::string Arg1, Settings & Options)
+{
+	AllSettings AS = LoadSettings(Arg1, Options);
+
+	Detector Det;
+	Det.LoadPixelMap(AS.EvaluationSettings.PixelMap_Path, AS.EvaluationSettings.PixelMap_DataSet);
+	Det.LoadPixelMask(AS.EvaluationSettings.PixelMask_Path, AS.EvaluationSettings.PixelMask_Dataset);
+	
+	ProfileTime Profiler;
+	Profiler.Tic();
+
+	PPP::ProcessData_PF_LAP(Det, AS.PPPLAPSettings, AS.EvaluationSettings.XML_Path);
+	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
+
+	return 0;
+}
+
 int MainRunModes::CreateAllPixelHistograms(std::string ConfigFile, Settings & Options)
 {
 	RunIAC::CreateDataEval_Settings EVS = LoadEvaluationSettings(ConfigFile, Options);
@@ -344,12 +466,15 @@ int MainRunModes::CreateAllPixelHistograms(std::string ConfigFile, Settings & Op
 	Detector Det;
 	Det.LoadPixelMap(EVS.PixelMap_Path, EVS.PixelMap_DataSet);
 	Det.LoadPixelMask(EVS.PixelMask_Path, EVS.PixelMask_Dataset);
+	Options.LoadHitEventListFromFile(EVS.XML_Path);
+	Statistics::CreateAndSaveAllPixelHistograms(STS.PixelHistogramSettings, Det, Options);
 
 	//Statistics::Histogram Hist = Statistics
 
 
 	return 0;
 }
+
 
 //Create XML Event Lists
 int MainRunModes::Create_XMLHitlist_from_H5Stack_script(std::string Arg1, std::string Arg2, Settings &Options)
@@ -390,11 +515,20 @@ int MainRunModes::Create_XMLHitlist_from_H5Stack(std::vector<std::string> H5_Pat
 
 
 
-//Run Statistics
+// --- EVALUATE ---
+//Auto correlate
+int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
+{
+	//Setup Open CL Stuff
+	Options.SetUp_OpenCL();
+	//load Config File
+	RunIAC::CreateDataEval_Settings EVS = LoadEvaluationSettings(ConfigFile, Options);
+
+	RunIAC::Run_AutoCorr_DataEval(Options, EVS);
 
 
-
-
+	return 0;
+}
 
 
 

@@ -463,6 +463,8 @@ int main(int argc, char** argv)
 			std::cout << "\n---   General stuff   ---\n";
 			std::cout << "help [h] \t: Displays a List of valid arguments.\n";
 
+			std::cout << "\n---   Data processing mode   ---\n";
+
 
 			std::cout << "\n---   Evaluation mode   ---\n";
 
@@ -506,7 +508,17 @@ int main(int argc, char** argv)
 	}
 	else if (Arg1 == "evaluate" || Arg1 == "-evaluate" || Arg1 == "e" || Arg1 == "-e")
 	{
-		std::cout << "TO be Implemented!!!!\n";
+		std::cout << "Run ICA in evaluation mode - autocorrelation\n";
+		if (argc < 3)
+		{
+			std::cerr << "-Evaluate requires one additional argument (\"Settings.xml\")\n";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			return MainRunModes::AutoCorrelateData(Arg2, Options);
+		}
 	}
 	else if (Arg1 == "exampleconfig" || Arg1 == "-exampleconfig" || Arg1 == "ec" || Arg1 == "-ec")
 	{
@@ -548,6 +560,35 @@ int main(int argc, char** argv)
 			return MainRunModes::AverageIntensity(Arg2, Options);
 		}
 	}
+	else if (Arg1 == "pixelwisehistograms" || Arg1 == "-pixelwisehistograms" || Arg1 == "ph" || Arg1 == "-ph")
+	{
+		if (argc < 3)
+		{
+			std::cerr << "-PixelwiseHistograms requires one additional argument (\"Settings.xml\")\n";
+			std::cerr << "Additional Info: -pixelwisehistograms uses the \"root.StatisticsSettings.PixelHistograms. (...)\" part.\n ";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			return MainRunModes::CreateAllPixelHistograms(Arg2, Options);
+		}
+	}
+	else if (Arg1 == "gainandlap" || Arg1 == "-gainandlap" || Arg1 == "gl" || Arg1 == "-gl")
+	{
+		std::cout << "run gain correction and LAP-photon counting\n";
+		if (argc < 3)
+		{
+			std::cerr << "-GainAndLAP requires one additional argument (\"Settings.xml\")\n";
+			std::cerr << "Additional Info: -pixelwisehistograms uses the \"root.StatisticsSettings.PixelHistograms. (...)\" part.\n ";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			return MainRunModes::GainCorrectionAndLAP(Arg2, Options);
+		}
+	}
 	else if (Arg1 == "qdtest" || Arg1 == "-qdtest" )
 	{
 		QDTests();
@@ -563,10 +604,11 @@ int main(int argc, char** argv)
 
 
 	 
+
+	//Old Stuff -> TODO: Integrate into Mode-Fork
+
 	//QDTests();
 	return 0;
-
-	
 	//omp_set_nested(1);
 	//omp_set_max_active_levels(2);
 
@@ -669,112 +711,6 @@ int main(int argc, char** argv)
 				EvalSettings.Out_Q_Vector = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/" + Prefix + "_Q.bin";
 
 				RunIAC::Run_AutoCorr_DataEval(Options, EvalSettings);
-
-			}
-			break;
-		case 2: //Autocorrelate Hb ePix 3fs
-			std::cout << "\n******************************\nRun IncohAutoCorrelate in Autocorrelation-mode for ePix\n******************************\n";
-			{
-				const bool HitsFromXml = true; //otherwise from stream
-
-
-				if (HitsFromXml)
-				{
-					Options.Echo("Load Events from XML");
-					Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_ePix.xml");
-				}
-				else
-				{
-					Options.Echo("Load Streamfile");
-					Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/indexing/3fs_JF.stream", "entry_1/instrument_1/detector_3/detector_corrected/data", false);
-					Detector t_Det;
-					t_Det.LoadPixelMask("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/ePix_mask1.bin");
-					t_Det.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Epix_rough.h5", "geometry");
-					RunIAC::Load_and_average_Intensities(Options, t_Det, 50.0f, 100.0f, "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_ePix.xml", "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_ePix.bin");
-
-				}
-
-				//Further Settings
-
-				RunIAC::CreateCQ_Settings CQ_Settings;
-				RunIAC::CreateAC_Settings AC_Settings;
-				{
-					CQ_Settings.AC_Merge_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-					CQ_Settings.AC_Small_Flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-
-					CQ_Settings.AVIntensity_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/IntensityAv_3fs_ePix.bin";
-
-					CQ_Settings.PixelMap_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Epix_rough.h5";
-					CQ_Settings.PixelMap_DataSet = "geometry";
-
-
-
-					CQ_Settings.PixelMask_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/ePix_mask1.bin";
-
-
-
-					CQ_Settings.echo = true;
-
-					CQ_Settings.MeshSize = 701;//701
-					CQ_Settings.QZoom = 1.0f;
-
-					CQ_Settings.SaveSmall_CQ = true;
-					CQ_Settings.SaveBig_CQ = true;
-
-					CQ_Settings.SmallCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_Cq_703-Z1_Small.bin";
-					CQ_Settings.BigCQ_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_Cq_703-Z1_Big.bin";
-
-
-					//ac shared settings
-					AC_Settings.AC_FirstMap_Flags = CQ_Settings.AC_Small_Flags;
-					AC_Settings.AC_SecondMap_Flags = CQ_Settings.AC_Merge_Flags;
-					AC_Settings.MeshSize = CQ_Settings.MeshSize;
-					AC_Settings.QZoom = CQ_Settings.QZoom;
-					AC_Settings.PixelMap_Path = CQ_Settings.PixelMap_Path;
-					AC_Settings.PixelMap_DataSet = CQ_Settings.PixelMap_DataSet;
-					AC_Settings.PixelMask_Path = CQ_Settings.PixelMask_Path;
-
-					//ac further settings
-					AC_Settings.SaveBig_AC = true;
-					AC_Settings.BigAC_Path = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_AC_UW_703-Z1_Big.bin";
-
-
-					AC_Settings.DoubleMap = true;
-					AC_Settings.echo = true;
-					AC_Settings.PhotonOffset = 50.0f;
-					AC_Settings.PhotonStep = 100.0f;
-				}
-
-				//
-
-				ACMesh CQ(&Options);
-				ACMesh AC(&Options);
-
-				profiler.Tic();
-
-				Options.Echo("Launch threads");
-
-				//RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options,0,1000);
-				//RunIAC::Run_AC_UW(AC, AC_Settings, Options,0,1000);
-
-				RunIAC::Create_CQ_Mesh(CQ, CQ_Settings, Options);
-				RunIAC::Run_AC_UW(AC, AC_Settings, Options);
-
-
-				Options.Echo("Merge Stuff");
-
-				double * FinalAC = new double[CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB];
-
-				RunIAC::Merge_ACandCQ(FinalAC, AC, CQ, Options);
-
-				ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_AC_Final_703-Z1.bin", FinalAC, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_AB, ArrayOperators::FileType::Binary);
-				std::cout << "Saved as: " << "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/ePix_sw_AC_Final_703-Z1.bin" << " \n";
-
-				delete[] FinalAC;
-
-
-				std::cout << "\n\n Finished in ";
-				profiler.Toc(true);
 
 			}
 			break;
@@ -1717,14 +1653,12 @@ int main(int argc, char** argv)
 				PPP::DetectorPanel DetPan;
 				//first Jungfrau Panel
 				DetPan.FirstInd = 0;
-				DetPan.Size = 1024 * 512;
 				DetPan.Scans[0] = 1024;
 				DetPan.Scans[1] = 512;
 
 				DetPanels.push_back(DetPan);
 				//second Jungfrau Panel
 				DetPan.FirstInd = 1024 * 512;
-				DetPan.Size = 1024 * 512;
 				DetPan.Scans[0] = 1024;
 				DetPan.Scans[1] = 512;
 
@@ -1732,372 +1666,6 @@ int main(int argc, char** argv)
 			}
 
 			PPP::ProcessData_PF_LAP(XML_IN, XML_OUT, H5_OUT, H5_Dataset_OUT, DetPanels, Det, Det.DetectorSize[0] * Det.DetectorSize[1], 6.4f, 0.5f, 0.9f);
-
-		}
-		break;
-		case 51: //Photon Hitfinding SM Jungfr
-		{
-			Detector Det;
-			//needed only for DetClass to work propaly (ToDo: Check if it is really needed)
-			Det.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5", "data/data");
-			Det.LoadPixelMask("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin");
-
-
-			std::string XML_IN = "/gpfs/cfel/cxi/scratch/user/trostfab/HitEventList_SM_Jungfr_Block3.xml";
-			//std::string XML_IN = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml";
-			std::string XML_OUT = "/gpfs/cfel/cxi/scratch/user/trostfab/PPPData/HitEventList_SM_Jungfr_Block3_LAP.xml";
-			std::string H5_OUT = "/gpfs/cfel/cxi/scratch/user/trostfab/PPPData/IntensityData_SM_Jungfr_Block3_LAP.h5";
-			std::string H5_Dataset_OUT = "LAP";
-
-			std::vector<PPP::DetectorPanel> DetPanels;
-			//Jungfrau Panels:
-			{
-				PPP::DetectorPanel DetPan;
-				//first Jungfrau Panel
-				DetPan.FirstInd = 0;
-				DetPan.Size = 1024 * 512;
-				DetPan.Scans[0] = 1024;
-				DetPan.Scans[1] = 512;
-
-				DetPanels.push_back(DetPan);
-				//second Jungfrau Panel
-				DetPan.FirstInd = 1024 * 512;
-				DetPan.Size = 1024 * 512;
-				DetPan.Scans[0] = 1024;
-				DetPan.Scans[1] = 512;
-
-				DetPanels.push_back(DetPan);
-			}
-
-			RunIAC::CreateSM_Settings SM_Settings;
-
-			bool Block1 = false;
-			bool Block2 = false;
-			bool Block3 = true;
-
-			if (Block1)
-			{
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_139-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run139/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_140-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run140/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_141-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run141/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_142-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run142/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_143-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run143/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_146-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run146/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_147-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run147/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_159-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run159/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_160-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run160/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_161-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run161/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_162-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run162/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_163-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run163/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_164-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run164/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_165-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run165/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_166-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run166/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_167-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run167/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_168-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run168/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_169-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run169/Jungfrau1M/calib/data");
-			}
-
-			if (Block2)
-			{
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_203-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run203/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_204-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run204/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_205-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run205/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_206-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run206/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_207-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run207/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_208-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run208/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_209-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run209/Jungfrau1M/calib/data");
-			}
-
-			if (Block3)
-			{
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_253-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run253/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_255-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run255/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_256-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run256/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_257-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run257/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_258-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run258/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_263-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run263/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_264-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run264/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_265-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run265/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_266-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run266/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_267-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run267/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_268-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run268/Jungfrau1M/calib/data");
-			}
-
-			Settings Options;
-			//Create XML
-			//Get number of events 
-			std::cout << "Calculate full stack size (number of events).\n";
-			Options.HitEvents.clear();
-			Options.HitEvents.reserve(100000);
-			unsigned int StackSize = 0;
-			for (unsigned int i = 0; i < SM_Settings.Files.size(); i++)
-			{
-				unsigned int t_size = RunIAC::GetH5StackSize(SM_Settings.Files[i], SM_Settings.H5Dataset[i]);
-				StackSize += t_size;
-				for (unsigned int j = 0; j < t_size; j++)
-				{
-					Settings::HitEvent t_Event;
-					t_Event.Event = j;
-					t_Event.Filename = SM_Settings.Files[i];
-					t_Event.Dataset = SM_Settings.H5Dataset[i];
-					t_Event.SerialNumber = j;
-					Options.HitEvents.push_back(t_Event);
-				}
-			}
-			Options.SafeHitEventListToFile(XML_IN);
-
-
-
-			PPP::ProcessData_PF_LAP_SM(XML_IN, XML_OUT, H5_OUT, H5_Dataset_OUT, DetPanels, Det, Det.DetectorSize[0] * Det.DetectorSize[1], 6.4f, 0.5f, 0.9f, true);
-
-		}
-		break;
-
-		case 52: //Photon Hitfinding SM ePix
-		{
-			Detector Det;
-			//needed only for DetClass to work propaly (ToDo: Check if it is really needed)
-			Det.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/Epix_rough.h5", "geometry");
-			Det.LoadPixelMask("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/ePix_mask1.bin");
-
-
-			std::string XML_IN = "/gpfs/cfel/cxi/scratch/user/trostfab/HitEventList_SM_ePix_Block3.xml";
-			//std::string XML_IN = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml";
-			std::string XML_OUT = "/gpfs/cfel/cxi/scratch/user/trostfab/PPPData/HitEventList_SM_ePix_Block3_LAP.xml";
-			std::string H5_OUT = "/gpfs/cfel/cxi/scratch/user/trostfab/PPPData/IntensityData_SM_ePix_Block3_LAP.h5";
-			std::string H5_Dataset_OUT = "LAP";
-
-			std::vector<PPP::DetectorPanel> DetPanels;
-			//ePix Panel:
-			{
-				PPP::DetectorPanel DetPan;
-				//first Jungfrau Panel
-				DetPan.FirstInd = 0;
-				DetPan.Size = Det.DetectorSize[0] * Det.DetectorSize[1];
-				DetPan.Scans[0] = Det.DetectorSize[0];
-				DetPan.Scans[1] = Det.DetectorSize[1];
-
-				DetPanels.push_back(DetPan);
-			}
-
-			RunIAC::CreateSM_Settings SM_Settings;
-
-			bool Block1 = false;
-			bool Block2 = false;
-			bool Block3 = true;
-
-			if (Block1)//Block 1
-			{
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_139-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run139/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_140-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run140/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_141-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run141/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_142-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run142/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_143-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run143/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_146-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run146/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_147-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run147/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_159-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run159/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_160-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run160/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_161-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run161/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_162-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run162/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_163-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run163/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_164-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run164/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_165-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run165/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_166-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run166/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_167-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run167/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_168-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run168/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_169-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run169/Epix100a/calib/data");
-			}
-
-			if (Block2)//Block2
-			{
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_203-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run203/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_204-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run204/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_205-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run205/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_206-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run206/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_207-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run207/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_208-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run208/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_209-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run209/Epix100a/calib/data");
-			}
-
-			if (Block3)
-			{
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_253-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run253/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_255-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run255/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_256-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run256/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_257-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run257/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_258-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run258/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_263-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run263/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_264-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run264/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_265-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run265/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_266-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run266/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_267-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run267/Epix100a/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_268-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run268/Epix100a/calib/data");
-			}
-
-			Settings Options;
-			//Create XML
-			//Get number of events 
-			std::cout << "Calculate full stack size (number of events).\n";
-			Options.HitEvents.clear();
-			Options.HitEvents.reserve(100000);
-			unsigned int StackSize = 0;
-			for (unsigned int i = 0; i < SM_Settings.Files.size(); i++)
-			{
-				unsigned int t_size = RunIAC::GetH5StackSize(SM_Settings.Files[i], SM_Settings.H5Dataset[i]);
-				StackSize += t_size;
-				for (unsigned int j = 0; j < t_size; j++)
-				{
-					Settings::HitEvent t_Event;
-					t_Event.Event = j;
-					t_Event.Filename = SM_Settings.Files[i];
-					t_Event.Dataset = SM_Settings.H5Dataset[i];
-					t_Event.SerialNumber = j;
-					Options.HitEvents.push_back(t_Event);
-				}
-			}
-			Options.SafeHitEventListToFile(XML_IN);
-
-
-
-			PPP::ProcessData_PF_LAP_SM(XML_IN, XML_OUT, H5_OUT, H5_Dataset_OUT, DetPanels, Det, Det.DetectorSize[0] * Det.DetectorSize[1], 100.0f, 0.5f, 0.9f, false);
 
 		}
 		break;
@@ -2126,14 +1694,12 @@ int main(int argc, char** argv)
 			PPP::DetectorPanel DetPan;
 			//first Jungfrau Panel
 			DetPan.FirstInd = 0;
-			DetPan.Size = 1024 * 512;
 			DetPan.Scans[0] = 1024;
 			DetPan.Scans[1] = 512;
 
 			DetPanels.push_back(DetPan);
 			//second Jungfrau Panel
 			DetPan.FirstInd = 1024 * 512;
-			DetPan.Size = 1024 * 512;
 			DetPan.Scans[0] = 1024;
 			DetPan.Scans[1] = 512;
 
@@ -2206,193 +1772,6 @@ int main(int argc, char** argv)
 
 			delete[] NormalizedStack;
 		}
-
-		case -1000: // copy SM Jungfr RAW to one H5 in the "cheetah like" style (3 dim instead of 4 dim)
-		{
-			Detector Det;
-			//needed only for DetClass to work propaly (ToDo: Check if it is really needed)
-			Det.LoadPixelMap("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMap_J.h5", "data/data");
-			Det.LoadPixelMask("/gpfs/cfel/cxi/scratch/user/trostfab/PixelMap/PixelMask_thr03.bin");
-
-
-			std::string XML_IN = "/gpfs/cfel/cxi/scratch/user/trostfab/HitEventList_SM_Jungfr_Block3.xml";
-			//std::string XML_IN = "/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/HitEventList_3fs_Jungfr.xml";
-			std::string XML_OUT = "/gpfs/cfel/cxi/scratch/user/trostfab/SM_RAWs/HitEventList_SM_Jungfr_PasanaCalib_Block3.xml";
-			std::string H5_OUT = "/gpfs/cfel/cxi/scratch/user/trostfab/SM_RAWs/IntensityData_SM_Jungfr_PsanaCalib_Block3.h5";
-			std::string H5_Dataset_OUT = "LAP";
-
-			std::vector<PPP::DetectorPanel> DetPanels;
-			//Jungfrau Panels:
-			{
-				PPP::DetectorPanel DetPan;
-				//first Jungfrau Panel
-				DetPan.FirstInd = 0;
-				DetPan.Size = 1024 * 512;
-				DetPan.Scans[0] = 1024;
-				DetPan.Scans[1] = 512;
-
-				DetPanels.push_back(DetPan);
-				//second Jungfrau Panel
-				DetPan.FirstInd = 1024 * 512;
-				DetPan.Size = 1024 * 512;
-				DetPan.Scans[0] = 1024;
-				DetPan.Scans[1] = 512;
-
-				DetPanels.push_back(DetPan);
-			}
-
-			RunIAC::CreateSM_Settings SM_Settings;
-
-			bool Block1 = false;
-			bool Block2 = false;
-			bool Block3 = true;
-
-			if (Block1)
-			{
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_139-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run139/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_140-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run140/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_141-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run141/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_142-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run142/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_143-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run143/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_146-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run146/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_147-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run147/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_159-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run159/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_160-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run160/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_161-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run161/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_162-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run162/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_163-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run163/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_164-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run164/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_165-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run165/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_166-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run166/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_167-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run167/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_168-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run168/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_169-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run169/Jungfrau1M/calib/data");
-			}
-
-			if (Block2)
-			{
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_203-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run203/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_204-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run204/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_205-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run205/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_206-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run206/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_207-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run207/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_208-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run208/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_209-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run209/Jungfrau1M/calib/data");
-			}
-
-			if (Block3)
-			{
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_253-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run253/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_255-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run255/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_256-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run256/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_257-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run257/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_258-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run258/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_263-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run263/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_264-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run264/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_265-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run265/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_266-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run266/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_267-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run267/Jungfrau1M/calib/data");
-
-				SM_Settings.Files.push_back("/gpfs/cfel/cxi/scratch/data/2018/LCLS-2018-Chapman-Mar-LR17/SegmentedSM/run_268-xes.h5");
-				SM_Settings.H5Dataset.push_back("/mfxlr1716/run268/Jungfrau1M/calib/data");
-			}
-
-			Settings Options;
-			//Create XML
-			//Get number of events 
-			std::cout << "Calculate full stack size (number of events).\n";
-			Options.HitEvents.clear();
-			Options.HitEvents.reserve(100000);
-			unsigned int StackSize = 0;
-			for (unsigned int i = 0; i < SM_Settings.Files.size(); i++)
-			{
-				unsigned int t_size = RunIAC::GetH5StackSize(SM_Settings.Files[i], SM_Settings.H5Dataset[i]);
-				StackSize += t_size;
-				for (unsigned int j = 0; j < t_size; j++)
-				{
-					Settings::HitEvent t_Event;
-					t_Event.Event = j;
-					t_Event.Filename = SM_Settings.Files[i];
-					t_Event.Dataset = SM_Settings.H5Dataset[i];
-					t_Event.SerialNumber = i;
-					Options.HitEvents.push_back(t_Event);
-				}
-			}
-			Options.SafeHitEventListToFile(XML_IN);
-
-
-
-			PPP::ProcessData_ConvertSM(XML_IN, XML_OUT, H5_OUT, H5_Dataset_OUT, DetPanels, Det, Det.DetectorSize[0] * Det.DetectorSize[1], 6.4f, 0.5f, 0.9f, true);
-
-		}
-
 		break;
 
 		case -5000: //Create flat 1

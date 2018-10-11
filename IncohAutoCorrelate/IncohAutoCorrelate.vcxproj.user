@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-ec /home/trostfab/scratch/ICA_TestDump/Test.xml</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-e /home/trostfab/scratch/LU56/SettingsUA3DAC.xml</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

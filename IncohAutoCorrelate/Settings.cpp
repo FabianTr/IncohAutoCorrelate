@@ -289,6 +289,7 @@ void Settings::checkErr(cl_int err, const char * name)
 
 void Settings::SetUp_OpenCL()
 {
+	Echo("Setup OpenCL - devices");
 	cl_int err;
 	cl::Platform::get(&CL_platforms);
 
@@ -454,8 +455,6 @@ void Settings::SafeHitEventListToFile(std::string Filename)
 	SafeHitEventListToFile(Filename, HitEvents);
 }
 
-
-
 void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList)
 {
 
@@ -526,12 +525,7 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 
 
 
-void Settings::LoadHitEventListFromFile(char * Filename)
-{
-	std::string Path;
-	Path = Filename;
-	LoadHitEventListFromFile(Path);
-}
+
 
 
 
@@ -559,6 +553,13 @@ void Settings::InvertRotationMatrices()
 
 }
 
+
+void Settings::LoadHitEventListFromFile(char * Filename)
+{
+	std::string Path;
+	Path = Filename;
+	LoadHitEventListFromFile(Path);
+}
 
 void Settings::LoadHitEventListFromFile(std::string Filename)
 {

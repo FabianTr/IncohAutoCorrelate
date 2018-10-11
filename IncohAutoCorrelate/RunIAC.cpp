@@ -10,82 +10,9 @@
 
 namespace RunIAC
 {
-	void Create_CQ_Mesh(ACMesh & CQ, CreateCQ_Settings CQ_Settings, Settings & PrgSettings)
-	{
-		Create_CQ_Mesh(CQ, CQ_Settings, PrgSettings, 0, PrgSettings.HitEvents.size());
-	}
-	void Create_CQ_Mesh(ACMesh & CQ, CreateCQ_Settings CQ_Settings, Settings & PrgSettings, unsigned int LowerBound, unsigned int UpperBound)
-	{
-		if (CQ_Settings.echo)
-			std::cout << CQ_Settings.ThreadName << ": start C(q) calculation.\n";
-		ProfileTime profiler;
-		profiler.Tic();
-		Detector Det;
-		if (CQ_Settings.echo)
-			std::cout << CQ_Settings.ThreadName << ": Set up detector ...\n";
+	
 
-		//Load PixelMap
-		Det.LoadPixelMap(CQ_Settings.PixelMap_Path, CQ_Settings.PixelMap_DataSet);
-		//Create k-Map
-		Det.Calc_kMap();
-		//Load Pixelmask
-		Det.LoadPixelMask(CQ_Settings.PixelMask_Path);
-
-
-		//load integrated/averaged intensity
-		delete[] Det.Intensity;
-		Det.Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
-		ArrayOperators::LoadArrayFromFile(CQ_Settings.AVIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
-		Det.Checklist.Intensity = true;
-		//apply Pixelmask
-		Det.ApplyPixelMask();
-
-
-
-		//Setup dense Correlation
-		if (CQ_Settings.echo)
-			std::cout << CQ_Settings.ThreadName << ": Start dense autocorrelating (small Mesh) ...\n";
-
-		ACMesh smallMesh(&PrgSettings);
-		smallMesh.CreateSmallMesh_CofQ_ForDetector(Det, CQ_Settings.MeshSize, CQ_Settings.QZoom);
-
-		if (CQ_Settings.echo)
-			std::cout << CQ_Settings.ThreadName << ": Calc small C(q) ...\n";
-
-		Det.AutoCorrelate_CofQ_SmallMesh(smallMesh, CQ_Settings.AC_Small_Flags, PrgSettings);
-
-		if (CQ_Settings.SaveSmall_CQ)
-		{
-			ArrayOperators::SafeArrayToFile(CQ_Settings.SmallCQ_Path, smallMesh.CQMesh, smallMesh.Shape.Size_AB*smallMesh.Shape.Size_AB*smallMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
-			if (CQ_Settings.echo)
-				std::cout << CQ_Settings.ThreadName << ": Small C(q) saved as: " << CQ_Settings.SmallCQ_Path << "\n";
-		}
-
-		//Weight and Merge
-		if (CQ_Settings.echo)
-			std::cout << CQ_Settings.ThreadName << ": Weight and merge C(q) ...\n";
-
-		CQ.CreateBigMesh_CofQ_ForDetector(Det, CQ_Settings.MeshSize, CQ_Settings.QZoom);
-		Det.Merge_smallCofQ(CQ, smallMesh, PrgSettings.HitEvents, LowerBound, UpperBound, PrgSettings, CQ_Settings.AC_Merge_Flags);
-
-		if (CQ_Settings.SaveBig_CQ)
-		{
-			ArrayOperators::SafeArrayToFile(CQ_Settings.BigCQ_Path, CQ.CQMesh, CQ.Shape.Size_AB*CQ.Shape.Size_AB*CQ.Shape.Size_C, ArrayOperators::FileType::Binary);
-			if (CQ_Settings.echo)
-				std::cout << CQ_Settings.ThreadName << ": Big C(q) saved as: " << CQ_Settings.BigCQ_Path << "\n";
-		}
-
-		if (CQ_Settings.echo)
-		{
-			std::cout << CQ_Settings.ThreadName << ": C(q) createt in ";
-			profiler.Toc(true);
-			std::cout << "\n";
-
-			std::cout << CQ_Settings.ThreadName << ": Finished.\n";
-		}
-
-	}
-
+	
 	void Run_AC_UW(ACMesh & AC, CreateAC_Settings AC_Settings, Settings & PrgSettings)
 	{
 		Run_AC_UW(AC, AC_Settings, PrgSettings, 0, PrgSettings.HitEvents.size());
@@ -228,7 +155,6 @@ namespace RunIAC
 	}
 
 
-	//Single Molecule
 	unsigned int GetH5StackSize(std::string Filename, std::string Dataset)
 	{
 		H5::H5File file(Filename, H5F_ACC_RDONLY);
@@ -256,30 +182,31 @@ namespace RunIAC
 
 		ACMesh Mesh_CurrAC(&PrgSettings);
 		ACMesh Mesh_CQ(&PrgSettings);
-
 		// </Output Field>
 
 		//Initialize Stuff
 		{
-			if (EvalSettings.PixelMap_Path == "")
-			{ 
-				std::cerr << "ERROR: No pixel map path set => can't load Hit Events\n";
-				std::cerr << "    -> in Run_AutoCorr_DataEval()\n";
-				throw;
-			}
-			if (EvalSettings.EchoLevel > 0)
-				std::cout << "Load pixel map\n";
-			
-			//load pixelmap and if existing pixel mask
-			Det.LoadPixelMap(EvalSettings.PixelMap_Path, EvalSettings.PixelMap_DataSet);
-			if (EvalSettings.DetDisturb) //Disturbation of Pixelmap for simulated data
+			//Load PixelMap and PixelMask
 			{
-				Simulator Sim;
-				Sim.DisturbePixelMap(Det, EvalSettings.DetDisturb_Shift, EvalSettings.DetDisturb_Rot);
+				if (EvalSettings.PixelMap_Path == "")
+				{
+					std::cerr << "ERROR: No pixel map path set => can't load Hit Events\n";
+					std::cerr << "    -> in Run_AutoCorr_DataEval()\n";
+					throw;
+				}
+				if (EvalSettings.EchoLevel > 0)
+					std::cout << "Load pixel map\n";
+
+				//load pixelmap and if existing pixel mask
+				Det.LoadPixelMap(EvalSettings.PixelMap_Path, EvalSettings.PixelMap_DataSet);
+				if (EvalSettings.DetDisturb) //Disturbation of Pixelmap for simulated data
+				{
+					Simulator Sim;
+					Sim.DisturbePixelMap(Det, EvalSettings.DetDisturb_Shift, EvalSettings.DetDisturb_Rot);
+				}
+				Det.Calc_kMap();
+				Det.LoadPixelMask(EvalSettings.PixelMask_Path, EvalSettings.PixelMask_Dataset);
 			}
-			Det.Calc_kMap();
-			Det.LoadPixelMask(EvalSettings.PixelMask_Path);
-			
 
 
 
@@ -292,52 +219,66 @@ namespace RunIAC
 			if (EvalSettings.EchoLevel > 0)
 				std::cout << "Load Hit Event List\n";
 
-			//Load Hit event list from xml-file
-			PrgSettings.LoadHitEventListFromFile(EvalSettings.XML_Path);
-
-			if (EvalSettings.InvertRotMatrix)
+			//Load Hit event list from xml-file (and invert Rot-matrix if requested)
 			{
-				if (EvalSettings.EchoLevel > 0)
-					std::cout << "Invert rotation matrices from Hit_Event_List\n";
-				PrgSettings.InvertRotationMatrices();
-			}
+				PrgSettings.LoadHitEventListFromFile(EvalSettings.XML_Path);
 
-			if (EvalSettings.RestrictStackToBoundaries)
-			{
-				if (EvalSettings.UpperBoundary > PrgSettings.HitEvents.size())
+				if (EvalSettings.InvertRotMatrix)
 				{
-					std::cerr << "ERROR: Upper Hit boundary exeeds number of hits in loaded XML file\n";
-					std::cerr << "    -> in Run_AutoCorr_DataEval()\n";
-					throw;
+					if (EvalSettings.EchoLevel > 0)
+						std::cout << "Invert rotation matrices from Hit_Event_List\n";
+					PrgSettings.InvertRotationMatrices();
+				}
+
+				if (EvalSettings.RestrictStackToBoundaries)
+				{
+					if (EvalSettings.UpperBoundary > PrgSettings.HitEvents.size())
+					{
+						std::cerr << "ERROR: Upper Hit boundary exeeds number of hits in loaded XML file\n";
+						std::cerr << "    -> in Run_AutoCorr_DataEval()\n";
+						throw;
+					}
+					else
+					{
+						StackSize = EvalSettings.UpperBoundary - EvalSettings.LowerBoundary;
+						lowerBound = EvalSettings.LowerBoundary;
+						upperBound = EvalSettings.UpperBoundary;
+					}
 				}
 				else
 				{
-					StackSize = EvalSettings.UpperBoundary - EvalSettings.LowerBoundary;
-					lowerBound = EvalSettings.LowerBoundary;
-					upperBound = EvalSettings.UpperBoundary;
+					StackSize = PrgSettings.HitEvents.size();
+					lowerBound = 0;
+					upperBound = StackSize;
 				}
 			}
-			else
-			{
-				StackSize = PrgSettings.HitEvents.size();
-				lowerBound = 0;
-				upperBound = StackSize;
-			}
+		
 		}
-
 		//check if fractional C(q) eval is required
 		if (EvalSettings.FractionalCq)
 		{
 			int Fractions_Num = StackSize / EvalSettings.SizeOfCqFraction;
 			
 			//To Implement
-
+			std::cerr << "Fractional C(q) is not implemented yet\n";
 			throw; //Implement remaining stuff
 		}
 		else
 		{
-			//Create averaged intensity
+			//Load or Create averaged intensity
+			if (EvalSettings.UseExistingAvInt)
 			{
+				PrgSettings.Echo("Load existing averaged intensity");
+				//Load avIntensity
+				delete[] Det.Intensity;
+				Det.Intensity = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
+				ArrayOperators::LoadArrayFromFile(EvalSettings.Out_AvIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+				//Apply Pixelmask
+				Det.ApplyPixelMask();
+			}
+			else
+			{
+				//Create avIntensity
 				Det.LoadAndAverageIntensity(PrgSettings.HitEvents, EvalSettings.PhotonOffset, EvalSettings.PhotonStep, lowerBound, upperBound, true);
 				
 				if (EvalSettings.Out_AvIntensity_Path != "")//save averaged intensity
@@ -349,6 +290,7 @@ namespace RunIAC
 				//Apply Pixelmask
 				Det.ApplyPixelMask();
 			}
+
 
 			if (EvalSettings.AngularAveraged)// Angular Averaged, 1D Mode
 			{
@@ -585,6 +527,9 @@ namespace RunIAC
 
 		//end of method
 	}
+
+
+
 
 	void Run_AC_SM_Full(AC1D & AC, CreateSM_Settings SM_Settings, Settings & PrgSettings)
 	{
