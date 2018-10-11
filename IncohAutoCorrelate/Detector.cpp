@@ -851,7 +851,7 @@ void Detector::CreateSparseHitList(float Threshold)
 		//	std::cout << "ERROR: I = " << I << "\n";
 		//}
 
-		if (I >= Threshold)
+		if (I >= Threshold && I > 0)
 		{
 			std::array< float, 4> TmpEntry;
 
