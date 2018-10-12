@@ -192,6 +192,55 @@ namespace Statistics
 		return GetAverageRatioOfPixelsWithHits(Options,RefDet,Offset,0,Options.HitEvents.size(), *&temp);
 	}
 
+	SpeckleContrastStatistics GetSpeckleContrastStatistics(Settings & Options, Detector & RefDet, unsigned int LowerBound, unsigned int UpperBound, float Offset, float Step)
+	{
+		SpeckleContrastStatistics SCS;
+
+		//Get number of masked pixel
+		SCS.NumberOfUnmaskedPixels = 0;
+		for (unsigned int i = 0; i < RefDet.DetectorSize[0] * RefDet.DetectorSize[1]; i++)
+		{
+			SCS.NumberOfUnmaskedPixels += RefDet.PixelMask[i];
+		}
+
+		//Preallocate outer vector
+		SCS.SCC_Statistics.resize(UpperBound - LowerBound);
+
+		//Loop through patterns --- can be parallized therefore clone det, ...
+		#pragma omp parallel for
+		for (unsigned int i = LowerBound; i < UpperBound; i++)
+		{
+			//Load Intensity
+			Detector Det(RefDet, true);
+			#pragma omp critical
+			{
+				Det.LoadIntensityData(&Options.HitEvents[i]);
+			}
+			Det.ApplyPixelMask();
+			//Loop through Pixel
+			for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
+			{
+				unsigned int Photons = ArrayOperators::ScalarPoissonSampling(Det.Intensity[j]);
+				if (Photons == 0)
+					continue;
+				//Check if propability-vector is large enought and expand if needed
+				while (Photons > SCS.SCC_Statistics[i].Probability.size())
+				{
+					SCS.SCC_Statistics[i].Probability.push_back(0);
+					if (Photons > SCS.Nmax)
+						SCS.Nmax = Photons; // store maximum of photons found per pixel
+				}
+				//Adds entry to photon-count histogram
+				SCS.SCC_Statistics[i].Probability[Photons - 1] += 1.0/((double)SCS.NumberOfUnmaskedPixels);
+				//updates mean number of photons
+				SCS.SCC_Statistics[i].MeanPhotonDensity += (double)Photons / ((double)SCS.NumberOfUnmaskedPixels);
+			}
+
+		}
+
+		return SCS;
+	}
+
 
 
 

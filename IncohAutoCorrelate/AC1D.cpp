@@ -250,7 +250,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 		float SHLsizeQuot = ((float)Det.SparseHitList.size()) / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1]));
 		if (SHLsizeQuot < 0.0075f) // (switch for SparseHitList.size / DetSize > p(0.0075))
 		{//CPU Mode
-			std::cout << "CPU MODE\n";
+			//std::cout << "CPU MODE\n";
 			for (unsigned int j = 0; j < Det.SparseHitList.size(); j++)
 			{
 				for (unsigned int k = j; k < Det.SparseHitList.size(); k++)
@@ -295,6 +295,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 		}
 		else //GPU Mode
 		{
+			//std::cout << "GPU MODE\n";
 			double Multiplicator = 100; //1 is sufficient for photon discretised values (only integer possible, nearest neighbour), 100 should be good for linear interpol.
 
 			int MapAndReduce = 10000;
@@ -450,13 +451,7 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 	{
 		AC_Threads[i].join();
 	}
-	//ProfileTime profiler;
-	//std::cout << "launch Worker 0 testwise\n";
-	//profiler.Tic();
-	//Calculate_AC_UW_Mapped(std::ref(Options), std::ref(RefDet), std::ref(AC_Map[0]), WorkerBounds[0][0], WorkerBounds[0][1], IterpolMode, Photonisation, Shape.Max_Q, Shape.dq_per_Step);
-	//profiler.Toc(true);
-	//std::cout << "done\n";
-	
+
 
 	//create AC_UW
 	delete[] AC_UW;

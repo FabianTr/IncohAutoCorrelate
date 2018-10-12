@@ -528,9 +528,7 @@ namespace RunIAC
 		//end of method
 	}
 
-
-
-
+	
 	void Run_AC_SM_Full(AC1D & AC, CreateSM_Settings SM_Settings, Settings & PrgSettings)
 	{
 		ProfileTime Profiler;

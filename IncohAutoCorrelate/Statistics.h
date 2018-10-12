@@ -71,6 +71,20 @@ namespace Statistics
 	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset, double & StDev);
 	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset);
 	
+ 
+	struct SpeckleContrastStatistics
+	{
+		struct SCC_Pattern
+		{
+			std::vector<double> Probability;
+			double MeanPhotonDensity;
+		};
+		std::vector<SCC_Pattern> SCC_Statistics;
+		unsigned int Nmax = 1;
+
+		unsigned int NumberOfUnmaskedPixels = 0;
+	};
+	SpeckleContrastStatistics GetSpeckleContrastStatistics(Settings & Options, Detector &RefDet, unsigned int LowerBound, unsigned int UpperBound, float Offset = 0.0f, float Step = 1.0f);
 
 
 }

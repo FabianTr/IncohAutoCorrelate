@@ -423,20 +423,44 @@ void Simulate(Settings & Options, std::string PixelMap_Path, std::string PixMapD
 }
 
 
-void QDTests()
+void QDTests(Settings & Options)
 {
+	std::cout << "Do Speckle contrast stuff...\n";
 	Detector Det;
 	Det.LoadPixelMap("/home/trostfab/scratch/LU56/PixelMap_ePix_LU56_V1.h5","PixelMap");
 	Det.LoadPixelMask("/home/trostfab/scratch/LU56/PixelMask_ePix_V1.h5", "data/data");
+	Options.LoadHitEventListFromFile("/home/trostfab/scratch/LU56/UnorientetGainCorrectedLAP.xml");
 
-	//for (int i = 0; i < Det.DetectorSize[0]; i++)
-	//{
-	//	for (int j = 0; j < Det.DetectorSize[1]; j++)
-	//	{
-	//		std::cout << Det.PixelMask[Det.DetectorSize[1] * i + j] << " ";
-	//	}
-	//	std::cout << "\n";
-	//}
+
+	Statistics::SpeckleContrastStatistics SCS;
+
+	SCS = Statistics::GetSpeckleContrastStatistics(Options, Det, 0, Options.HitEvents.size());
+
+	std::ofstream myfile;
+	myfile.open("/home/trostfab/scratch/LU56/eval/SCS.csv");
+
+	for (int i = 0; i < SCS.SCC_Statistics.size(); i++)
+	{
+		myfile << SCS.SCC_Statistics[i].MeanPhotonDensity << "; ";
+		for (int j = 0; j < SCS.Nmax; j++)
+		{
+			if (SCS.SCC_Statistics[i].Probability.size() > j)
+			{
+				myfile << SCS.SCC_Statistics[i].Probability[j];
+			}
+			else
+			{
+				myfile << 0;
+			}
+			if (j < SCS.Nmax - 1)
+			{
+				myfile << ", ";
+			}
+		}
+		myfile << "\n";
+	}
+	myfile.close();
+	
 }
 
 
@@ -591,7 +615,7 @@ int main(int argc, char** argv)
 	}
 	else if (Arg1 == "qdtest" || Arg1 == "-qdtest" )
 	{
-		QDTests();
+		QDTests(Options);
 		return 0;
 	}
 	else
