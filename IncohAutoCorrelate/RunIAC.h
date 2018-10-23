@@ -9,7 +9,14 @@ namespace RunIAC
 {
 
 
+	struct IAC_Report
+	{
+		float dQperVox = 0.0;
+		unsigned int SmallCqMeshSize[3];
+		unsigned int FinalMeshSize = 101;
 
+
+	};
 
 	struct CreateAC_Settings
 	{
@@ -64,6 +71,8 @@ namespace RunIAC
 
 		bool InvertRotMatrix = false;
 
+		bool UsePixelMask_as_Flatfield = false;
+
 		//Input Paths
 		std::string XML_Path = "";
 		std::string PixelMap_Path = "";//H5
@@ -100,7 +109,7 @@ namespace RunIAC
 
 
 	};
-	void Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings);
+	IAC_Report Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings);
 
 
 	//Single Molecule

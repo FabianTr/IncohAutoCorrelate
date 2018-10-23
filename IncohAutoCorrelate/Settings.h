@@ -30,6 +30,25 @@ public:
 	Settings();
 	~Settings();
 
+	struct HitEvent
+	{
+		float RotMatrix[9]; // in rez space [x1 y1 z1 x2 y2 z2 x3 y3 z3] so it is multiplied as: q = M * q_local = {{q_local_1 * x1 + q_local_2 * y1 + q_local_3 * z1},{q_local_1 * x2 + ...},  {...}}
+		std::string Filename;
+		std::string Dataset;
+		int Event;
+		int SerialNumber;
+
+		float MeanIntensity = -1.0f;
+		int PhotonCount = -1;
+
+		float HitsPixelRatio = -1.0f; // Number of Pixels with hits / Number of Pixel
+	};
+
+	std::vector<HitEvent> HitEvents;
+
+	Eigen::Matrix<float, 3, 3> MReference;
+	bool echo = true;
+
 	void LoadStreamFile(char * Filename, char* DatasetFIntensity, bool InclMultiHits); //Filename for StreamFile, DatasetFIntensity for the Intensity in CXIFile, include Hits with multiple segmented crystals
 	std::array<unsigned int,2> ScanH5Files(std::vector<std::string> Filenames, std::vector<std::string> Datasets, bool ResumeOnError = false); //Loads all entrys out of H5 files, returns the 2x2 DetectorSize
 	void Echo(std::string output);
@@ -51,23 +70,9 @@ public:
 
 
 
-	bool echo = true;
 
-	struct HitEvent
-	{
-		float RotMatrix[9]; // in rez space [x1 y1 z1 x2 y2 z2 x3 y3 z3] so it is multiplied as: q = M * q_local = {{q_local_1 * x1 + q_local_2 * y1 + q_local_3 * z1},{q_local_1 * x2 + ...},  {...}}
-		std::string Filename;
-		std::string Dataset;
-		int Event;
-		int SerialNumber;
 
-		float MeanIntensity = -1.0f;
-		int PhotonCount = -1;
 
-		float HitsPixelRatio = -1.0f; // Number of Pixels with hits / Number of Pixel
-	};
-
-	std::vector<HitEvent> HitEvents;
 	void SafeHitEventListToFile(char* Filename);
 	void SafeHitEventListToFile(std::string Filename);
 	void SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList);
@@ -121,6 +126,9 @@ public:
 	//
 
 
-	Eigen::Matrix<float, 3, 3> MReference;
+	//Sort 
+	std::vector<unsigned int> SortHitEventsByIntensity();
+
+
 };
 

@@ -460,7 +460,7 @@ void QDTests(Settings & Options)
 		myfile << "\n";
 	}
 	myfile.close();
-	
+	std::cout << "Done";
 }
 
 
@@ -598,12 +598,12 @@ int main(int argc, char** argv)
 			return MainRunModes::CreateAllPixelHistograms(Arg2, Options);
 		}
 	}
-	else if (Arg1 == "gainandlap" || Arg1 == "-gainandlap" || Arg1 == "gl" || Arg1 == "-gl")
+	else if (Arg1 == "gainandlapcorrection" || Arg1 == "-gainandlapcorrection" || Arg1 == "glc" || Arg1 == "-glc")
 	{
 		std::cout << "run gain correction and LAP-photon counting\n";
 		if (argc < 3)
 		{
-			std::cerr << "-GainAndLAP requires one additional argument (\"Settings.xml\")\n";
+			std::cerr << "-GainAndLAPCorrection requires one additional argument (\"Settings.xml\")\n";
 			std::cerr << "Additional Info: -pixelwisehistograms uses the \"root.StatisticsSettings.PixelHistograms. (...)\" part.\n ";
 			return -1;
 		}
@@ -611,6 +611,49 @@ int main(int argc, char** argv)
 		{
 			std::string Arg2 = argv[2];
 			return MainRunModes::GainCorrectionAndLAP(Arg2, Options);
+		}
+	}
+	else if (Arg1 == "gaincorrection" || Arg1 == "-gaincorrection" || Arg1 == "gc" || Arg1 == "-gc")
+	{
+		std::cout << "run gain correction\n";
+		if (argc < 3)
+		{
+			std::cerr << "-GainPCorrection requires one additional argument (\"Settings.xml\")\n";
+			std::cerr << "Additional Info: -pixelwisehistograms uses the \"root.StatisticsSettings.PixelHistograms. (...)\" part.\n ";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			return MainRunModes::GainCorrection(Arg2, Options);
+		}
+	}
+	else if (Arg1 == "sortbyintensity" || Arg1 == "-sortbyintensity" || Arg1 == "si" || Arg1 == "-si")
+	{
+		if (argc < 4)
+		{
+			std::cerr << "-SortByIntensity requires two additional arguments (\"EventList.xml\" \"Output.csv\")\n";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			std::string Arg3 = argv[3];
+			return MainRunModes::SortHitsByMeanIntensity(Arg2, Arg3, Options);
+		}
+	}
+	else if (Arg1 == "sortxmlbyintensity" || Arg1 == "-sortxmlbyintensity" || Arg1 == "six" || Arg1 == "-six")
+	{
+		if (argc < 4)
+		{
+			std::cerr << "-SortXmlByIntensity requires two additional arguments (\"EventList.xml\" \"SortedEventList.xmli\")\n";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			std::string Arg3 = argv[3];
+			return MainRunModes::SortXMLHitsByMeanIntensity(Arg2, Arg3, Options);
 		}
 	}
 	else if (Arg1 == "qdtest" || Arg1 == "-qdtest" )

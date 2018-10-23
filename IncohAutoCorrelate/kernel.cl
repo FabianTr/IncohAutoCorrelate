@@ -3,6 +3,7 @@
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 __constant double PI = 3.1415926535897932;
+__constant bool IgnoreQZero = true;
 
 // Atomic add of floats or double
 // Adapted from:
@@ -219,7 +220,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 
 	for (int i = 0; i < DetSize; i++) //Loop over all Pixel //< DetSize
 	{
-		if (i == ind) //exclude zeroth peak need to be set to infinity afterwards
+		if (i == ind && IgnoreQZero) //exclude zeroth peak need to be set to infinity afterwards
 		{
 			continue;
 		}
@@ -421,7 +422,7 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 
 	for (unsigned int i = 0; i < ListSize; i++)
 	{
-		if (i == ind) // ignore q = 0
+		if (i == ind && IgnoreQZero) // ignore q = 0
 		{
 			continue;
 		}
@@ -533,7 +534,7 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 	for (int i = 0; i < DetSize; i++) //Loop over all Pixel //< DetSize
 	{
-		if (i == ind) //exclude zeroth peak need to be set to infinity afterwards
+		if (i == ind && IgnoreQZero) //exclude zeroth peak need to be set to infinity afterwards
 		{
 			continue;
 		}
@@ -736,7 +737,7 @@ __kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 
 	for (int i = 0; i < HLSize; i++) //Loop over all Pixel //< DetSize
 	{
-		if (i == ind) //exclude zeroth peak need to be set to infinity afterwards
+		if (i == ind && IgnoreQZero) //exclude zeroth peak need to be set to infinity afterwards
 		{
 			continue;
 		}

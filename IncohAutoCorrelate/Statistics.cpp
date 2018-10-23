@@ -218,9 +218,10 @@ namespace Statistics
 			}
 			Det.ApplyPixelMask();
 			//Loop through Pixel
+			ArrayOperators::DiscretizeToPhotons(Det.Intensity, Offset, Step, Det.DetectorSize[0] * Det.DetectorSize[1]);
 			for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
 			{
-				unsigned int Photons = ArrayOperators::ScalarPoissonSampling(Det.Intensity[j]);
+				unsigned int Photons = Det.Intensity[j];
 				if (Photons == 0)
 					continue;
 				//Check if propability-vector is large enought and expand if needed

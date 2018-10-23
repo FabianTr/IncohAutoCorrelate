@@ -17,6 +17,11 @@ namespace MainRunModes
 	//Helper
 	std::vector<std::string> CSV_Splitter(std::string Input, std::string delimiter);
 
+	struct Create_MiscSettings
+	{
+		std::string ReportPath = "";
+	};
+
 	struct AllSettings
 	{
 		//Evaluator
@@ -27,6 +32,9 @@ namespace MainRunModes
 		Statistics::StatisticsSettings StatisticsSettings;
 		//PPP.LAP
 		PPP::Create_LAPSettings PPPLAPSettings;
+
+		//Misc
+		Create_MiscSettings MiscSettings;
 
 	};
 
@@ -58,10 +66,18 @@ namespace MainRunModes
 	//DataProcessing
 	int GainCorrectionAndLAP(std::string Arg1, Settings &Options);
 
+	int GainCorrection(std::string Arg1, Settings &Options);
 	//->Statistics
 	int CreateAllPixelHistograms(std::string ConfigFile, Settings &Options);
 
 
 	//EVALUATE - AUTOCORRELATION mode
 	int AutoCorrelateData(std::string ConfigFile, Settings &Options);
+
+
+
+	//Sort Events
+	int SortHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options);//xml_in, csv_out
+
+	int SortXMLHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options);//xml_in, xml_out
 }

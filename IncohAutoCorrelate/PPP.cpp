@@ -108,7 +108,7 @@ namespace PPP
 		ProcessData_PF_LAP(Det, LAPSettings, XML_In);
 	}
 
-	void ProcessData_PF_LAP(Detector & Det, Create_LAPSettings LAPSettings, std::string XML_In)
+	void ProcessData_PF_LAP(Detector & Det, Create_LAPSettings LAPSettings, std::string XML_In, bool GainOnly)
 	{
 		std::string XML_Out = LAPSettings.Output_NewXML;
 		std::string H5_Out = LAPSettings.Output_Path;
@@ -163,7 +163,10 @@ namespace PPP
 				GainCorrection(Det, LAPSettings.GainMapPath, LAPSettings.DatasetOffset, LAPSettings.DatasetGain, OptionsIn); //Perform Gain Correction
 			}
 			//Run LAP
-			PhotonFinder_LargestAdjacentPixel(Det.Intensity, DetectorPanels, FullDetSize, ADU_perPhoton, SeedThershold, CombinedThershold);
+			if (!GainOnly)
+			{
+				PhotonFinder_LargestAdjacentPixel(Det.Intensity, DetectorPanels, FullDetSize, ADU_perPhoton, SeedThershold, CombinedThershold);
+			}
 			//Create Event 
 			Settings::HitEvent t_Event;
 

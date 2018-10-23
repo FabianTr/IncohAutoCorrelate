@@ -950,7 +950,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		{
 			for (unsigned int j = i; j < SparseHitList.size(); j++)
 			{
-				if (j == i)
+				if (j == i & Ignore_QZero)
 					continue;
 				float q[3];
 				//float RM[9] = { 1,0,0,0,1,0,0,0,1 };//TODO IMPLEMENT ROTATION MATRIX -> THIS IS A DUMMY

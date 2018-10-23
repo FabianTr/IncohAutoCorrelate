@@ -1,6 +1,7 @@
 #include "MainRunModes.h"
 
 #include <iostream>
+#include <fstream>
 
 #include "ProfileTime.h"
 #include "Detector.h"
@@ -71,6 +72,7 @@ RunIAC::CreateDataEval_Settings MainRunModes::LoadEvaluationSettings(std::string
 	EVS.RestrictStackToBoundaries = pt.get<bool>("root.EvalSettings.Misc.RestrictStackToBoundaries", false);
 	EVS.LowerBoundary = pt.get<unsigned int>("root.EvalSettings.Misc.LowerBoundary", 0);
 	EVS.UpperBoundary = pt.get<unsigned int>("root.EvalSettings.Misc.UpperBoundary", 10);
+	EVS.UsePixelMask_as_Flatfield = pt.get<bool>("root.EvalSettings.Misc.UsePixelmaskAsFlatField", false);
 	EVS.FractionalCq = pt.get<bool>("root.EvalSettings.Misc.FractionalCq",false);
 	EVS.SizeOfCqFraction = pt.get<unsigned int>("root.EvalSettings.Misc.SizeOfCqFraction",10);
 	EVS.InvertRotMatrix = pt.get<bool>("root.EvalSettings.Misc.InvertRotMatrix", false);
@@ -251,6 +253,8 @@ boost::property_tree::ptree MainRunModes::Example_Evaluation_Config_PT(boost::pr
 		EES.LowerBoundary = 0;
 		EES.UpperBoundary = 10;
 
+		EES.UsePixelMask_as_Flatfield = false;
+
 		EES.FractionalCq = false;
 		EES.SizeOfCqFraction = 10;
 
@@ -300,6 +304,8 @@ boost::property_tree::ptree MainRunModes::Example_Evaluation_Config_PT(boost::pr
 		pt.put("root.EvalSettings.Misc.RestrictStackToBoundaries", EES.RestrictStackToBoundaries);
 		pt.put("root.EvalSettings.Misc.LowerBoundary", EES.LowerBoundary);
 		pt.put("root.EvalSettings.Misc.UpperBoundary", EES.UpperBoundary);
+
+		pt.put("root.EvalSettings.Misc.UsePixelmaskAsFlatField", EES.UsePixelMask_as_Flatfield);
 
 		pt.put("root.EvalSettings.Misc.FractionalCq", EES.FractionalCq);
 		pt.put("root.EvalSettings.Misc.SizeOfCqFraction", EES.SizeOfCqFraction);
@@ -458,6 +464,22 @@ int MainRunModes::GainCorrectionAndLAP(std::string Arg1, Settings & Options)
 	return 0;
 }
 
+int MainRunModes::GainCorrection(std::string Arg1, Settings & Options)
+{
+	AllSettings AS = LoadSettings(Arg1, Options);
+
+	Detector Det;
+	Det.LoadPixelMap(AS.EvaluationSettings.PixelMap_Path, AS.EvaluationSettings.PixelMap_DataSet);
+	Det.LoadPixelMask(AS.EvaluationSettings.PixelMask_Path, AS.EvaluationSettings.PixelMask_Dataset);
+
+	ProfileTime Profiler;
+	Profiler.Tic();
+
+	PPP::ProcessData_PF_LAP(Det, AS.PPPLAPSettings, AS.EvaluationSettings.XML_Path,false);
+	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
+	return 0;
+}
+
 int MainRunModes::CreateAllPixelHistograms(std::string ConfigFile, Settings & Options)
 {
 	RunIAC::CreateDataEval_Settings EVS = LoadEvaluationSettings(ConfigFile, Options);
@@ -519,19 +541,99 @@ int MainRunModes::Create_XMLHitlist_from_H5Stack(std::vector<std::string> H5_Pat
 //Auto correlate
 int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 {
+	
 	//Setup Open CL Stuff
 	Options.SetUp_OpenCL();
 	//load Config File
-	RunIAC::CreateDataEval_Settings EVS = LoadEvaluationSettings(ConfigFile, Options);
+	//RunIAC::CreateDataEval_Settings EVS = LoadEvaluationSettings(ConfigFile, Options);
+	MainRunModes::AllSettings EVS = LoadSettings(ConfigFile, Options);
 
-	RunIAC::Run_AutoCorr_DataEval(Options, EVS);
+	ProfileTime Profiler;
+	Profiler.Tic();
+	RunIAC::IAC_Report Report;
+	Report = RunIAC::Run_AutoCorr_DataEval(Options, EVS.EvaluationSettings);
+	double TimeNeeded = Profiler.Toc(false);
 
+	//save Report
+	if (EVS.MiscSettings.ReportPath != "")
+	{
+		std::ofstream file;
+		file.open(EVS.MiscSettings.ReportPath);
+
+		file << " *** IAC - Report (autocorrelation mode) *** \n\n";
+		
+		if (EVS.EvaluationSettings.AngularAveraged) //Aav
+		{
+			file << "Angular averaged (1D - Mode)\n";
+			file << "Vector Length: " << Report.FinalMeshSize << "\n";
+			file << "dq/dx = " << Report.dQperVox << "  (dq/dx is normalized to be 2 for 180° between k1 and k2)\n";
+
+		}
+		else //3D
+		{
+			file << "AC-Volume (3D - Mode)\n";
+			file << "Final Mesh Size: " << Report.FinalMeshSize << " x "<< Report.FinalMeshSize << " x " << Report.FinalMeshSize << "\n";
+			file << "dq/dVox = " << Report.dQperVox << "  (dq/dVox is normalized to be 2 for 180° between k1 and k2)\n";
+			file << "small C(q) Mesh Size: " << Report.SmallCqMeshSize[0] << " x " << Report.SmallCqMeshSize[1] << " x " << Report.SmallCqMeshSize[2] << "\n";
+
+
+		}
+		file << "\nEvaluation performed within " << TimeNeeded << "s (" << TimeNeeded / (3600) << "h)\n\n";
+
+
+		file.close();
+	}
 
 	return 0;
 }
 
 
 
+//Sort Events
+int MainRunModes::SortHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options)
+{
+	std::cout << "Sort XML-EventList by mean intensity and save output as csv\n";
+	Options.LoadHitEventListFromFile(Arg1);
+	std::vector<unsigned int> SortedInd = Options.SortHitEventsByIntensity();
+
+	std::ofstream f;
+	f.open(Arg2);
+
+	f << "XMLIndex, MeanIntensity, Photons, H5-Path, Dataset, H5Index \n";
+
+	for (unsigned int i = 0; i < SortedInd.size(); i++)
+	{
+		f << SortedInd[i] << ", " << Options.HitEvents[SortedInd[i]].MeanIntensity << ", " << Options.HitEvents[SortedInd[i]].PhotonCount << ", " << Options.HitEvents[SortedInd[i]].Filename << ", " << Options.HitEvents[SortedInd[i]].Dataset << ", " << Options.HitEvents[SortedInd[i]].Event <<"\n";
+	}
+
+	f.close();
+	std::cout << "Sorted List saved as \"" << Arg2 << "\"\n";
+	std::cout << "Done.\n";
+	return 0;
+}
+
+int MainRunModes::SortXMLHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings & Options)
+{
+	std::cout << "Sort XML-EventList by mean intensity and save output new XML-list\n";
+	Options.LoadHitEventListFromFile(Arg1);
+	std::vector<unsigned int> SortedInd = Options.SortHitEventsByIntensity();
+
+	Settings NewList;
+	NewList.HitEvents.reserve(SortedInd.size());
+
+	for (unsigned int i = 0; i < SortedInd.size(); i++)
+	{
+		NewList.HitEvents.push_back(Options.HitEvents[SortedInd[i]]);
+	}
+
+	NewList.SafeHitEventListToFile(Arg2);
+
+	std::cout << "Sorted Hit-Event-List (XML) saved as \"" << Arg2 << "\"\n";
+	std::cout << "Done.\n";
+	return 0;
+
+	return 0;
+}
 
 
 

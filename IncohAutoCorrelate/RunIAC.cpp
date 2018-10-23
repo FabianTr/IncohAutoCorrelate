@@ -168,8 +168,10 @@ namespace RunIAC
 		return (unsigned int)dims[0];
 	}
 
-	void Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings)
+	IAC_Report Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings)
 	{
+		IAC_Report Report;
+
 		ProfileTime ProfileLevel_0;
 		ProfileTime ProfileLevel_1;
 		Detector Det;
@@ -266,7 +268,7 @@ namespace RunIAC
 		else
 		{
 			//Load or Create averaged intensity
-			if (EvalSettings.UseExistingAvInt)
+			if (EvalSettings.UseExistingAvInt && !EvalSettings.UsePixelMask_as_Flatfield)
 			{
 				PrgSettings.Echo("Load existing averaged intensity");
 				//Load avIntensity
@@ -276,9 +278,10 @@ namespace RunIAC
 				//Apply Pixelmask
 				Det.ApplyPixelMask();
 			}
-			else
+			else if(!EvalSettings.UsePixelMask_as_Flatfield)
 			{
 				//Create avIntensity
+				PrgSettings.Echo("Load and averaged all Intensities");
 				Det.LoadAndAverageIntensity(PrgSettings.HitEvents, EvalSettings.PhotonOffset, EvalSettings.PhotonStep, lowerBound, upperBound, true);
 				
 				if (EvalSettings.Out_AvIntensity_Path != "")//save averaged intensity
@@ -289,6 +292,18 @@ namespace RunIAC
 				}
 				//Apply Pixelmask
 				Det.ApplyPixelMask();
+			}
+			else //Use Pixelmask as Flatfield
+			{
+				PrgSettings.Echo("Use pixel-mask as flat-field (instead of averaged intensity)");
+
+				delete[] Det.Intensity;
+				Det.Intensity = new float[Det.DetectorSize[1] * Det.DetectorSize[0]]();
+				for (unsigned int i = 0; i < Det.DetectorSize[0]* Det.DetectorSize[1]; i++)
+				{
+					Det.Intensity[i] = (float)Det.PixelMask[i];
+				}
+				Det.Checklist.Intensity = true;
 			}
 
 
@@ -372,6 +387,12 @@ namespace RunIAC
 						std::cout << " --> Vetor Length = " << Vector_AC.Shape.Size << "\n";
 					}
 				}
+				
+				Report.dQperVox = Vector_AC.Shape.dq_per_Step;
+				Report.FinalMeshSize = Vector_AC.Shape.Size;
+				Report.SmallCqMeshSize[0] = 0;
+				Report.SmallCqMeshSize[1] = 0;
+				Report.SmallCqMeshSize[2] = 0;
 				// </Q Vector>
 				if (EvalSettings.EchoLevel > 0)
 				{
@@ -510,6 +531,11 @@ namespace RunIAC
 				{
 					std::cout << "WARNING: no path set for final AC => Results have not been saved!\n";
 				}
+				Report.dQperVox = AC_uw.Shape.dq_per_Voxel;
+				Report.FinalMeshSize = AC_uw.Shape.Size_AB;
+				Report.SmallCqMeshSize[0] = Mesh_CQ.Shape.Size_AB;
+				Report.SmallCqMeshSize[1] = Mesh_CQ.Shape.Size_AB;
+				Report.SmallCqMeshSize[2] = Mesh_CQ.Shape.Size_C;
 				delete[] FinalAC;
 				// </Apply C(q) to AC_uw>
 
@@ -520,12 +546,13 @@ namespace RunIAC
 				}
 				//end of eval
 
-				return;
+				return Report;
 			}
 
 		}
 
 		//end of method
+		return Report; //information about the Dataoutput
 	}
 
 	

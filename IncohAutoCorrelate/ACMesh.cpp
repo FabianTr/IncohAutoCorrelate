@@ -177,23 +177,6 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 		std::swap(Shape.k_A, Shape.k_B);
 	}
 
-
-	//if      (Det.Max_q[0] > Det.Max_q[1] && Det.Max_q[0] > Det.Max_q[2])
-	//	Shape.k_A = 0;
-	//else if (Det.Max_q[1] > Det.Max_q[2] && Det.Max_q[1] > Det.Max_q[0])
-	//	Shape.k_A = 1;
-	//else if (Det.Max_q[2] > Det.Max_q[0] && Det.Max_q[2] > Det.Max_q[1])
-	//	Shape.k_A = 2;
-	////Find smallest q-axis:
-	//if      (Det.Max_q[0] < Det.Max_q[1] && Det.Max_q[0] < Det.Max_q[2])
-	//	Shape.k_C = 0;
-	//else if (Det.Max_q[1] < Det.Max_q[2] && Det.Max_q[1] < Det.Max_q[0])
-	//	Shape.k_C = 1;
-	//else if (Det.Max_q[2] < Det.Max_q[0] && Det.Max_q[2] < Det.Max_q[1])
-	//	Shape.k_C = 2;
-	// calculate the second largest q-axis
-	//Shape.k_B = 3 - Shape.k_A - Shape.k_C;
-	//Set Size
 	Shape.Size_AB = PerpSize + 2;//+2 padding
 
 

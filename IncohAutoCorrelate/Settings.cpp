@@ -522,14 +522,6 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 }
 
 
-
-
-
-
-
-
-
-
 void Settings::InvertRotationMatrices()
 {
 
@@ -552,7 +544,6 @@ void Settings::InvertRotationMatrices()
 	}
 
 }
-
 
 void Settings::LoadHitEventListFromFile(char * Filename)
 {
@@ -741,4 +732,32 @@ void Settings::LoadHitEventListFromFile(std::string Filename)
 
 		//}
 	}
+}
+
+
+std::vector<unsigned int> Settings::SortHitEventsByIntensity()
+{
+
+	std::vector<std::pair<float, unsigned int>> IntIndPair;
+	IntIndPair.resize(HitEvents.size());
+
+	#pragma omp parallel for
+	for (unsigned int i = 0; i < HitEvents.size(); i++)
+	{
+		IntIndPair[i] = { HitEvents[i].MeanIntensity ,i };
+	}
+
+	std::sort(IntIndPair.begin(), IntIndPair.end(), [](const std::pair<float, unsigned int> & a, const std::pair<float, unsigned int> & b) {return a.first > b.first; });
+	
+	std::vector<unsigned int> SortedInd;
+	SortedInd.resize(HitEvents.size());
+
+	#pragma omp parallel for
+	for (unsigned int i = 0; i < HitEvents.size(); i++)
+	{
+		SortedInd[i] = IntIndPair[i].second;
+	}
+
+
+	return SortedInd;
 }
