@@ -70,7 +70,6 @@ namespace RunIAC
 		unsigned int SizeOfCqFraction = 100;
 
 		bool InvertRotMatrix = false;
-
 		bool UsePixelMask_as_Flatfield = false;
 
 		//Input Paths

@@ -950,8 +950,6 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		{
 			for (unsigned int j = i; j < SparseHitList.size(); j++)
 			{
-				if (j == i & Ignore_QZero)
-					continue;
 				float q[3];
 				//float RM[9] = { 1,0,0,0,1,0,0,0,1 };//TODO IMPLEMENT ROTATION MATRIX -> THIS IS A DUMMY
 
@@ -1286,16 +1284,6 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 
 		if (Events[i].MeanIntensity > MaxWeight)
 			MaxWeight = Events[i].MeanIntensity;
-
-
-		//if (i < 20)
-		//{
-		//	std::cout << Rot_and_Weight[ind + 0] << "   " << Rot_and_Weight[ind + 1] << "   " << Rot_and_Weight[ind + 2] << "\n";
-		//	std::cout << Rot_and_Weight[ind + 3] << "   " << Rot_and_Weight[ind + 4] << "   " << Rot_and_Weight[ind + 5] << "\n";
-		//	std::cout << Rot_and_Weight[ind + 6] << "   " << Rot_and_Weight[ind + 7] << "   " << Rot_and_Weight[ind + 8] << "\n";
-		//	std::cout << Rot_and_Weight[ind + 9] << ";\n";
-		//	std::cout << "\n";
-		//}
 
 		ind += 10;
 	}

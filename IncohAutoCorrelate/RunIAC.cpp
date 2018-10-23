@@ -268,7 +268,7 @@ namespace RunIAC
 		else
 		{
 			//Load or Create averaged intensity
-			if (EvalSettings.UseExistingAvInt && !EvalSettings.UsePixelMask_as_Flatfield)
+			if (EvalSettings.UseExistingAvInt && !EvalSettings.UsePixelMask_as_Flatfield) //load existing avIntensity (flat field)
 			{
 				PrgSettings.Echo("Load existing averaged intensity");
 				//Load avIntensity
@@ -278,9 +278,8 @@ namespace RunIAC
 				//Apply Pixelmask
 				Det.ApplyPixelMask();
 			}
-			else if(!EvalSettings.UsePixelMask_as_Flatfield)
+			else if(!EvalSettings.UsePixelMask_as_Flatfield)//Create avIntensity
 			{
-				//Create avIntensity
 				PrgSettings.Echo("Load and averaged all Intensities");
 				Det.LoadAndAverageIntensity(PrgSettings.HitEvents, EvalSettings.PhotonOffset, EvalSettings.PhotonStep, lowerBound, upperBound, true);
 				
@@ -293,7 +292,7 @@ namespace RunIAC
 				//Apply Pixelmask
 				Det.ApplyPixelMask();
 			}
-			else //Use Pixelmask as Flatfield
+			else //Use Pixelmask as avIntensity (flat field)
 			{
 				PrgSettings.Echo("Use pixel-mask as flat-field (instead of averaged intensity)");
 
@@ -342,7 +341,12 @@ namespace RunIAC
 				bool RememberEchoLevel = PrgSettings.echo;
 				if (EvalSettings.EchoLevel < 1)
 					PrgSettings.echo = false;
-				Vector_AC.Calculate_AC_UW_MR(PrgSettings, Det, AvInterpol, EvalSettings.PhotonOffset, EvalSettings.PhotonStep);
+
+				std::array<float, 2> Photonisation;
+				Photonisation[0] = EvalSettings.PhotonOffset;
+				Photonisation[1] = EvalSettings.PhotonStep;
+
+				Vector_AC.Calculate_AC_UW_MR(PrgSettings, Det, AvInterpol, Photonisation);
 				PrgSettings.echo = RememberEchoLevel;
 
 				if (EvalSettings.EchoLevel > 0)
@@ -413,7 +417,7 @@ namespace RunIAC
 				smallMesh.CreateSmallMesh_CofQ_ForDetector(Det, EvalSettings.MeshSize, EvalSettings.QZoom);
 
 				Detector::AutoCorrFlags Flags;
-				Flags.InterpolationMode = Settings::NearestNeighbour;
+				Flags.InterpolationMode = Settings::NearestNeighbour; //TODO implement more modes
 				Det.AutoCorrelate_CofQ_SmallMesh(smallMesh, Flags, PrgSettings);
 
 				//save small C(q)

@@ -32,17 +32,13 @@ public:
 
 	MeshShape Shape;
 //Functions
-	void CreateSmallMeshForDetector(Detector & Det, int PerpSize);
-	void CreateSmallMeshForDetector(Detector & Det, int PerpSize, float q_Zoom);
+	void CreateSmallMeshForDetector(Detector & Det, int PerpSize, float q_Zoom = 1.0f);
 
-	void CreateBigMeshForDetector(Detector & Det, int EdgeSize);
-	void CreateBigMeshForDetector(Detector & Det, int EdgeSize, float q_Zoom);
+	void CreateBigMeshForDetector(Detector & Det, int EdgeSize, float q_Zoom = 1.0f);
 
-	void CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize);
-	void CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize, float q_Zoom);
+	void CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize, float q_Zoom = 1.0f);
 
-	void CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize);
-	void CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, float q_Zoom);
+	void CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, float q_Zoom = 1.0f);
 
 	void Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode);
 	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode );

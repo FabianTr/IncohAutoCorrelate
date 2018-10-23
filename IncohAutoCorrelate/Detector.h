@@ -18,13 +18,9 @@
 class Detector
 {
 private:
-	const bool Ignore_QZero = true;
-
 	//Pixelmap Stuff
 	struct XMapExtremeV { float max_x, min_x, max_y, min_y, max_z, min_z; };
 	XMapExtremeV PixelMapExtend;
-	inline float GetPixelPos(int dimension, int i_x, int i_y);
-	inline float GetkVal(int dimension, int i_x, int i_y);
 	void Calc_PixelMapExtremeValues();
 
 

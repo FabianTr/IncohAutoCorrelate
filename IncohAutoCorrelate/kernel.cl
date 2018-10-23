@@ -3,7 +3,6 @@
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 __constant double PI = 3.1415926535897932;
-__constant bool IgnoreQZero = true;
 
 // Atomic add of floats or double
 // Adapted from:
@@ -208,23 +207,8 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 
 	float INT_ind = IntensityData[ind];
 
-
-
-
-
-	//int N = 10;
-	//int n = (ind*777)%N ;
-	//int i = n;
-	//do{
-
-
 	for (int i = 0; i < DetSize; i++) //Loop over all Pixel //< DetSize
 	{
-		if (i == ind && IgnoreQZero) //exclude zeroth peak need to be set to infinity afterwards
-		{
-			continue;
-		}
-
 		double Val = INT_ind * IntensityData[i];
 
 		if (Val < 1e-37f) //no entry shortcut
@@ -235,18 +219,12 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		unsigned long ValConv = 0;
 		ValConv = (unsigned long)(Val*Multiplicator);
 		
-
-
 		k2[0] = KMap[0 + 3 * i];
 		k2[1] = KMap[1 + 3 * i];
 		k2[2] = KMap[2 + 3 * i];
 		q1[0] = (k1[0] - k2[0]);
 		q1[1] = (k1[1] - k2[1]);
 		q1[2] = (k1[2] - k2[2]);
-
-		//q2[0] = (k2[0] - k1[0]);
-		//q2[1] = (k2[1] - k1[1]);
-		//q2[2] = (k2[2] - k1[2]);
 
 		if (sqrt(q1[0] * q1[0] + q1[1] * q1[1] + q1[2] * q1[2]) > MaxQ)
 		{
@@ -256,7 +234,6 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		q1[0] = q1[0] / dqPerVox;
 		q1[1] = q1[1] / dqPerVox;
 		q1[2] = q1[2] / dqPerVox;
-
 
 		//Map to Mesh
 		unsigned int fs, ms, ss;//fast-scan, medium-scan, slow-scan
@@ -367,12 +344,12 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 			ss = (int)(floor(q_out[2] + 0.5) + smallMeshCenterAB);//ss = (unsigned int)(floor(q_out[2] + 0.5);
 
 
-			if (ss < 0 || ms < 0 || fs < 0 || ss >= smallMeshSize_AB || ms >= smallMeshSize_AB || fs >= smallMeshSize_AB)
-			{
-				printf("ME. Scan: %d, %d, %d; q: %f, %f, %f; ind: %d; Scan in: %d, %d, %d;   qin: %f, %f, %f; i:%d;\n", ss, ms, fs, q_out[0], q_out[1], q_out[2], ind, ss_in, ms_in, fs_in, q_in[0], q_in[1], q_in[2], i);
-			
-			//	continue;
-			}
+			//if (ss < 0 || ms < 0 || fs < 0 || ss >= smallMeshSize_AB || ms >= smallMeshSize_AB || fs >= smallMeshSize_AB)
+			//{
+			//	printf("ME. Scan: %d, %d, %d; q: %f, %f, %f; ind: %d; Scan in: %d, %d, %d;   qin: %f, %f, %f; i:%d;\n", ss, ms, fs, q_out[0], q_out[1], q_out[2], ind, ss_in, ms_in, fs_in, q_in[0], q_in[1], q_in[2], i);
+			//
+			////	continue;
+			//}
 
 			//if(fs >= smallMeshSize_AB || ms >= smallMeshSize_AB || ss >= )
 
@@ -407,7 +384,6 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	int DoubleMapping = (int)Params[5]; //if 1, maps two times (before and after rotation)
 	double Multiplicator = Params[6]; //for conversion float -> int
 
-	//printf("MeshSize: %d;    MeshCenter: %d\n", MeshSize, MeshCenter);
 
 	//obtain k-vector and value given by kernel index
 	float k1[3];
@@ -416,17 +392,8 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	k1[2] = SparseHitList[4 * ind + 2];
 	double f_Val = (double)SparseHitList[4 * ind + 3];
 
-	//printf("ind: %d; k = [%f, %f, %f]; Val = %f\n",ind, k1[0], k1[1], k1[2],f_Val);
-
-	//printf("RotMat: {{%f, %f, %f},{%f, %f, %f},{%f, %f, %f}}\n", RotMatrix[0], RotMatrix[1], RotMatrix[2], RotMatrix[3], RotMatrix[4], RotMatrix[5], RotMatrix[6], RotMatrix[7], RotMatrix[8]);
-
 	for (unsigned int i = 0; i < ListSize; i++)
 	{
-		if (i == ind && IgnoreQZero) // ignore q = 0
-		{
-			continue;
-		}
-
 		float q[3];
 		q[0] = k1[0] - SparseHitList[4 * i + 0];
 		q[1] = k1[1] - SparseHitList[4 * i + 1];
@@ -461,7 +428,6 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 			q[1] = (float)(ms_l - MeshCenter);
 			q[2] = (float)(ss_l - MeshCenter);
 		}
-		//printf("q = [%f, %f, %f]\n", q[0], q[1], q[2]);
 
 		//Rotation
 		float t_q[3];
@@ -476,14 +442,18 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 
 		//map to mesh
 		int fs, ms, ss;
-		fs = (int)(floor(q[0] + 0.5) + MeshCenter);
-		ms = (int)(floor(q[1] + 0.5) + MeshCenter);
-		ss = (int)(floor(q[2] + 0.5) + MeshCenter);
-
+		fs = (int)(MeshCenter + floor(q[0] + 0.5) );
+		ms = (int)(MeshCenter + floor(q[1] + 0.5) );
+		ss = (int)(MeshCenter + floor(q[2] + 0.5) );
 
 		atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
 
+		//Mirrowed Entry
+		fs = (int)(MeshCenter - floor(q[0] + 0.5));
+		ms = (int)(MeshCenter - floor(q[1] + 0.5));
+		ss = (int)(MeshCenter - floor(q[2] + 0.5));
 
+		atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
 	}
 }
 
@@ -534,11 +504,6 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 	for (int i = 0; i < DetSize; i++) //Loop over all Pixel //< DetSize
 	{
-		if (i == ind && IgnoreQZero) //exclude zeroth peak need to be set to infinity afterwards
-		{
-			continue;
-		}
-
 		double Val = INT_ind * IntensityData[i];
 
 		if (Val < 1e-37f) //no entry shortcut
@@ -737,10 +702,6 @@ __kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 
 	for (int i = 0; i < HLSize; i++) //Loop over all Pixel //< DetSize
 	{
-		if (i == ind && IgnoreQZero) //exclude zeroth peak need to be set to infinity afterwards
-		{
-			continue;
-		}
 			
 		k2[0] = HitList[4 * i + 0];
 		k2[1] = HitList[4 * i + 1];

@@ -22,10 +22,6 @@ ACMesh::~ACMesh()
 	delete[] Mesh;
 }
 
-void ACMesh::CreateSmallMeshForDetector(Detector & Det, int PerpSize)
-{
-	CreateSmallMeshForDetector(Det, PerpSize, 1.0f);
-}
 void ACMesh::CreateSmallMeshForDetector(Detector & Det, int PerpSize, float q_Zoom)
 {
 	if (PerpSize % 2 == 0)//check if PerpSize is even or odd 
@@ -72,10 +68,6 @@ void ACMesh::CreateSmallMeshForDetector(Detector & Det, int PerpSize, float q_Zo
 	Checklist.SmallMesh = true;
 }
 
-void ACMesh::CreateBigMeshForDetector(Detector & Det, int EdgeSize)
-{
-	CreateBigMeshForDetector(Det, EdgeSize, 1.0f);
-}
 void ACMesh::CreateBigMeshForDetector(Detector & Det, int EdgeSize, float q_Zoom)
 {
 	if (EdgeSize % 2 == 0)//check if PerpSize is even or odd 
@@ -109,10 +101,6 @@ void ACMesh::CreateBigMeshForDetector(Detector & Det, int EdgeSize, float q_Zoom
 	Checklist.BigMesh = true;
 }
 
-void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize)
-{
-	CreateBigMesh_CofQ_ForDetector(Det, EdgeSize, 1.0f);
-} 
 void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize, float q_Zoom)
 {
 	if (EdgeSize % 2 == 0)//check if PerpSize is even or odd 
@@ -145,10 +133,7 @@ void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize, float 
 	Checklist.CofQBigMesh = true;
 }
 
-void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize)
-{
-	CreateSmallMesh_CofQ_ForDetector(Det, PerpSize, 1.0f);
-}
+
 void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, float q_Zoom)
 {
 	if (PerpSize % 2 == 0)//check if PerpSize is even or odd 
@@ -192,7 +177,7 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 	}
 	else
 	{
-		Shape.Size_C= Shape.Size_AB;
+		Shape.Size_C = Shape.Size_AB;
 	}
 
 
