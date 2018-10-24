@@ -392,7 +392,7 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	k1[2] = SparseHitList[4 * ind + 2];
 	double f_Val = (double)SparseHitList[4 * ind + 3];
 
-	for (unsigned int i = 0; i < ListSize; i++)
+	for (unsigned int i = ind; i < ListSize; i++)
 	{
 		float q[3];
 		q[0] = k1[0] - SparseHitList[4 * i + 0];
@@ -444,16 +444,24 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 		int fs, ms, ss;
 		fs = (int)(MeshCenter + floor(q[0] + 0.5) );
 		ms = (int)(MeshCenter + floor(q[1] + 0.5) );
-		ss = (int)(MeshCenter + floor(q[2] + 0.5) );
+		ss = (int)(floor(q[2] + 0.5) );
 
-		atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+		if (ss > 0)
+		{
+			atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+		}
+		else
+		{
+			if (ss==0)
+				atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
 
-		//Mirrowed Entry
-		fs = (int)(MeshCenter - floor(q[0] + 0.5));
-		ms = (int)(MeshCenter - floor(q[1] + 0.5));
-		ss = (int)(MeshCenter - floor(q[2] + 0.5));
+			//Mirrowed Entry
+			fs = (int)(MeshCenter - floor(q[0] + 0.5));
+			ms = (int)(MeshCenter - floor(q[1] + 0.5));
+			ss = (int)(- floor(q[2] + 0.5));
 
-		atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+			atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+		}
 	}
 }
 

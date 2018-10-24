@@ -835,8 +835,6 @@ void Detector::LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_stri
 	Checklist.Intensity = true;
 }
 
-
-
 void Detector::CreateSparseHitList(float Threshold)
 {
 	SparseHitList.clear();
@@ -845,11 +843,6 @@ void Detector::CreateSparseHitList(float Threshold)
 	for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
 	{
 		float I = Intensity[i];
-
-		//if (I < 0)
-		//{
-		//	std::cout << "ERROR: I = " << I << "\n";
-		//}
 
 		if (I >= Threshold && I > 0)
 		{
@@ -865,7 +858,6 @@ void Detector::CreateSparseHitList(float Threshold)
 
 	Checklist.SparseHitList = true;
 }
-
 void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
 {
 	CreateSparseHitList(Threshold);
@@ -875,7 +867,6 @@ void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
 		SparseHitList[i][3] = DiscretizeToPhotones(SparseHitList[i][3], Threshold, PhotonSamplingStep);
 	}
 }
-
 void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep, bool Par)
 {
 	CreateSparseHitList(Threshold);
@@ -1007,10 +998,10 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 
 		//Buffers
 		//Output
-		uint64_t * TempBigMesh;
-		TempBigMesh = new uint64_t[BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB]();
+		uint64_t * TempBigMesh; //Half Mesh
+		TempBigMesh = new uint64_t[BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB *  ( (BigMesh.Shape.Size_AB + 1)/2)]();
 
-		size_t ACsize = sizeof(uint64_t) * (BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB);
+		size_t ACsize = sizeof(uint64_t) * (BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * ( (BigMesh.Shape.Size_AB + 1)/2));
 		cl::Buffer CL_AC(Options.CL_context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, ACsize, TempBigMesh, &err);
 
 
@@ -1043,8 +1034,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		const size_t &global_size = SparseHitList.size();
 
 		//launch Kernel
-
-
+		
 
 		Profiler.Tic();
 
@@ -1061,21 +1051,53 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		//Free Device
 		Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
-		//add to Bigmesh
+
+		//Point reflection and add to Bigmesh
+		unsigned int MeshCenter = (BigMesh.Shape.Size_AB - 1) / 2;
 #pragma omp parallel for
-		for (unsigned int i = 0; i < BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB; i++)
+		for (unsigned int ss  = 0; ss < (BigMesh.Shape.Size_AB + 1) / 2; ss ++)
 		{
-			double t_val = (double)TempBigMesh[i] / (double)Multiplicator;
-			long val;
-			val = (long)Options.FloatToInt(t_val);
-
-			if (val < 0)
+			for (unsigned int ms = 0; ms < BigMesh.Shape.Size_AB; ms++)
 			{
-				std::cerr << "ERROR: VAL < 0 : " << t_val << "\n";
-			}
+				for (unsigned int fs = 0; fs < BigMesh.Shape.Size_AB; fs++)
+				{
+					double t_val = (double)TempBigMesh[fs + ms * BigMesh.Shape.Size_AB + ss * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] / (double)Multiplicator;
+					long val;
+					val = (long)Options.FloatToInt(t_val);
+					if (val < 0)
+					{
+						std::cerr << "ERROR: VAL < 0 : " << t_val << "\n";
+					}
 
-			BigMesh.Mesh[i] += (unsigned long)val;
+
+					//add first
+					BigMesh.Mesh[fs + ms * BigMesh.Shape.Size_AB + (ss + MeshCenter) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] += (unsigned long)val;
+
+					//mirrow
+					if (ss != 0)
+					{
+						BigMesh.Mesh[(2 * MeshCenter - fs) + (2 * MeshCenter - ms) * BigMesh.Shape.Size_AB + (MeshCenter - ss) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] += (unsigned long)val;
+					}
+				}
+			}
 		}
+
+
+		//add to Bigmesh
+//#pragma omp parallel for
+//		for (unsigned int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * 0.5*(BigMesh.Shape.Size_AB+1); i++)
+//		{
+//			double t_val = (double)TempBigMesh[i] / (double)Multiplicator;
+//			long val;
+//			val = (long)Options.FloatToInt(t_val);
+//
+//			if (val < 0)
+//			{
+//				std::cerr << "ERROR: VAL < 0 : " << t_val << "\n";
+//			}
+//
+//			BigMesh.Mesh[i] += (unsigned long)val;
+//		}
 
 		//clean up
 		delete[] TempBigMesh;
