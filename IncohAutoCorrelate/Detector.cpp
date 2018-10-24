@@ -918,7 +918,7 @@ void Detector::InitializeDetector(H5std_string PixelMap_Path, H5std_string Pixel
 	CreateSparseHitList(Pixel_Threshold);
 }
 
-void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping, Settings & Options)
+int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping, Settings & Options)
 {
 	if (!Checklist.SparseHitList)
 	{
@@ -955,6 +955,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 				BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
 			}
 		}
+		return 0; //For statistics: CPU -> 0
 	}
 	else
 	{ //Implementation for GPU 
@@ -1036,14 +1037,14 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 		//launch Kernel
 		
 
-		Profiler.Tic();
+		//Profiler.Tic();
 
 		err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NullRange, NULL, &cl_event);
 
 		//	Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelateSparseList() ");
 		cl_event.wait();
 
-		Profiler.Toc(true);
+		//Profiler.Toc(true);
 
 		err = queue.enqueueReadBuffer(CL_AC, CL_TRUE, 0, ACsize, TempBigMesh);
 		Options.checkErr(err, "OpenCL kernel, launched in Detector::AutoCorrelateSparseList() ");
@@ -1054,7 +1055,7 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 
 		//Point reflection and add to Bigmesh
 		unsigned int MeshCenter = (BigMesh.Shape.Size_AB - 1) / 2;
-#pragma omp parallel for
+		#pragma omp parallel for
 		for (unsigned int ss  = 0; ss < (BigMesh.Shape.Size_AB + 1) / 2; ss ++)
 		{
 			for (unsigned int ms = 0; ms < BigMesh.Shape.Size_AB; ms++)
@@ -1064,11 +1065,6 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 					double t_val = (double)TempBigMesh[fs + ms * BigMesh.Shape.Size_AB + ss * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] / (double)Multiplicator;
 					long val;
 					val = (long)Options.FloatToInt(t_val);
-					if (val < 0)
-					{
-						std::cerr << "ERROR: VAL < 0 : " << t_val << "\n";
-					}
-
 
 					//add first
 					BigMesh.Mesh[fs + ms * BigMesh.Shape.Size_AB + (ss + MeshCenter) * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB] += (unsigned long)val;
@@ -1082,27 +1078,11 @@ void Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bo
 			}
 		}
 
-
-		//add to Bigmesh
-//#pragma omp parallel for
-//		for (unsigned int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * 0.5*(BigMesh.Shape.Size_AB+1); i++)
-//		{
-//			double t_val = (double)TempBigMesh[i] / (double)Multiplicator;
-//			long val;
-//			val = (long)Options.FloatToInt(t_val);
-//
-//			if (val < 0)
-//			{
-//				std::cerr << "ERROR: VAL < 0 : " << t_val << "\n";
-//			}
-//
-//			BigMesh.Mesh[i] += (unsigned long)val;
-//		}
-
 		//clean up
 		delete[] TempBigMesh;
-	}
 
+		return 1; //For statistics: GPU -> 1
+	}
 }
 
 

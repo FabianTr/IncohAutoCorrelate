@@ -466,7 +466,6 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 }
 
 
-
 //create C(q) for angular averaged stuff (1D)
 __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 	__global const float *KMap,
@@ -571,8 +570,7 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 
 	}//while ((i = (i + 1) % N) != n);
 }
-
-
+	
 
 //Simulation (Emitterlist -> Intensity pattern)
 __kernel void SimulateCrystal(__global const float *PixelMap,
@@ -667,7 +665,6 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 	//Do Poisson sampling on cpu (need to know integrated intensity first, there is no way to calculate it here (need all threads to be finished))
 
 }
-
 
 
 //create AngularAveraged AC for sparse (dense) HitList

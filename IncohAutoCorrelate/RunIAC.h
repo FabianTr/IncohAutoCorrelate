@@ -14,8 +14,6 @@ namespace RunIAC
 		float dQperVox = 0.0;
 		unsigned int SmallCqMeshSize[3];
 		unsigned int FinalMeshSize = 101;
-
-
 	};
 
 	struct CreateAC_Settings

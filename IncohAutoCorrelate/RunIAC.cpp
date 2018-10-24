@@ -474,9 +474,20 @@ namespace RunIAC
 					std::cout << "Start auto correlation for sparsificated intensities\n";
 
 				Det.LoadIntensityData(&PrgSettings.HitEvents[0]);
+				unsigned int NumOfEvents = upperBound - lowerBound;
+				unsigned int Counter = 0;
+				unsigned int CounterStep=1;
+				unsigned int CSMult = 100;
+				if (NumOfEvents > 10000)
+					CSMult = 1000;
+				ProfileTime ACProfiler1;
+				ProfileTime ACProfiler2;
+				double Mean_ACuwTime = 0.0;
+				ACProfiler1.Tic(); 
 				for (unsigned int i = lowerBound; i < upperBound; i++)
 				{
-					if (EvalSettings.EchoLevel > 1)
+					ACProfiler2.Tic();
+					if (EvalSettings.EchoLevel > 4)
 						std::cout << "AC event " << i << "/" << (upperBound) << std::endl;
 
 					Det.LoadIntensityData(&PrgSettings.HitEvents[i]);
@@ -485,10 +496,30 @@ namespace RunIAC
 
 					Det.CreateSparseHitList(EvalSettings.PhotonOffset, EvalSettings.PhotonStep); //Sparsificate
 				
-					if (EvalSettings.EchoLevel > 2)
+					if (EvalSettings.EchoLevel > 4)
 						std::cout << i << ": Pixels with hits: " << Det.SparseHitList.size()*100.0 / (Det.DetectorSize[0] * Det.DetectorSize[1]) << "%" << "    Mean intensity: " << PrgSettings.HitEvents[i].MeanIntensity << "\n";
 
 					Det.AutoCorrelateSparseList(AC_uw, Flags, EvalSettings.DoubleMap, PrgSettings);
+
+					Mean_ACuwTime += ACProfiler2.Toc(false) / (double)NumOfEvents;
+					Counter++;
+					if (Counter * CSMult / CounterStep >= NumOfEvents && EvalSettings.EchoLevel > 2)
+					{
+						std::cout << Counter << " / " << NumOfEvents << " events ^= " << 100 * (double)Counter / (double)NumOfEvents << "%; expired time: " << ACProfiler1.Toc(false)/60.0 <<"min.\n";
+						CounterStep++;
+					}
+
+				}
+				if (EvalSettings.EchoLevel > 1)
+				{
+					std::cout << "Unweighted 3D autocorrelation of " << NumOfEvents << " events done within " << ACProfiler1.Toc(false)/3600.0 << "h.\n";
+					if (Mean_ACuwTime < 0.1)
+						std::cout << "Mean time needed for one Event was " << Mean_ACuwTime * 1000 << "ms.\n";
+					else if (Mean_ACuwTime < 60)
+						std::cout << "Mean time needed for one Event was " << Mean_ACuwTime  << "s.\n";
+					else 
+						std::cout << "Mean time needed for one Event was " << Mean_ACuwTime /60.0 << "min.\n";
+					std::cout << "\n";
 				}
 				//Save
 				if (EvalSettings.Out_ACuw_Path != "")
