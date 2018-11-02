@@ -7,16 +7,9 @@
 #include <fstream>
 
 
-ExoticAnalysis::ExoticAnalysis()
-{
-}
 
 
-ExoticAnalysis::~ExoticAnalysis()
-{
-}
-
-void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings, RunIAC::CreateDataEval_Settings EvalSettings, std::vector<std::vector<unsigned int>> Clusters, std::string OutputFilePath, bool IncludeHeader)
+void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings, RunIAC::CreateDataEval_Settings EvalSettings, std::vector<std::vector<unsigned int>> Clusters, std::string OutputFilePath,  std::vector<std::string> HeaderNames,bool IncludeHeader)
 {
 	unsigned int NumberOfClusters = Clusters.size();
 	if (NumberOfClusters == 0)
@@ -123,12 +116,6 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 		PrgSettings.Echo("Load and averaged all Intensities");
 		Det.LoadAndAverageIntensity(PrgSettings.HitEvents, EvalSettings.PhotonOffset, EvalSettings.PhotonStep, lowerBound, upperBound, true);
 
-		if (EvalSettings.Out_AvIntensity_Path != "")//save averaged intensity
-		{
-			ArrayOperators::SafeArrayToFile(EvalSettings.Out_AvIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::Binary);
-			if (EvalSettings.EchoLevel > 0)
-				std::cout << "-> Averaged intensity saved as \"" << EvalSettings.Out_AvIntensity_Path << "\".\n";
-		}
 		//Apply Pixelmask
 		Det.ApplyPixelMask();
 	}
@@ -194,7 +181,15 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 		file << "mean intensity";
 		for (unsigned int n = 1; n <= NumberOfClusters; n++)
 		{
-			file << ", cluster " << n;
+			if (HeaderNames.size() != Clusters.size())
+			{
+				std::cout << "Heade size doesn't macht cluster size, ... fix that!\n";
+				file << ", cluster " << n;
+			}
+			else
+			{
+				file << ", " << HeaderNames[n];
+			}
 		}
 		file << "\n";
 	}
