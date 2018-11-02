@@ -199,7 +199,7 @@ namespace RunIAC
 				if (EvalSettings.EchoLevel > 0)
 					std::cout << "Load pixel map\n";
 
-				//load pixelmap and if existing pixel mask
+				//load pixelmap and, if exists, pixel mask
 				Det.LoadPixelMap(EvalSettings.PixelMap_Path, EvalSettings.PixelMap_DataSet);
 				if (EvalSettings.DetDisturb) //Disturbation of Pixelmap for simulated data
 				{
@@ -253,6 +253,8 @@ namespace RunIAC
 					lowerBound = 0;
 					upperBound = StackSize;
 				}
+				Report.UpperBound = upperBound;
+				Report.LowerBound = lowerBound;
 			}
 		
 		}
@@ -492,13 +494,15 @@ namespace RunIAC
 
 					Det.LoadIntensityData(&PrgSettings.HitEvents[i]);
 
+					Report.MeanPhotonCount += PrgSettings.HitEvents[i].PhotonCount;
+
 					ArrayOperators::ParMultiplyElementwise(Det.Intensity, Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
 					Det.CreateSparseHitList(EvalSettings.PhotonOffset, EvalSettings.PhotonStep); //Sparsificate
 				
 					if (EvalSettings.EchoLevel > 4)
 						std::cout << i << ": Pixels with hits: " << Det.SparseHitList.size()*100.0 / (Det.DetectorSize[0] * Det.DetectorSize[1]) << "%" << "    Mean intensity: " << PrgSettings.HitEvents[i].MeanIntensity << "\n";
-
+					
 					Det.AutoCorrelateSparseList(AC_uw, Flags, EvalSettings.DoubleMap, PrgSettings);
 
 					Mean_ACuwTime += ACProfiler2.Toc(false) / (double)NumOfEvents;
@@ -510,6 +514,7 @@ namespace RunIAC
 					}
 
 				}
+				Report.MeanPhotonCount = Report.MeanPhotonCount / ((float)(upperBound - lowerBound));
 				if (EvalSettings.EchoLevel > 1)
 				{
 					std::cout << "Unweighted 3D autocorrelation of " << NumOfEvents << " events done within " << ACProfiler1.Toc(false)/3600.0 << "h.\n";

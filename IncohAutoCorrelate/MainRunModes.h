@@ -33,9 +33,8 @@ namespace MainRunModes
 		//PPP.LAP
 		PPP::Create_LAPSettings PPPLAPSettings;
 
-		//Misc
-		Create_MiscSettings MiscSettings;
 
+		std::string XMLSetting_Path = "";
 	};
 
 	//Functions

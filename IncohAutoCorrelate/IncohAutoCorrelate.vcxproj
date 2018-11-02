@@ -73,6 +73,7 @@
     <ClCompile Include="MainRunModes.cpp" />
     <ClCompile Include="PPP.cpp" />
     <ClCompile Include="ProfileTime.cpp" />
+    <ClCompile Include="ExoticAnalysis.cpp" />
     <ClCompile Include="RunIAC.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="ArrayOperators.cpp" />
@@ -89,6 +90,7 @@
     <ClInclude Include="MainRunModes.h" />
     <ClInclude Include="PPP.h" />
     <ClInclude Include="ProfileTime.h" />
+    <ClInclude Include="ExoticAnalysis.h" />
     <ClInclude Include="RunIAC.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Simulator.h" />

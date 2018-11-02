@@ -14,6 +14,11 @@ namespace RunIAC
 		float dQperVox = 0.0;
 		unsigned int SmallCqMeshSize[3];
 		unsigned int FinalMeshSize = 101;
+
+		float MeanPhotonCount = 0.0;
+
+		unsigned int LowerBound = 0;
+		unsigned int UpperBound = 0;
 	};
 
 	struct CreateAC_Settings
@@ -84,6 +89,8 @@ namespace RunIAC
 		std::string Out_Cq_small_Path = "";//only 3D
 		std::string Out_Final_AC_Path = "";
 		std::string Out_Q_Vector = "";//only 1D AAv
+		//
+		std::string Out_Report = "";
 
 		float PhotonOffset = 0.0f;
 		float PhotonStep = 1.0f;

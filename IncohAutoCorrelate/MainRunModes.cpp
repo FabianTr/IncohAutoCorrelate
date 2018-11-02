@@ -78,6 +78,7 @@ RunIAC::CreateDataEval_Settings MainRunModes::LoadEvaluationSettings(std::string
 	EVS.InvertRotMatrix = pt.get<bool>("root.EvalSettings.Misc.InvertRotMatrix", false);
 	EVS.EchoLevel = pt.get<int>("root.EvalSettings.Misc.EchoLevel", 3);
 
+	EVS.Out_Report = pt.get<std::string>("root.EvalSettings.Misc.Report_Path", "");
 
 	//switch off echo if wanted
 	if (EVS.EchoLevel == 0)
@@ -262,6 +263,8 @@ boost::property_tree::ptree MainRunModes::Example_Evaluation_Config_PT(boost::pr
 
 		EES.EchoLevel = 3;
 
+		EES.Out_Report = "Report.txt";
+
 		//->DisturbationForSimulation
 		EES.DetDisturb = false;
 		EES.DetDisturb_Rot = 0.0;
@@ -312,6 +315,10 @@ boost::property_tree::ptree MainRunModes::Example_Evaluation_Config_PT(boost::pr
 
 		pt.put("root.EvalSettings.Misc.InvertRotMatrix", EES.InvertRotMatrix);
 		pt.put("root.EvalSettings.Misc.EchoLevel", EES.EchoLevel);
+
+		pt.put("root.EvalSettings.Misc.Report_Path", EES.Out_Report);
+
+		
 	}
 	return pt;
 }
@@ -555,13 +562,14 @@ int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 	double TimeNeeded = Profiler.Toc(false);
 
 	//save Report
-	if (EVS.MiscSettings.ReportPath != "")
+	if (EVS.EvaluationSettings.Out_Report != "")
 	{
 		std::ofstream file;
-		file.open(EVS.MiscSettings.ReportPath);
-
-		file << " *** IAC - Report (autocorrelation mode) *** \n\n";
+		file.open(EVS.EvaluationSettings.Out_Report);
 		
+		file << " *** IAC - Report (autocorrelation mode) *** \n\n";
+		file << "From settings file: \"" << EVS.XMLSetting_Path << "\"\n\n";
+
 		if (EVS.EvaluationSettings.AngularAveraged) //Aav
 		{
 			file << "Angular averaged (1D - Mode)\n";
@@ -575,6 +583,28 @@ int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 			file << "Final Mesh Size: " << Report.FinalMeshSize << " x "<< Report.FinalMeshSize << " x " << Report.FinalMeshSize << "\n";
 			file << "dq/dVox = " << Report.dQperVox << "  (dq/dVox is normalized to be 2 for 180° between k1 and k2)\n";
 			file << "small C(q) Mesh Size: " << Report.SmallCqMeshSize[0] << " x " << Report.SmallCqMeshSize[1] << " x " << Report.SmallCqMeshSize[2] << "\n";
+
+			file << "Mean photon count per pattern: " << Report.MeanPhotonCount << "\n";
+
+			file << "\n Further Information (from Settings file):\n";
+			file << "Input paths:\n";
+			file << "Event-XML-file path: \"" << EVS.EvaluationSettings.XML_Path << "\"\n";
+			file << "Pixel-map path: \"" << EVS.EvaluationSettings.PixelMap_Path << "\"; Dataset: \"" << EVS.EvaluationSettings.PixelMap_DataSet << "\"\n";
+			file << "Pixel-mask path: \"" << EVS.EvaluationSettings.PixelMask_Path << "\"; Dataset: \"" << EVS.EvaluationSettings.PixelMask_Path << "\"\n";
+
+			file << "Output paths:\n";
+			file << "AC (merged) Output path: \"" << EVS.EvaluationSettings.Out_Final_AC_Path << "\"\n";
+			if (EVS.EvaluationSettings.Out_Cq_Path != "")
+				file << "CQ (merged) path: \"" << EVS.EvaluationSettings.Out_Cq_Path << "\"\n";
+			if(EVS.EvaluationSettings.Out_ACuw_Path != "")
+				file << "AC (uw) Output path: \"" << EVS.EvaluationSettings.Out_ACuw_Path << "\"\n";
+			if (EVS.EvaluationSettings.Out_Cq_small_Path != "")
+				file << "CQ (small) Output path: \"" << EVS.EvaluationSettings.Out_Cq_small_Path << "\"\n";
+			if (EVS.EvaluationSettings.Out_AvIntensity_Path != "")
+				file << "Averaged intensity (flat) path: \"" << EVS.EvaluationSettings.Out_AvIntensity_Path << "\"\n";
+
+			file << "Other Settings:\n";
+			file << "Evaluated Stack: Events: " << Report.LowerBound << " - " << Report.UpperBound << "\n";
 
 
 		}
