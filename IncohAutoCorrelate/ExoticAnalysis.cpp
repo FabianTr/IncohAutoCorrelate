@@ -116,6 +116,13 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 		PrgSettings.Echo("Load and averaged all Intensities");
 		Det.LoadAndAverageIntensity(PrgSettings.HitEvents, EvalSettings.PhotonOffset, EvalSettings.PhotonStep, lowerBound, upperBound, true);
 
+		if (EvalSettings.Out_AvIntensity_Path != "")//save averaged intensity
+		{
+			ArrayOperators::SafeArrayToFile(EvalSettings.Out_AvIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::Binary);
+			if (EvalSettings.EchoLevel > 0)
+				std::cout << "-> Averaged intensity saved as \"" << EvalSettings.Out_AvIntensity_Path << "\".\n";
+		}
+
 		//Apply Pixelmask
 		Det.ApplyPixelMask();
 	}
@@ -130,6 +137,8 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 			Det.Intensity[i] = (float)Det.PixelMask[i];
 		}
 		Det.Checklist.Intensity = true;
+
+
 	}
 
 
@@ -172,7 +181,7 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 
 
 	std::ofstream file;
-	file.open(OutputFilePath);
+	file.open(OutputFilePath, std::ios::app);
 
 	if (IncludeHeader)
 	{
@@ -188,10 +197,10 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 			}
 			else
 			{
-				file << ", " << HeaderNames[n];
+				file << ", " << HeaderNames[n-1];
 			}
 		}
-		file << "\n";
+		file << std::endl;
 	}
 
 	ACProfiler1.Tic();
@@ -231,7 +240,7 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 			file << ", " << OutputMatrix[counter][n];
 		}
 		file << "\n";
-		std::cout << counter + 1  << " / " << StackSize << ": MeanInt = " << PrgSettings.HitEvents[i].MeanIntensity << "   "<< ACProfiler1.Toc(false)/60.0 << "min elapsed.\n";
+		std::cout << counter + 1  << " / " << StackSize << ": MeanInt = " << PrgSettings.HitEvents[i].MeanIntensity << "   "<< ACProfiler1.Toc(false)/60.0 << "min elapsed." << std::endl;
 
 		counter++;
 	}

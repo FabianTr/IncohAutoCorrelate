@@ -469,6 +469,8 @@ void QDTests(Settings & Options)
 
 	std::cout << "Running Cluster Stuff\n\n";
 
+	Options.SetUp_OpenCL();
+
 	MainRunModes::AllSettings InputSettings = MainRunModes::LoadSettings("/home/trostfab/scratch/LU56/ClusterTest/Settings_Clusters.xml",Options);
 
 	std::string OutPath = "/home/trostfab/scratch/LU56/ClusterTest/Clusters.csv";
