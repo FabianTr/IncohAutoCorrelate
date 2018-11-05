@@ -4,6 +4,10 @@
 
 __constant double PI = 3.1415926535897932;
 
+
+
+
+
 // Atomic add of floats or double
 // Adapted from:
 // https://streamcomputing.eu/blog/2016-02-09/atomic-operations-for-floats-in-opencl-improved/
@@ -242,7 +246,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		ss = (unsigned int)(floor(q1[Cind] + 0.5) + MeshCenterC);
 		atomic_add(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), ValConv);
 
-		if (ss < 0 || ms < 0 || fs < 0 || ss >= MeshSizeC || ms >= MeshSizeAB || fs >= MeshSizeAB)//Check scans and display overflows.
+		if (ss >= MeshSizeC || ms >= MeshSizeAB || fs >= MeshSizeAB)//Check scans and display overflows.
 		{
 			printf("ME: scans:%d, %d, %d   q: %f, %f, %f\n", ss, ms, fs, q1[0], q1[1], q1[2]);
 		}
@@ -297,7 +301,6 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 	}
 	//END
 
-
 	float q_in[3];
 	int ss_in = 0, ms_in = 0, fs_in = 0;
 	//retrive scans from index
@@ -342,16 +345,6 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 			fs = (int)(floor(q_out[0] + 0.5) + smallMeshCenterAB);
 			ms = (int)(floor(q_out[1] + 0.5) + smallMeshCenterAB);
 			ss = (int)(floor(q_out[2] + 0.5) + smallMeshCenterAB);//ss = (unsigned int)(floor(q_out[2] + 0.5);
-
-
-			//if (ss < 0 || ms < 0 || fs < 0 || ss >= smallMeshSize_AB || ms >= smallMeshSize_AB || fs >= smallMeshSize_AB)
-			//{
-			//	printf("ME. Scan: %d, %d, %d; q: %f, %f, %f; ind: %d; Scan in: %d, %d, %d;   qin: %f, %f, %f; i:%d;\n", ss, ms, fs, q_out[0], q_out[1], q_out[2], ind, ss_in, ms_in, fs_in, q_in[0], q_in[1], q_in[2], i);
-			//
-			////	continue;
-			//}
-
-			//if(fs >= smallMeshSize_AB || ms >= smallMeshSize_AB || ss >= )
 
 			atomic_add(&(CQ[fs + ms * smallMeshSize_AB + ss * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
 

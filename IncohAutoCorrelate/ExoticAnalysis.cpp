@@ -50,13 +50,6 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 	}
 
 
-	//Create Output Field
-
-	std::vector<std::vector<double>> OutputMatrix(StackSize, std::vector<double>(NumberOfClusters + 1));
-
-
-	//
-
 
 	//Load Events
 	if (EvalSettings.XML_Path == "")
@@ -100,6 +93,9 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 		}
 	}
 
+	//Create Output Field
+	std::vector<std::vector<double>> OutputMatrix(StackSize, std::vector<double>(NumberOfClusters + 1));
+
 	//Load or Create averaged intensity
 	if (EvalSettings.UseExistingAvInt && !EvalSettings.UsePixelMask_as_Flatfield) //load existing avIntensity (flat field)
 	{
@@ -140,10 +136,6 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 
 
 	}
-
-
-
-
 
 
 	//C(q)
@@ -188,16 +180,16 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 		//include header for output csv
 
 		file << "mean intensity";
-		for (unsigned int n = 1; n <= NumberOfClusters; n++)
+		for (unsigned int n = 0; n < NumberOfClusters; n++)
 		{
 			if (HeaderNames.size() != Clusters.size())
 			{
 				std::cout << "Heade size doesn't macht cluster size, ... fix that!\n";
-				file << ", cluster " << n;
+				file << ", cluster " << n+1;
 			}
 			else
 			{
-				file << ", " << HeaderNames[n-1];
+				file << ", " << HeaderNames[n];
 			}
 		}
 		file << std::endl;
@@ -227,19 +219,19 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 		file << PrgSettings.HitEvents[i].MeanIntensity;
 
 		OutputMatrix[counter][0] = PrgSettings.HitEvents[i].MeanIntensity;
-		for (unsigned int n = 1; n <= NumberOfClusters; n++)
+		for (unsigned int n = 0; n < NumberOfClusters; n++)
 		{
-			OutputMatrix[counter][n] = 0.0;
+			OutputMatrix[counter][n+1] = 0.0;
 			
 			for (unsigned int m = 0; m < Clusters[n].size(); m++)
 			{
 				double tmpVal = (double)PrgSettings.IntToFloat(AC_uw.Mesh[Clusters[n][m]]);
 				tmpVal = tmpVal / Mesh_CQ.CQMesh[Clusters[n][m]];
-				OutputMatrix[counter][n] += tmpVal;
+				OutputMatrix[counter][n+1] += tmpVal;
 			}
-			file << ", " << OutputMatrix[counter][n];
+			file << ", " << OutputMatrix[counter][n+1];
 		}
-		file << "\n";
+		file << std::endl;
 		std::cout << counter + 1  << " / " << StackSize << ": MeanInt = " << PrgSettings.HitEvents[i].MeanIntensity << "   "<< ACProfiler1.Toc(false)/60.0 << "min elapsed." << std::endl;
 
 		counter++;
@@ -249,5 +241,5 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 	file.close();
 
 	std::cout << "Saved results in \"" << OutputFilePath << "\"\n";
-	std::cout << "Done in " << ACProfiler1.Toc(false) / 3600.0 << "h.\n";
+	std::cout << "Done in " << ACProfiler1.Toc(false) / 3600.0 << "h." << std::endl;
 }

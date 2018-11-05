@@ -22,12 +22,7 @@ double ProfileTime::Toc(bool print)
 	end = chrono::high_resolution_clock::now();
 	std::chrono::milliseconds interv  = std::chrono::duration_cast< std::chrono::milliseconds>(end - start);
 	if (print)
-		cout << (double)interv.count() / 1000. << " sec\n";
+		cout << (double)interv.count() / 1000. << " sec" << std::endl;
 	return (double)interv.count()/1000;
 
-}
-
-double ProfileTime::Toc()
-{
-	return Toc(true);
 }

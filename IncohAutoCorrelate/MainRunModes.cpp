@@ -567,8 +567,8 @@ int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 		std::ofstream file;
 		file.open(EVS.EvaluationSettings.Out_Report);
 		
-		file << " *** IAC - Report (autocorrelation mode) *** \n\n";
-		file << "From settings file: \"" << EVS.XMLSetting_Path << "\"\n\n";
+		file << " *** IAC - Report (autocorrelation mode) *** \n" << std::endl;
+		file << "From settings file: \"" << EVS.XMLSetting_Path << "\"\n" << std::endl;
 
 		if (EVS.EvaluationSettings.AngularAveraged) //Aav
 		{
@@ -608,7 +608,7 @@ int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 
 
 		}
-		file << "\nEvaluation performed within " << TimeNeeded << "s (" << TimeNeeded / (3600) << "h)\n\n";
+		file << "\nEvaluation performed within " << TimeNeeded << "s (" << TimeNeeded / (3600) << "h)\n" << std::endl;
 
 
 		file.close();

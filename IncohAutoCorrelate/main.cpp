@@ -39,7 +39,6 @@
 
 
 
-
 void Test_CQ_small(Settings &Options, Detector &Det)
 {
 
@@ -508,8 +507,7 @@ void QDTests(Settings & Options)
 
 	ExoticAnalysis::CompareClustersInAC_PatternByPattern(Options, InputSettings.EvaluationSettings, Clusters, OutPath, ClHeader, true);
 
-
-
+	
 }
 
 

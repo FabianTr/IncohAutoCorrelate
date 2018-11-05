@@ -10,7 +10,5 @@ public:
 	~ProfileTime();
 
 	void Tic();
-	double Toc(bool print);
-	double Toc();
+	double Toc(bool print = false);
 };
-
