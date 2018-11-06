@@ -225,9 +225,12 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 			
 			for (unsigned int m = 0; m < Clusters[n].size(); m++)
 			{
+				
 				double tmpVal = (double)PrgSettings.IntToFloat(AC_uw.Mesh[Clusters[n][m]]);
 				tmpVal = tmpVal / Mesh_CQ.CQMesh[Clusters[n][m]];
 				OutputMatrix[counter][n+1] += tmpVal;
+
+			//	std::cout << n << ", " << m << " => "<< Clusters[n][m] <<  " : " << PrgSettings.IntToFloat(AC_uw.Mesh[Clusters[n][m]]) << " , " << Mesh_CQ.CQMesh[Clusters[n][m]] << std::endl;
 			}
 			file << ", " << OutputMatrix[counter][n+1];
 		}
