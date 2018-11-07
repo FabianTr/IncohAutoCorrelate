@@ -501,7 +501,7 @@ void QDTests(Settings & Options)
 				continue;
 
 			Clusters.push_back({ 276 + ms * 553 + ss * 553 * 553 });
-			ClHeader.push_back("(276," + std::to_string(ms) + "," + std::to_string(ms)+ ")");
+			ClHeader.push_back("(276," + std::to_string(ms) + "," + std::to_string(ss)+ ")");
 		}
 	}
 

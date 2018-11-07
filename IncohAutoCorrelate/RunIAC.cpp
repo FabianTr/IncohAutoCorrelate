@@ -169,9 +169,11 @@ namespace RunIAC
 	}
 
 
-	void AC_3Duw_Mapped(Settings & Options, CreateDataEval_Settings & EvalSettings, Detector & RefDet)
+	void AC_3Duw_Mapped(Settings & Options, CreateDataEval_Settings & EvalSettings, Detector & RefDet, unsigned int EventNum)
 	{
 		Detector Det(RefDet, true);
+
+
 		
 	}
 

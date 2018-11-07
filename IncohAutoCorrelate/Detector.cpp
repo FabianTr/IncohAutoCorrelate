@@ -643,7 +643,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		{
 			if ((((i - LowerBound) * 100) / (UpperBound - LowerBound - 1)) > t_prog)
 			{
-				std::cout << "Load and Average: " << ((i - LowerBound) * 100) / (UpperBound - LowerBound - 1) << "%\n";
+				std::cout << "Load and Average: " << ((i - LowerBound) * 100) / (UpperBound - LowerBound - 1) << "%" << std::endl;
 				t_prog++;
 			}
 
@@ -918,7 +918,7 @@ void Detector::InitializeDetector(H5std_string PixelMap_Path, H5std_string Pixel
 	CreateSparseHitList(Pixel_Threshold);
 }
 
-int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping, Settings & Options)
+int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping, Settings & Options, int CpuGpu)
 {
 	if (!Checklist.SparseHitList)
 	{
@@ -934,7 +934,7 @@ int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, boo
 	}
 
 	float SHLsizeQuot = ((float)SparseHitList.size()) / ((float)(DetectorSize[0] * DetectorSize[1]));
-	if (SHLsizeQuot < 0.0075f) // (switch for SparseHitList.size / DetSize > p(0.0075))
+	if ( ( (SHLsizeQuot < 0.0075f) && (CpuGpu == -1) ) || CpuGpu == 0) // (switch for SparseHitList.size / DetSize > p(0.0075))
 	{ //Implementation for CPU
 #pragma omp parallel for
 		for (unsigned int i = 0; i < SparseHitList.size(); i++)

@@ -116,7 +116,7 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 		{
 			ArrayOperators::SafeArrayToFile(EvalSettings.Out_AvIntensity_Path, Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], ArrayOperators::Binary);
 			if (EvalSettings.EchoLevel > 0)
-				std::cout << "-> Averaged intensity saved as \"" << EvalSettings.Out_AvIntensity_Path << "\".\n";
+				std::cout << "-> Averaged intensity saved as \"" << EvalSettings.Out_AvIntensity_Path << "\"."<< std::endl;
 		}
 
 		//Apply Pixelmask
@@ -239,8 +239,7 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 
 		counter++;
 	}
-
-
+	
 	file.close();
 
 	std::cout << "Saved results in \"" << OutputFilePath << "\"\n";

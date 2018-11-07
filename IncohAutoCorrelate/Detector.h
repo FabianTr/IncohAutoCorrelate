@@ -87,7 +87,7 @@ public:
 	
 
 	//Correlation Kernels (3D):
-	int AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping, Settings & Options);
+	int AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping, Settings & Options, int CpuGpu = -1);
 	void AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::vector<Settings::HitEvent>& Events, unsigned int LowerBound, unsigned int UpperBound, Settings& Options);
 
 	void AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Flags, Settings& Options);
