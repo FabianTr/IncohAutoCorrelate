@@ -22,12 +22,22 @@ namespace MainRunModes
 		std::string ReportPath = "";
 	};
 
+	struct AllSimSettings
+	{
+		Simulator::SimulationSettings SimSettings;
+		std::vector<std::array<double, 3>> UnitCell;
+
+		double LatticeVector[3][3];
+
+	};
+
+
 	struct AllSettings
 	{
 		//Evaluator
 		RunIAC::CreateDataEval_Settings EvaluationSettings;
 		//Simulator
-		Simulator::SimulationSettings SimulationSettings;
+		AllSimSettings AllSimulationSettings;
 		//Statistics
 		Statistics::StatisticsSettings StatisticsSettings;
 		//PPP.LAP
@@ -44,10 +54,12 @@ namespace MainRunModes
 
 	
 	//->Settings-Files Handle
+
 	//single mode
 	RunIAC::CreateDataEval_Settings LoadEvaluationSettings(std::string Filename, Settings &Options);
 	Statistics::StatisticsSettings LoadStatisticSettings(std::string Filename, Settings &Options);
 	PPP::Create_LAPSettings LoadPPPLAPSettings(std::string Filename, Settings &Options);
+	AllSimSettings LoadSimulationSettings(std::string Filename, Settings &Options);
 	//combined
 	MainRunModes::AllSettings LoadSettings(std::string Filename, Settings &Options);
 
@@ -58,6 +70,7 @@ namespace MainRunModes
 	boost::property_tree::ptree Example_Evaluation_Config_PT(boost::property_tree::ptree pt, Settings &Options);
 	boost::property_tree::ptree Example_Statistics_Config_PT(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
 	boost::property_tree::ptree Example_PatternPreProcessing_LAP(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
+	boost::property_tree::ptree Example_Simulation_Config_PT(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
 
 	//->Data Evaluation
 	int AverageIntensity(std::string EvaluationConfigFile, Settings &Options, bool UpdateEventXML = false);
@@ -79,4 +92,7 @@ namespace MainRunModes
 	int SortHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options);//xml_in, csv_out
 
 	int SortXMLHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options);//xml_in, xml_out
+
+	//Simulation
+	int Simulate(std::string ConfigFile, Settings &Options);
 }

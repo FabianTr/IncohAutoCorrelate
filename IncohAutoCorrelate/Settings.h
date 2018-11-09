@@ -130,5 +130,34 @@ public:
 	std::vector<unsigned int> SortHitEventsByIntensity();
 
 
+	template <typename T>
+	static typename std::enable_if<std::is_arithmetic<T>::value>::type SplitString(std::string Input, T * Output, unsigned int ReqSize, std::string delimiter = ";")
+	{
+		size_t pos = 0;
+		std::string token;
+		int count = 0;
+		while ((pos = Input.find(delimiter)) != std::string::npos)
+		{
+
+			if (count >= ReqSize -1)
+			{
+				throw;
+			}
+
+			token = Input.substr(0, pos);
+
+			Output[count] = atof(token.data());
+
+			//std::cout << count << " :" << Val << std::endl;
+			Input.erase(0, pos + delimiter.length());
+			count++;
+		}
+
+		Output[count] = atof(Input.data());
+
+		if (count != ReqSize - 1)
+			throw;
+	}
+
 };
 

@@ -703,11 +703,28 @@ int main(int argc, char** argv)
 			return MainRunModes::SortXMLHitsByMeanIntensity(Arg2, Arg3, Options);
 		}
 	}
+	
+	else if (Arg1 == "simulate" || Arg1 == "-simulate" || Arg1 == "s" || Arg1 == "-s")
+	{
+		std::cout << "Run ICA in simulation mode - autocorrelation" << std::endl;;
+		if (argc < 3)
+		{
+			std::cerr << "-Simulate requires one additional argument (\"Settings.xml\")\n";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			return MainRunModes::Simulate(Arg2, Options);
+		}
+	}
+	
 	else if (Arg1 == "qdtest" || Arg1 == "-qdtest" )
 	{
 		QDTests(Options);
 		return 0;
 	}
+
 	else
 	{
 		std::cout << "Invalid argument: \"" << Arg1 << "\"\n";

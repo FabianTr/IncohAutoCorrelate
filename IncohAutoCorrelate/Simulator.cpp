@@ -762,8 +762,6 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 		unsigned int NumEM = EmitterList.size();
 
 
-
-
 		{ // invert and store rotation matrix
 
 			Eigen::Matrix3d RotM;
@@ -835,8 +833,6 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 		Params[8] = v_Step[2]; //v3
 
 		Params[9] = SimSettings.Wavelength;//Wavelength (needed to calculate k)
-
-
 
 		for (unsigned int ModeRun = 0; ModeRun < SimSettings.Modes; ModeRun++)
 		{
@@ -929,8 +925,6 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 
 		//PostProcess 
 
-
-
 		//Rescale for expected number of photons
 		double ExpNumOfPhotones = ((double)SimSettings.AveragePhotonesPerEmitterOnDetector * (double)SimSettings.CrystSettings.FlYield * (double)EmitterCrystal.AtomPositions.size());
 		double IntegratedIntensity = 0.0;
@@ -956,10 +950,6 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 
 		//Multiply with Photon value
 		ArrayOperators::MultiplyScalar(Intensity, SimSettings.Value_per_Photon, Det.DetectorSize[0] * Det.DetectorSize[1]);
-
-
-
-
 
 		//Push back pattern Intensity to Output Vector
 		for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
@@ -989,10 +979,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 
 		Output.HitEvents.push_back(curr_Event);
 
-
-
 		//print status
-
 		if (N >= 100) {
 
 			if ((i + 1) % (N / 100) == 0)
@@ -1008,7 +995,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 		else
 		{
 			g_echo_mutex_Sim.lock();
-			std::cout << "Thread " << ThreadNum << ": Pattern " << (i + 1) << "/" << N << " ^= " << ((i + 1) * 100 / N) << "\% \t in: " << Profiler.Toc(false) << "s\n";
+			std::cout << "Thread " << ThreadNum << ": Pattern " << (i + 1) << "/" << N << " ^= " << ((i + 1) * 100 / N) << "\% \t in: " << Profiler.Toc(false) << "s" << std::endl;
 			g_echo_mutex_Sim.unlock();
 			//std::cout << "Current Intensity: " << ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1])
 			//	<< " =^ " << (int)(ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1]) / SimSettings.Value_per_Photon)
@@ -1130,7 +1117,7 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 
 
 	//launch threads
-	std::cout << "Launch 2 Threads\n";
+	std::cout << "Launch 2 Threads" << std::endl;
 	Profiler.Tic();
 
 	std::thread Thread1(SimulatePart, EmitterCrystal, std::ref(DetPart[0]), SimSettingsPart[0], std::ref(OutputPart[0]), std::ref(Options), 1);
@@ -1141,8 +1128,8 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 	Thread2.join();
 	//Thread3.join();
 
-	std::cout << "**************\n" << SimSettings.NumberOfSimulations << " patterns done in ";
-	Profiler.Toc(true);
+	std::cout << "**************\n" << SimSettings.NumberOfSimulations << " patterns done in " << Profiler.Toc() << "s" << std::endl;
+	
 
 	Output.HitEvents = OutputPart[0].HitEvents;
 	Output.HitEvents.insert(Output.HitEvents.end(), OutputPart[1].HitEvents.begin(), OutputPart[1].HitEvents.end());

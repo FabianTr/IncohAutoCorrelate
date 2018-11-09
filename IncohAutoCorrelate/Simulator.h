@@ -33,7 +33,7 @@ public:
 		float AveragePhotonesPerEmitterOnDetector = 1.0f;
 
 		bool PoissonSample = true; //apply Poisson distribution to obtain discrete Photons
-		float Value_per_Photon = 6.4f; //factor to be applied (after Poisson sampling)
+		float Value_per_Photon = 1.0f; //factor to be applied (after Poisson sampling)
 		float ADUNoise = 0.0f; //additional white noise in +/- Value_per_Photon
 
 		bool AutoPixelOrientation = true; //if true guesses orientation from Pixel-map
@@ -45,7 +45,7 @@ public:
 		Crystal::EmittingCrystSettings CrystSettings; //Settings for emitting Crystal
 
 		//output stuff
-		bool SaveResults = false;
+		bool SaveResults = true;
 		std::string Dataset = "data";
 		std::string Filename_Intensity = "";
 		std::string Filename_XML = "";

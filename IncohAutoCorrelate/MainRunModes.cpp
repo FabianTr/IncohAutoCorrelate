@@ -155,6 +155,71 @@ PPP::Create_LAPSettings MainRunModes::LoadPPPLAPSettings(std::string Filename, S
 	return LAPS;
 }
 
+MainRunModes::AllSimSettings MainRunModes::LoadSimulationSettings(std::string Filename, Settings & Options)
+{
+	MainRunModes::AllSimSettings SimS;
+
+	using boost::property_tree::ptree;
+	ptree pt;
+	boost::property_tree::read_xml(Filename, pt);
+
+	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
+
+
+	{
+		SimS.SimSettings.Filename_XML = pt.get<std::string>("root.Simulation.OutputPath_EventList", "SimOut.xml");
+		SimS.SimSettings.Filename_Intensity = pt.get<std::string>("root.Simulation.OutputPath_Intensities", "SimOut.h5");
+		SimS.SimSettings.Dataset = pt.get<std::string>("root.Simulation.OutputDataset_Intensities", "data");
+		SimS.SimSettings.SaveResults = pt.get<bool>("root.Simulation.SaveResults", true);
+
+		SimS.SimSettings.Wavelength = pt.get<double>("root.Simulation.Wavelength", 1.94);
+		SimS.SimSettings.NumberOfSimulations = pt.get<unsigned int>("root.Simulation.NumberOfPattern", 10);
+		SimS.SimSettings.Modes = pt.get<unsigned int>("root.Simulation.NumberOfModes", 1);
+		SimS.SimSettings.CrystSettings.FlYield = pt.get<float>("root.Simulation.FluorescenceYield", 1.0f);
+		SimS.SimSettings.CrystSettings.Incoherent = pt.get<bool>("root.Simulation.Incoherent", true);
+		SimS.SimSettings.CrystSettings.RandOrientation = pt.get<bool>("root.Simulation.RandomOriented", false);
+		SimS.SimSettings.CrystSettings.Isotropie = pt.get<float>("root.Simulation.OrientationIsotropie", 1.0f);
+
+		SimS.SimSettings.AveragePhotonesPerEmitterOnDetector = pt.get<float>("root.Simulation.AveragePhotonesPerEmitterOnDetector", 1.0f);
+		SimS.SimSettings.SubSampling = pt.get<unsigned int>("root.Simulation.SubSampling", 1);
+		SimS.SimSettings.PoissonSample = pt.get<bool>("root.Simulation.PoissonSample", true);
+		SimS.SimSettings.Value_per_Photon = pt.get<float>("root.Simulation.ValuePerPhoton", 1.0f);
+		SimS.SimSettings.ADUNoise = pt.get<float>("root.Simulation.ADUNoise", 0.0f);
+
+		SimS.SimSettings.AutoPixelOrientation = pt.get<bool>("root.Simulation.AutoPixelOrientation", true);
+		SimS.SimSettings.AutoPixelSize = pt.get<bool>("root.Simulation.AutoPixelSize", true);
+
+
+		std::string delimiter = ";"; // for array parsing
+
+
+		Settings::SplitString(pt.get<std::string>("root.Simulation.PixelOrientationVectors", "0.0; 1.0; 0.0; 0.0; 0.0; 1.0"), SimS.SimSettings.PixelOrientationVectors, 6, delimiter);
+
+		Settings::SplitString(pt.get<std::string>("root.Simulation.PixelSize", "50.0; 50.0"), SimS.SimSettings.PixelSize, 2, delimiter);
+
+		Settings::SplitString(pt.get<std::string > ("root.Simulation.UnitCells", "10; 10; 10"), SimS.SimSettings.UnitCells, 3, delimiter);
+
+		//Parse LatticeVectors
+		Settings::SplitString(pt.get<std::string >("root.Simulation.LatticeVector_1", "1.0; 0.0; 0.0"), SimS.LatticeVector[0], 3, delimiter);
+		Settings::SplitString(pt.get<std::string >("root.Simulation.LatticeVector_2", "0.0; 1.0; 0.0"), SimS.LatticeVector[1], 3, delimiter);
+		Settings::SplitString(pt.get<std::string >("root.Simulation.LatticeVector_3", "0.0; 0.0; 1.0"), SimS.LatticeVector[2], 3, delimiter);
+
+
+		unsigned int NOE = pt.get<unsigned int>("root.Simulation.UnitCell.NumberOfEmittersPerUnitcell", -1);
+		std::array<double, 3> UcEm;
+		SimS.UnitCell.clear();
+		for (unsigned int i = 0; i < NOE; i++)
+		{
+			Settings::SplitString(pt.get<std::string >("root.Simulation.UnitCell.Emitter_" + std::to_string(i+1), "0.0; 0.0; 0.0"), UcEm.data(), 3, delimiter);
+			SimS.UnitCell.push_back(UcEm);
+		}
+
+	}
+
+
+	return SimS;
+}
+
 MainRunModes::AllSettings MainRunModes::LoadSettings(std::string Filename, Settings & Options)
 {
 	MainRunModes::AllSettings SettingsStack;
@@ -162,6 +227,7 @@ MainRunModes::AllSettings MainRunModes::LoadSettings(std::string Filename, Setti
 	SettingsStack.EvaluationSettings = MainRunModes::LoadEvaluationSettings(Filename, Options); //Evaluation & General
 	SettingsStack.StatisticsSettings = MainRunModes::LoadStatisticSettings(Filename, Options); //Statistics
 	SettingsStack.PPPLAPSettings = MainRunModes::LoadPPPLAPSettings(Filename, Options); //PPP.LAP
+	SettingsStack.AllSimulationSettings = MainRunModes::LoadSimulationSettings(Filename, Options);
 
 	return SettingsStack;
 }
@@ -199,6 +265,7 @@ int MainRunModes::Create_Example_Config_File(std::string Filename, Settings & Op
 	pt = Example_Evaluation_Config_PT(pt, Options);
 	pt = Example_Statistics_Config_PT(pt, Options);
 	pt = Example_PatternPreProcessing_LAP(pt, Options);
+	pt = Example_Simulation_Config_PT(pt, Options);
 	//save to File
 	boost::property_tree::write_xml(Filename, pt);
 
@@ -398,6 +465,125 @@ boost::property_tree::ptree MainRunModes::Example_PatternPreProcessing_LAP(boost
 	return pt;
 }
 
+boost::property_tree::ptree MainRunModes::Example_Simulation_Config_PT(boost::property_tree::ptree pt, Settings & Options)
+{
+	Simulator::SimulationSettings SimS;
+
+	SimS.Filename_XML = "OutputEventList.xml";
+	SimS.Filename_Intensity = "OutputIntensities.h5";
+	SimS.Dataset = "data";
+	SimS.SaveResults = true;
+
+	SimS.Wavelength = 1.94;
+	SimS.NumberOfSimulations = 10;
+	SimS.Modes = 1;
+	SimS.CrystSettings.FlYield = 1.0f;
+	SimS.CrystSettings.Incoherent = true;
+	SimS.CrystSettings.RandOrientation = false;
+	SimS.CrystSettings.Isotropie = 1.0f;
+
+	SimS.AveragePhotonesPerEmitterOnDetector = 1.0f;
+	SimS.SubSampling = 1;
+	SimS.PoissonSample = true;
+	SimS.Value_per_Photon = 1.0f;
+	SimS.ADUNoise = 0;
+
+	SimS.AutoPixelOrientation = true;
+	SimS.AutoPixelSize = true;
+
+	SimS.PixelOrientationVectors[0] = 0.0;
+	SimS.PixelOrientationVectors[1] = 1.0;
+	SimS.PixelOrientationVectors[2] = 0.0;
+	SimS.PixelOrientationVectors[3] = 0.0;
+	SimS.PixelOrientationVectors[4] = 0.0;
+	SimS.PixelOrientationVectors[5] = 1.0;
+
+	SimS.PixelSize[0] = 50;
+	SimS.PixelSize[1] = 50;
+
+
+	SimS.UnitCells[0] = 10;
+	SimS.UnitCells[1] = 10;
+	SimS.UnitCells[2] = 10;
+
+
+	//Options.MReference << 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0;
+
+	double LatticeVector[3][3];
+	LatticeVector[0][0] = 1.0;
+	LatticeVector[0][1] = 0.0;
+	LatticeVector[0][2] = 0.0;
+
+	LatticeVector[1][0] = 0.0;
+	LatticeVector[1][1] = 1.0;
+	LatticeVector[1][2] = 0.0;
+
+	LatticeVector[2][0] = 0.0;
+	LatticeVector[2][1] = 0.0;
+	LatticeVector[2][2] = 1.0;
+
+	unsigned int NumberOfEmittersPerUnitcell = 1;
+
+	std::vector<std::array<double, 3>> UnitCell;
+	std::array<double, 3> t_pos;
+	t_pos = { 0 , 0 , 0 };
+	UnitCell.push_back(t_pos);
+
+
+
+	{
+		pt.put("root.Simulation.OutputPath_EventList", SimS.Filename_XML);
+		pt.put("root.Simulation.OutputPath_Intensities", SimS.Filename_Intensity);
+		pt.put("root.Simulation.OutputDataset_Intensities", SimS.Dataset);
+		//pt.put("root.Simulation.SaveResults", SimS.SaveResults);
+
+		pt.put("root.Simulation.Wavelength", SimS.Wavelength);
+		pt.put("root.Simulation.NumberOfPattern", SimS.NumberOfSimulations);
+		pt.put("root.Simulation.NumberOfModes", SimS.Modes);
+		pt.put("root.Simulation.FluorescenceYield", SimS.CrystSettings.FlYield);
+		pt.put("root.Simulation.Incoherent", SimS.CrystSettings.Incoherent);
+		pt.put("root.Simulation.RandomOriented", SimS.CrystSettings.RandOrientation);
+		pt.put("root.Simulation.OrientationIsotropie", SimS.CrystSettings.Isotropie);
+
+		pt.put("root.Simulation.AveragePhotonesPerEmitterOnDetector", SimS.AveragePhotonesPerEmitterOnDetector);
+		pt.put("root.Simulation.SubSampling", SimS.SubSampling);
+		pt.put("root.Simulation.PoissonSample", SimS.PoissonSample);
+		pt.put("root.Simulation.ValuePerPhoton", SimS.Value_per_Photon);
+		pt.put("root.Simulation.ADUNoise", SimS.ADUNoise);
+
+		pt.put("root.Simulation.AutoPixelOrientation", SimS.AutoPixelOrientation);
+		pt.put("root.Simulation.AutoPixelSize", SimS.AutoPixelSize);
+
+		std::string POV = std::to_string(SimS.PixelOrientationVectors[0]);
+		for (int i = 1; i < 6; i++)
+		{
+			POV = POV + "; " + std::to_string(SimS.PixelOrientationVectors[i]);
+		}
+		pt.put("root.Simulation.PixelOrientationVectors", POV);
+		
+		std::string PXS = std::to_string(SimS.PixelSize[0]) + "; " + std::to_string(SimS.PixelSize[1]);
+		pt.put("root.Simulation.PixelSize", PXS);
+
+		std::string UC = std::to_string(SimS.UnitCells[0]) + "; " + std::to_string(SimS.UnitCells[1]) + "; " + std::to_string(SimS.UnitCells[2]);
+		pt.put("root.Simulation.UnitCells", UC);
+
+		std::string LAV = std::to_string(LatticeVector[0][0]) + "; " + std::to_string(LatticeVector[0][1])  + "; " + std::to_string(LatticeVector[0][2]);
+		pt.put("root.Simulation.LatticeVector_1", LAV);
+		LAV = std::to_string(LatticeVector[1][0]) + "; " + std::to_string(LatticeVector[1][1]) + "; " + std::to_string(LatticeVector[1][2]);
+		pt.put("root.Simulation.LatticeVector_2", LAV);
+		LAV = std::to_string(LatticeVector[2][0]) + "; " + std::to_string(LatticeVector[2][1]) + "; " + std::to_string(LatticeVector[2][2]);
+		pt.put("root.Simulation.LatticeVector_3", LAV);
+
+		pt.put("root.Simulation.UnitCell.NumberOfEmittersPerUnitcell", NumberOfEmittersPerUnitcell);
+
+		std::string EM = std::to_string(UnitCell[0][0]) + "; " + std::to_string(UnitCell[0][1]) + "; " + std::to_string(UnitCell[0][2]);
+		pt.put("root.Simulation.UnitCell.Emitter_1", EM);
+
+	}
+
+	return pt;
+}
+
 
 //Run Evaluations
 
@@ -548,7 +734,6 @@ int MainRunModes::Create_XMLHitlist_from_H5Stack(std::vector<std::string> H5_Pat
 //Auto correlate
 int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 {
-	
 	//Setup Open CL Stuff
 	Options.SetUp_OpenCL();
 	//load Config File
@@ -661,6 +846,49 @@ int MainRunModes::SortXMLHitsByMeanIntensity(std::string Arg1, std::string Arg2,
 	std::cout << "Sorted Hit-Event-List (XML) saved as \"" << Arg2 << "\"\n";
 	std::cout << "Done.\n";
 	return 0;
+
+	return 0;
+}
+
+int MainRunModes::Simulate(std::string ConfigFile, Settings & Options)
+{
+	//Setup Open CL Stuff
+	Options.SetUp_OpenCL();
+
+	MainRunModes::AllSettings SIS = LoadSettings(ConfigFile, Options);
+
+	//Check Stuff
+	{
+		if (SIS.AllSimulationSettings.UnitCell.size() == 0)
+		{
+			std::cerr << "ERROR: No amtoms within unit cell" << std::endl;
+			std::cerr << "    -> in MainRunModes::Simulate()" << std::endl;
+			throw;
+		}
+	
+	}
+
+	ProfileTime Profiler;
+	Profiler.Tic();
+
+	SIS.AllSimulationSettings.SimSettings.CrystalSize[0] = SIS.AllSimulationSettings.SimSettings.UnitCells[0] * sqrt(SIS.AllSimulationSettings.LatticeVector[0][0] * SIS.AllSimulationSettings.LatticeVector[0][0] + SIS.AllSimulationSettings.LatticeVector[1][0] * SIS.AllSimulationSettings.LatticeVector[1][0] + SIS.AllSimulationSettings.LatticeVector[2][0] * SIS.AllSimulationSettings.LatticeVector[2][0]);
+	SIS.AllSimulationSettings.SimSettings.CrystalSize[1] = SIS.AllSimulationSettings.SimSettings.UnitCells[1] * sqrt(SIS.AllSimulationSettings.LatticeVector[0][1] * SIS.AllSimulationSettings.LatticeVector[0][1] + SIS.AllSimulationSettings.LatticeVector[1][1] * SIS.AllSimulationSettings.LatticeVector[1][1] + SIS.AllSimulationSettings.LatticeVector[2][1] * SIS.AllSimulationSettings.LatticeVector[2][1]);
+	SIS.AllSimulationSettings.SimSettings.CrystalSize[2] = SIS.AllSimulationSettings.SimSettings.UnitCells[2] * sqrt(SIS.AllSimulationSettings.LatticeVector[0][2] * SIS.AllSimulationSettings.LatticeVector[0][2] + SIS.AllSimulationSettings.LatticeVector[1][2] * SIS.AllSimulationSettings.LatticeVector[1][2] + SIS.AllSimulationSettings.LatticeVector[2][2] * SIS.AllSimulationSettings.LatticeVector[2][2]);
+	
+	//Set up crystal
+	Crystal Cryst(SIS.AllSimulationSettings.LatticeVector,  SIS.AllSimulationSettings.SimSettings.UnitCells, SIS.AllSimulationSettings.UnitCell);
+	
+	//Set up detector
+	Detector Sim_Det;
+	Sim_Det.LoadPixelMap(SIS.EvaluationSettings.PixelMap_Path, SIS.EvaluationSettings.PixelMap_DataSet);
+	Sim_Det.Calc_kMap();
+
+	Simulator Sim;
+	Simulator::SimulationOutput Sim_Output;
+
+	Sim.ParSimulate(Cryst, Sim_Det, SIS.AllSimulationSettings.SimSettings, Sim_Output, Options);
+
+	std::cout << "Simulation performed within " << Profiler.Toc() / 3600 << "h" << std::endl;
 
 	return 0;
 }
