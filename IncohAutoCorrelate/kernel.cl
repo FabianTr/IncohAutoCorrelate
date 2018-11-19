@@ -547,8 +547,14 @@ __kernel void AutoCorr_CQ_AV(__global const float *IntensityData,
 		{
 			unsigned int sc1, sc2;
 
+			if ((unsigned int)(floor(q)) >= 1201)
+			{
+				printf("sc1: %d\n", (unsigned int)(floor(q)));
+			}
+
 			sc1 = (unsigned int)(floor(q)) + MaR_ScanAdd;
 			sc2 = sc1 + 1;
+
 
 			double Sep = q - (floor(q)); //separator
 
@@ -711,7 +717,7 @@ __kernel void AutoCorr_sparseHL_AAV(__global const float *HitList,
 
 		double Val = INT_ind * (double)HitList[4 * i + 3];
 
-		if (q > MaxQ) //check if q is in boundaries
+		if (q  > MaxQ) //check if q is in boundaries
 		{
 			continue;
 		}

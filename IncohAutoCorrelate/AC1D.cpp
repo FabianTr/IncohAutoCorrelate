@@ -47,14 +47,14 @@ void AC1D::Initialize(Detector & Det, unsigned int ArraySize)
 {
 	Shape.Size = ArraySize;
 	Shape.Max_Q = (float)(sqrt(Det.Max_q[0] * Det.Max_q[0] + Det.Max_q[1] * Det.Max_q[1] + Det.Max_q[2] * Det.Max_q[2]));
-	Shape.dq_per_Step = Shape.Max_Q / ((float)(Shape.Size + 1));
+	Shape.dq_per_Step = Shape.Max_Q / ((float)(Shape.Size - 2));
 	Initialize();
 }
 void AC1D::Initialize(Detector & Det, unsigned int ArraySize, float QZoom)
 {
 	Shape.Size = ArraySize;
 	Shape.Max_Q = (float)(sqrt(Det.Max_q[0] * Det.Max_q[0] + Det.Max_q[1] * Det.Max_q[1] + Det.Max_q[2] * Det.Max_q[2]))/QZoom ;
-	Shape.dq_per_Step = Shape.Max_Q / ((float)(Shape.Size + 1));
+	Shape.dq_per_Step = Shape.Max_Q / ((float)(Shape.Size - 2));
 	Initialize();
 }
 
@@ -262,7 +262,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 						(Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) * (Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) +
 						(Det.SparseHitList[j][2] - Det.SparseHitList[k][2]) * (Det.SparseHitList[j][2] - Det.SparseHitList[k][2]));
 
-					if (q + dqdx > MaxQ)
+					if (q > MaxQ)
 					{
 						continue;
 					}
@@ -287,6 +287,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 						AC_M[sc1] += Val1;
 						AC_M[sc2] += Val2;
+
 					}
 				}
 			}
@@ -298,11 +299,13 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 
 			int MapAndReduce = 10000;
 			int VecSize = (int)ceilf(MaxQ / dqdx) - 1; //the -1 compensates for zeropadding
-			int TempArraySize = MapAndReduce * VecSize;
+
+
+			unsigned int TempArraySize = MapAndReduce * VecSize;
 
 			//set Parameter
 			double Params[7];
-
+			
 			Params[0] = (double)Det.SparseHitList.size();
 			Params[1] = (double)VecSize;
 			Params[2] = (double)MaxQ;
@@ -320,7 +323,6 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 			{
 				std::this_thread::sleep_for(std::chrono::microseconds(Options.ThreadSleepForOCLDev));
 			}
-
 
 			//obtain Device
 			cl::Device CL_Device = Options.CL_devices[OpenCLDeviceNumber];
@@ -361,14 +363,14 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 			Options.OCL_FreeDevice(OpenCLDeviceNumber);
 
 			//Reduce mapped data and convert to double
-			int j = 0;
-			for (unsigned int i = 0; i < TempArraySize; i++)
+			unsigned int j = 0;
+			for (unsigned int ii = 0; ii < TempArraySize; ii++)
 			{
 				if (j == VecSize)
 					j = 0;
 
 
-				AC_M[j] += ((double)TempArray[i] / (double)Multiplicator);
+				AC_M[j] += ((double)TempArray[ii] / (double)Multiplicator);
 				j++;
 			}
 
@@ -424,6 +426,9 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 		WorkerBounds.push_back(t);
 	}
 
+
+	std::cout << Shape.Size << std::endl;
+
 	std::vector<double *> AC_Map;
 	for (int i = 0; i < Threads; i++)
 	{
@@ -442,6 +447,8 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 	{
 		AC_Threads[i].join();
 	}
+
+
 
 
 	//create AC_UW
