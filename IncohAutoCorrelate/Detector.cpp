@@ -934,7 +934,7 @@ int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, boo
 	}
 
 	float SHLsizeQuot = ((float)SparseHitList.size()) / ((float)(DetectorSize[0] * DetectorSize[1]));
-	if ( ( (SHLsizeQuot < 0.0075f) && (CpuGpu == -1) ) || CpuGpu == 0) // (switch for SparseHitList.size / DetSize > p(0.0075))
+	if ( ( (SHLsizeQuot < 0.01f) && (CpuGpu == -1) ) || CpuGpu == 0) // (switch for SparseHitList.size / DetSize > p(0.01) [old p(0.0075)])
 	{ //Implementation for CPU
 #pragma omp parallel for
 		for (unsigned int i = 0; i < SparseHitList.size(); i++)

@@ -44,7 +44,7 @@ public:
 
 	//Sparse or Dense Autocorrelate dyn switch
 
-	void Calculate_AC_UW_MR(Settings &Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, int Threads = 200);
+	void Calculate_AC_UW_MR(Settings &Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float, 2> Photonisation, unsigned int LowerBoundary, unsigned int UpperBoundary, unsigned int Threads = 200);
 
 
 

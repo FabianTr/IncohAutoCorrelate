@@ -377,6 +377,8 @@ void Settings::SetUp_OpenCL()
 	}
 
 	Checklist.OpenCL = true;
+
+	std::cout << "OpenCL kernels successful compiled.\n";
 }
 
 int Settings::OCL_ReserveDevice()

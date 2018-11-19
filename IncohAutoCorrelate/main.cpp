@@ -489,6 +489,7 @@ void QDTests(Settings & Options)
 	Clusters.push_back(GhostCluster);
 	ClHeader.push_back("Ghost");
 
+
 	//Cental Peak (CP)
 	Clusters.push_back({ 276 + 276 * 553 + 276 * 553 * 553 });
 	ClHeader.push_back("CP (276,276,276)");

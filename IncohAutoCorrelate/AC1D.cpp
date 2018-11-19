@@ -262,7 +262,7 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 						(Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) * (Det.SparseHitList[j][1] - Det.SparseHitList[k][1]) +
 						(Det.SparseHitList[j][2] - Det.SparseHitList[k][2]) * (Det.SparseHitList[j][2] - Det.SparseHitList[k][2]));
 
-					if (q > MaxQ)
+					if (q + dqdx > MaxQ)
 					{
 						continue;
 					}
@@ -388,35 +388,37 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 	}
 }
 
-void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation, int Threads )
+void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::Interpolation IterpolMode, std::array<float,2> Photonisation, unsigned int LowerBoundary, unsigned int UpperBoundary,unsigned int Threads)
 {
 	//int Threads = 200; //(200) set higher than expectred threads because of waitingtimes for read from file
-	if (Options.HitEvents.size() < 200)
+	unsigned int StackSize = UpperBoundary - LowerBoundary;
+
+	if (StackSize < Threads)
 	{
-		Threads = (int)Options.HitEvents.size();
+		Threads = StackSize;
 	}
 	
-	if (Options.HitEvents.size() <= 0)
+	if (Options.HitEvents.size() <= 0 || StackSize <= 0)
 	{
 		std::cerr << "ERROR: No entrys in HitEvents\n";
 		std::cerr << "    -> in AC1D::Calculate_AC_M()\n";
 		throw;
 	}
 
-	int WorkerSize = (int)Options.HitEvents.size() / (Threads - 1);
+	unsigned int WorkerSize = (unsigned int) ceil( (double)StackSize / (Threads - 1.0));
 
 	std::vector<std::array<unsigned int,2>> WorkerBounds;
 	for (unsigned int i = 0; i < Threads; i++)
 	{
 		std::array<unsigned int, 2> t;
-		t[0] = i * WorkerSize;
-		if (t[0] + WorkerSize < Options.HitEvents.size())
+		t[0] = i * WorkerSize + LowerBoundary;
+		if (t[0] + WorkerSize < UpperBoundary)
 		{
 			t[1] = t[0] + WorkerSize;
 		}
 		else
 		{
-			t[1] = Options.HitEvents.size();
+			t[1] = UpperBoundary;
 		}
 	//	std::cout << t[0] << " - " << t[1] << "\n";
 		WorkerBounds.push_back(t);

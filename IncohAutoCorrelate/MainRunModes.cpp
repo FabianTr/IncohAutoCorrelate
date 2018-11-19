@@ -205,7 +205,7 @@ MainRunModes::AllSimSettings MainRunModes::LoadSimulationSettings(std::string Fi
 		Settings::SplitString(pt.get<std::string >("root.Simulation.LatticeVector_3", "0.0; 0.0; 1.0"), SimS.LatticeVector[2], 3, delimiter);
 
 
-		unsigned int NOE = pt.get<unsigned int>("root.Simulation.UnitCell.NumberOfEmittersPerUnitcell", -1);
+		unsigned int NOE = pt.get<unsigned int>("root.Simulation.UnitCell.NumberOfEmittersPerUnitcell", 0);
 		std::array<double, 3> UcEm;
 		SimS.UnitCell.clear();
 		for (unsigned int i = 0; i < NOE; i++)
@@ -738,11 +738,14 @@ int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 	Options.SetUp_OpenCL();
 	//load Config File
 	//RunIAC::CreateDataEval_Settings EVS = LoadEvaluationSettings(ConfigFile, Options);
+
+	std::cout << "load settings\n";
 	MainRunModes::AllSettings EVS = LoadSettings(ConfigFile, Options);
 
 	ProfileTime Profiler;
 	Profiler.Tic();
 	RunIAC::IAC_Report Report;
+	std::cout << "start evaluation\n";
 	Report = RunIAC::Run_AutoCorr_DataEval(Options, EVS.EvaluationSettings);
 	double TimeNeeded = Profiler.Toc(false);
 

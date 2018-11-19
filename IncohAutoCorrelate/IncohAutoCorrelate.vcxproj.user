@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-s /home/trostfab/scratch/LU56/Simulation/Settings_Sim.xml</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-e /home/trostfab/scratch/LU56/run/Settings186av.xml</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

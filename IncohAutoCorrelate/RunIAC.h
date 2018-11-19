@@ -111,7 +111,7 @@ namespace RunIAC
 		double DetDisturb_Rot = 0.0; //in degree
 
 
-
+		bool IgnoreOrientation = false;
 	};
 	IAC_Report Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings);
 
