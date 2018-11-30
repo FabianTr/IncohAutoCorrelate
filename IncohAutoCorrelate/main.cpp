@@ -44,7 +44,7 @@ void Test_CQ_small(Settings &Options, Detector &Det)
 
 	int const MeshSize = 501;
 	float const QZoom = 1.0f;
-
+	
 	ProfileTime profiler;
 
 	// Get Sparse C(q)  --- TEST
