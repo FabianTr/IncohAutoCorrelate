@@ -207,7 +207,7 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 		Detector::AutoCorrFlags flags;
 		flags.InterpolationMode = Settings::Interpolation::NearestNeighbour;
-		Det.AutoCorrelateSparseList(BigMesh, flags, true, Options);
+		Det.AutoCorrelateSparseList(BigMesh, flags, flags, true, Options);
 
 	}
 
@@ -704,7 +704,20 @@ int main(int argc, char** argv)
 			return MainRunModes::SortXMLHitsByMeanIntensity(Arg2, Arg3, Options);
 		}
 	}
-	
+	else if (Arg1 == "xmlfromcsv" || Arg1 == "-xmlfromcsv" || Arg1 == "xfc" || Arg1 == "-xfc")
+	{
+		if (argc < 4)
+		{
+			std::cerr << "-XmlFromCsv requires two additional arguments (\"EventList_IN.CSV\" \"EventList_Out.xmli\")\n";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			std::string Arg3 = argv[3];
+			return MainRunModes::GetHitListFromCSVFile (Arg2, Arg3, Options);
+		}
+	}
 	else if (Arg1 == "simulate" || Arg1 == "-simulate" || Arg1 == "s" || Arg1 == "-s")
 	{
 		std::cout << "Run ICA in simulation mode - autocorrelation" << std::endl;;

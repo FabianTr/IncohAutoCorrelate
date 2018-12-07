@@ -42,7 +42,7 @@ public:
 
 	void Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode);
 	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode );
-	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode, bool DoubleBinning);
+	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation FirstInterpolationMode, Settings::Interpolation SecondInterpolationMode, bool DoubleBinning);
 	
 
 

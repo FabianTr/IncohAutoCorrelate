@@ -17,6 +17,11 @@
 #include <omp.h>
 #include <Eigen/Dense>
 
+// Conventions:
+// ------------
+// Matrices stored in 1D arrays (e.g. the rotation matrix) are always row major! (be aware, that for example Matlab and PyQtGraph are Column major but Pylab again row major)
+//
+// ------------
 
 class Settings
 {
@@ -32,7 +37,7 @@ public:
 
 	struct HitEvent
 	{
-		float RotMatrix[9]; // in rez space [x1 y1 z1 x2 y2 z2 x3 y3 z3] so it is multiplied as: q = M * q_local = {{q_local_1 * x1 + q_local_2 * y1 + q_local_3 * z1},{q_local_1 * x2 + ...},  {...}}
+		float RotMatrix[9]; //ROW MAJOR!!! // in rez space [x1 y1 z1 x2 y2 z2 x3 y3 z3] so it is multiplied as: q = M * q_local = {{q_local_1 * x1 + q_local_2 * y1 + q_local_3 * z1},{q_local_1 * x2 + ...},  {...}}
 		std::string Filename;
 		std::string Dataset;
 		int Event;

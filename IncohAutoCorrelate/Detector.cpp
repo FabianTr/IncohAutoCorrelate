@@ -918,7 +918,7 @@ void Detector::InitializeDetector(H5std_string PixelMap_Path, H5std_string Pixel
 	CreateSparseHitList(Pixel_Threshold);
 }
 
-int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, bool DoubleMapping, Settings & Options, int CpuGpu)
+int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags FlagsFirstMap, AutoCorrFlags FlagsSecondMap, bool DoubleMapping, Settings & Options, int CpuGpu)
 {
 	if (!Checklist.SparseHitList)
 	{
@@ -943,16 +943,15 @@ int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, boo
 			{
 				float q[3];
 				//float RM[9] = { 1,0,0,0,1,0,0,0,1 };//TODO IMPLEMENT ROTATION MATRIX -> THIS IS A DUMMY
-
 				q[0] = SparseHitList[i][0] - SparseHitList[j][0];
 				q[1] = SparseHitList[i][1] - SparseHitList[j][1];
 				q[2] = SparseHitList[i][2] - SparseHitList[j][2];
-				BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
+				BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], FlagsFirstMap.InterpolationMode, FlagsSecondMap.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
 				//std::cout << SparseHitList[i][3] * SparseHitList[j][3] << ", ";
 				q[0] = SparseHitList[j][0] - SparseHitList[i][0];
 				q[1] = SparseHitList[j][1] - SparseHitList[i][1];
 				q[2] = SparseHitList[j][2] - SparseHitList[i][2];
-				BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], Flags.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
+				BigMesh.Atomic_Add_q_Entry(q, DetectorEvent->RotMatrix, SparseHitList[i][3] * SparseHitList[j][3], FlagsFirstMap.InterpolationMode, FlagsSecondMap.InterpolationMode, DoubleMapping); // DetectorEvent->RotMatrix
 			}
 		}
 		return 0; //For statistics: CPU -> 0
@@ -964,7 +963,7 @@ int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, boo
 		double Multiplicator = 10; //1 is sufficient for photon discretised values (only integer possible)
 
 		//set Parameter
-		double Params[8];
+		double Params[9];
 		Params[0] = SparseHitList.size();
 
 		Params[1] = BigMesh.Shape.dq_per_Voxel; //dq per Voxel
@@ -976,7 +975,8 @@ int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags Flags, boo
 		Params[5] = (double)DoubleMapping;
 
 		Params[6] = Multiplicator; //Multiplicator for conversion to long
-		Params[7] = Flags.InterpolationMode; //Not implementet, only nearest neighbours
+		Params[7] = FlagsFirstMap.InterpolationMode; //Not implementet, only nearest neighbours
+		Params[8] = FlagsSecondMap.InterpolationMode;
 								   //reserve OpenCL Device
 		int OpenCLDeviceNumber = -1;
 		cl_int err;

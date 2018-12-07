@@ -214,7 +214,7 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 		//if (EvalSettings.EchoLevel > 4)
 		//	std::cout << i << ": Pixels with hits: " << Det.SparseHitList.size()*100.0 / (Det.DetectorSize[0] * Det.DetectorSize[1]) << "%" << "    Mean intensity: " << PrgSettings.HitEvents[i].MeanIntensity << "\n";
 
-		Det.AutoCorrelateSparseList(AC_uw, Flags, EvalSettings.DoubleMap, PrgSettings);
+		Det.AutoCorrelateSparseList(AC_uw, EvalSettings.AC_FirstMap_Flags,EvalSettings.AC_SecondMap_Flags, EvalSettings.DoubleMap, PrgSettings);
 	
 		file << PrgSettings.HitEvents[i].MeanIntensity;
 

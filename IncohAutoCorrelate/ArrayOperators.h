@@ -274,7 +274,8 @@ namespace ArrayOperators
 		return sum;
 	}
 
-	
+	void KabschRotationMatrixRetrieval3x3(float* Input, float* Reference, float* RotationMatrix);
+
 
 
 

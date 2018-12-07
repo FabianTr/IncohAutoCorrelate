@@ -26,6 +26,7 @@ namespace PPP
 		float SeedThershold = 0.5f;
 		float CombinedThershold = 0.9f;
 
+
 		std::string Output_Path = "";
 		std::string Output_Dataset = "";
 
@@ -45,4 +46,5 @@ namespace PPP
 
 	void GainCorrection(Detector & Det, std::string GainCorr_Path, std::string Dataset_Offset, std::string Dataset_Gain, Settings & Options);
 	
+
 }

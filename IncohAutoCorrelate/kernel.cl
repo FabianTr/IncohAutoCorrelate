@@ -332,14 +332,15 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 			continue;
 		}
 
-		Val_in = Val_in * Multiplicator * (double)RW[10 * i + 9];
-		unsigned long Val_out = (unsigned long)Val_in;
+		
 
 
 
 
 		if (InterpolMode == 0) //Nearest Neighbour
 		{
+			Val_in = Val_in * Multiplicator * (double)RW[10 * i + 9];
+			unsigned long Val_out = (unsigned long)Val_in;
 			//get new scans
 			int fs = 0, ms = 0, ss = 0;
 			fs = (int)(floor(q_out[0] + 0.5) + smallMeshCenterAB);
@@ -351,7 +352,49 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 		}
 		if (InterpolMode == 1) //Linear
 		{
-			printf("ERROR: Linear Interpolation not implemented yet\n");
+			double Sep_fs = 1 - (q_out[0] - floor(q_out[0]));
+			double Sep_ms = 1 - (q_out[1] - floor(q_out[1]));
+			double Sep_ss = 1 - (q_out[2] - floor(q_out[2]));
+
+			int fs = 0, ms = 0, ss = 0; //floor scans
+			fs = (int)(floor(q_out[0]) + smallMeshCenterAB);
+			ms = (int)(floor(q_out[1]) + smallMeshCenterAB);
+			ss = (int)(floor(q_out[2]) + smallMeshCenterAB);
+
+			unsigned long Val_out;
+			//fff  (fs: floor, ms: floor, ss: floor)
+			double Val_fff = Val_in * Multiplicator * (double)RW[10 * i + 9] * (Sep_fs*Sep_ms*Sep_ss);
+			Val_out = (unsigned long)Val_fff;
+			atomic_add(&(CQ[fs + ms * smallMeshSize_AB + ss * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
+			//fft (fs: floor, ms: floor, ss: top)
+			double Val_fft = Val_in * Multiplicator * (double)RW[10 * i + 9] * (Sep_fs*Sep_ms*(1-Sep_ss));
+			Val_out = (unsigned long)Val_fft;
+			atomic_add(&(CQ[fs + ms * smallMeshSize_AB + (ss + 1) * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
+			//tff
+			double Val_tff = Val_in * Multiplicator * (double)RW[10 * i + 9] * ((1-Sep_fs)*Sep_ms*Sep_ss);
+			Val_out = (unsigned long)Val_tff;
+			atomic_add(&(CQ[(fs+1) + ms * smallMeshSize_AB + (ss + 0) * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
+			//tft
+			double Val_tft = Val_in * Multiplicator * (double)RW[10 * i + 9] * ((1 - Sep_fs)*Sep_ms*(1-Sep_ss));
+			Val_out = (unsigned long)Val_tft;
+			atomic_add(&(CQ[(fs + 1) + ms * smallMeshSize_AB + (ss + 1) * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
+			//ftf
+			double Val_ftf = Val_in * Multiplicator * (double)RW[10 * i + 9] * (( Sep_fs)*(1-Sep_ms)*( Sep_ss));
+			Val_out = (unsigned long)Val_ftf;
+			atomic_add(&(CQ[(fs + 0) + (ms+1) * smallMeshSize_AB + (ss + 0) * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
+			//ftt
+			double Val_ftt = Val_in * Multiplicator * (double)RW[10 * i + 9] * ((Sep_fs)*(1 - Sep_ms)*(1-Sep_ss));
+			Val_out = (unsigned long)Val_ftt;
+			atomic_add(&(CQ[(fs + 0) + (ms + 1) * smallMeshSize_AB + (ss + 1) * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
+			//ttf
+			double Val_ttf = Val_in * Multiplicator * (double)RW[10 * i + 9] * ((1 - Sep_fs)*(1 - Sep_ms)*( Sep_ss));
+			Val_out = (unsigned long)Val_ttf;
+			atomic_add(&(CQ[(fs + 1) + (ms + 1) * smallMeshSize_AB + (ss + 0) * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
+			//ttt
+			double Val_ttt = Val_in * Multiplicator * (double)RW[10 * i + 9] * ((1 - Sep_fs)*(1 - Sep_ms)*(1-Sep_ss));
+			Val_out = (unsigned long)Val_ttt;
+			atomic_add(&(CQ[(fs + 1) + (ms + 1) * smallMeshSize_AB + (ss + 1) * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
+
 		}
 
 	}
@@ -377,6 +420,8 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	int DoubleMapping = (int)Params[5]; //if 1, maps two times (before and after rotation)
 	double Multiplicator = Params[6]; //for conversion float -> int
 
+	int InterpolMode_lvl1 = (int)Params[7];
+	int InterpolMode_lvl2 = (int)Params[8];
 
 	//obtain k-vector and value given by kernel index
 	float k1[3];
@@ -398,8 +443,7 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 			continue;
 		}
 
-		double t_Val = f_Val * SparseHitList[4 * i + 3];
-		long Val = (long)(t_Val * Multiplicator);
+		
 
 
 		//convert q to units of voxel
@@ -410,7 +454,7 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 
 		if(DoubleMapping == 1)
 		{ 
-			//map to mesh
+			//map to mesh             //Todo: implement first lvl interpolation
 			int fs_l, ms_l, ss_l;
 			fs_l = (int)(floor(q[0] + 0.5) + MeshCenter);
 			ms_l = (int)(floor(q[1] + 0.5) + MeshCenter);
@@ -434,27 +478,124 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 		q[2] = t_q[2];
 
 		//map to mesh
-		int fs, ms, ss;
-		fs = (int)(MeshCenter + floor(q[0] + 0.5) );
-		ms = (int)(MeshCenter + floor(q[1] + 0.5) );
-		ss = (int)(floor(q[2] + 0.5) );
+		if (InterpolMode_lvl2 == 0) //nearest neighbour
+		{
+			double t_Val = f_Val * SparseHitList[4 * i + 3];
+			long Val = (long)(t_Val * Multiplicator);
 
-		if (ss > 0)
-		{
-			atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
-		}
-		else
-		{
-			if (ss==0)
+			int fs, ms, ss;
+			fs = (int)(MeshCenter + floor(q[0] + 0.5));
+			ms = (int)(MeshCenter + floor(q[1] + 0.5));
+			ss = (int)(floor(q[2] + 0.5));
+
+			if (ss > 0) //positive half of slow scan dimension
+			{
 				atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+			}
+			else
+			{
+				if (ss == 0)
+					atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
 
-			//Mirrowed Entry
-			fs = (int)(MeshCenter - floor(q[0] + 0.5));
-			ms = (int)(MeshCenter - floor(q[1] + 0.5));
-			ss = (int)(- floor(q[2] + 0.5));
+				//Mirrowed Entry
+				fs = (int)(MeshCenter - floor(q[0] + 0.5));
+				ms = (int)(MeshCenter - floor(q[1] + 0.5));
+				ss = (int)(-floor(q[2] + 0.5));
 
-			atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+				atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+			}
+
 		}
+		if (InterpolMode_lvl2 == 1) //linear
+		{
+			double Sep_fs = 1 - (q[0] - floor(q[0]));
+			double Sep_ms = 1 - (q[1] - floor(q[1]));
+			double Sep_ss = 1 - (q[2] - floor(q[2]));
+
+			int fs, ms, ss;
+			ss = (int)(floor(q[2]));
+			double t_Val = f_Val * SparseHitList[4 * i + 3];
+			long Val;
+			if (q[2] >= 0.0) //positive half of slow scan dimension no mirrowing required
+			{
+				fs = (int)(MeshCenter + floor(q[0]));
+				ms = (int)(MeshCenter + floor(q[1]));
+				ss = (int)(floor(q[2]));
+				//fff
+				Val = (long)(t_Val * Multiplicator *((Sep_fs) * (Sep_ms)  * (Sep_ss)));
+				atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+				//tff
+				Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (Sep_ms)  * (Sep_ss)));
+				atomic_add(&(AC[(fs + 1) + (ms + 0) * MeshSize + (ss + 0) * MeshSize * MeshSize]), Val);
+				//fft
+				Val = (long)(t_Val * Multiplicator *((Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+				atomic_add(&(AC[(fs + 0) + (ms + 0) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
+				//tft
+				Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+				atomic_add(&(AC[(fs + 1) + (ms + 0) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
+				//ftf
+				Val = (long)(t_Val * Multiplicator *((Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+				atomic_add(&(AC[(fs + 0) + (ms + 1) * MeshSize + (ss + 0) * MeshSize * MeshSize]), Val);
+				//ttf
+				Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+				atomic_add(&(AC[(fs + 1) + (ms + 1) * MeshSize + (ss + 0) * MeshSize * MeshSize]), Val);
+				//ftt
+				Val = (long)(t_Val * Multiplicator *((Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+				atomic_add(&(AC[(fs + 0) + (ms + 1) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
+				//ttt
+				Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+				atomic_add(&(AC[(fs + 1) + (ms + 1) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
+				// ###########################################################	
+			}
+			if (q[2] <= 0.0) //Case zero needs to be handeld doubled
+			{
+				//Mirrowed Entry
+				fs = (int)(MeshCenter - floor(q[0]));
+				ms = (int)(MeshCenter - floor(q[1]));
+				ss = (int)(-floor(q[2]));
+
+				// => interpolation direction is mirrowed, too. { (scan + 1) -> (scan - 1) }
+
+				//fff
+				Val = (long)(t_Val * Multiplicator *((Sep_fs) * (Sep_ms)  * (Sep_ss)));
+				atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+				//tff
+				Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (Sep_ms)  * (Sep_ss)));
+				atomic_add(&(AC[(fs - 1) + (ms - 0) * MeshSize + (ss - 0) * MeshSize * MeshSize]), Val);
+				//ftf
+				Val = (long)(t_Val * Multiplicator *((Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+				atomic_add(&(AC[(fs - 0) + (ms - 1) * MeshSize + (ss - 0) * MeshSize * MeshSize]), Val);
+				//ttf
+				Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+				atomic_add(&(AC[(fs - 1) + (ms - 1) * MeshSize + (ss - 0) * MeshSize * MeshSize]), Val);
+
+				if (q[2] < 0.0) // be extra careful not to write to negative indices
+				{
+					//fft
+					Val = (long)(t_Val * Multiplicator *((Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+					atomic_add(&(AC[(fs - 0) + (ms - 0) * MeshSize + (ss - 1) * MeshSize * MeshSize]), Val);
+					//tft
+					Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+					atomic_add(&(AC[(fs - 1) + (ms - 0) * MeshSize + (ss - 1) * MeshSize * MeshSize]), Val);
+					//ftt
+					Val = (long)(t_Val * Multiplicator *((Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+					atomic_add(&(AC[(fs - 0) + (ms - 1) * MeshSize + (ss - 1) * MeshSize * MeshSize]), Val);
+					//ttt
+					Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+					atomic_add(&(AC[(fs - 1) + (ms - 1) * MeshSize + (ss - 1) * MeshSize * MeshSize]), Val);
+				}
+				// ###########################################################	
+
+			}
+
+
+
+
+		}
+
+
+
+
 	}
 }
 

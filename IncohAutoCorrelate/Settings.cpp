@@ -513,9 +513,9 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 		////
 
 		std::string RMOutput = std::to_string(HitEventList[i].RotMatrix[0]);
-		for (int i = 1; i < 9; i++)
+		for (int j = 1; j < 9; j++)
 		{
-			RMOutput += "; " + std::to_string(HitEventList[i].RotMatrix[i]);
+			RMOutput += "; " + std::to_string(HitEventList[i].RotMatrix[j]);
 		}
 		pt.put(path + ".Rotation", RMOutput);
 

@@ -133,7 +133,6 @@ void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize, float 
 	Checklist.CofQBigMesh = true;
 }
 
-
 void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, float q_Zoom)
 {
 	if (PerpSize % 2 == 0)//check if PerpSize is even or odd 
@@ -164,8 +163,7 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 
 	Shape.Size_AB = PerpSize + 2;//+2 padding
 
-
-
+	
 	if (q_Zoom == 1)
 	{
 		float t_1 = Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A];
@@ -180,8 +178,7 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 		Shape.Size_C = Shape.Size_AB;
 	}
 
-
-
+	
 	if (Shape.Size_C % 2 == 0)//check if PerpSize is even or odd 
 	{
 		Shape.Size_C += 1;
@@ -205,15 +202,15 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 
 void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode)
 {
-	Atomic_Add_q_Entry(q_local, RotationM, Value, InterpolationMode, false);
+	Atomic_Add_q_Entry(q_local, RotationM, Value, InterpolationMode, InterpolationMode, false);
 }
-void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode, bool DoubleBinning)
+void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation FirstInterpolationMode, Settings::Interpolation SecondInterpolationMode, bool DoubleBinning)
 {
 	if (DoubleBinning)
 	{
-		if (InterpolationMode == Settings::Interpolation::Linear)
+		if (FirstInterpolationMode == Settings::Interpolation::Linear)
 		{
-			std::cerr << "ERROR: Linear interpolation not implemented for double binning yet.\nContinue with nearest neighbor.\n";
+			std::cerr << "ERROR: Linear interpolation (for first step) not implemented for double binning yet.\nContinue with nearest neighbor.\n";
 		}
 
 		if (sqrtf(q_local[0] * q_local[0] + q_local[1] * q_local[1] + q_local[2] * q_local[2]) > Shape.Max_Q)
@@ -237,23 +234,77 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 
 		
 		//second binning
-		int fs, ms, ss;
-		fs = (int)floorf(q_local[0] + 0.5) + Shape.Center[0];
-		ms = (int)floorf(q_local[1] + 0.5) + Shape.Center[1];
-		ss = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
+		if (SecondInterpolationMode == 0) //neares neighbour
+		{
+			int fs, ms, ss;
+			fs = (int)floorf(q_local[0] + 0.5) + Shape.Center[0];
+			ms = (int)floorf(q_local[1] + 0.5) + Shape.Center[1];
+			ss = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
 
-		int s = Shape.Size_AB;
+			int s = Shape.Size_AB;
 
-		unsigned int val;
-		val = Options->FloatToInt(Value);
+			unsigned int val;
+			val = Options->FloatToInt(Value);
 
-		#pragma omp atomic
-		Mesh[fs + ms * s + ss * s*s] += val;
+			#pragma omp atomic
+			Mesh[fs + ms * s + ss * s*s] += val;
+		}
+		if (SecondInterpolationMode == 1) //linear
+		{
+			double Sep_fs = 1 - (q_local[0] - floor(q_local[0]));
+			double Sep_ms = 1 - (q_local[1] - floor(q_local[1]));
+			double Sep_ss = 1 - (q_local[2] - floor(q_local[2]));
+			int fs, ms, ss;
+
+			fs = (int)floorf(q_local[0]) + Shape.Center[0];
+			ms = (int)floorf(q_local[1]) + Shape.Center[1];
+			ss = (int)floorf(q_local[2]) + Shape.Center[2];
+
+			int s = Shape.Size_AB;
+
+			unsigned int val;
+			//val = Options->FloatToInt(Value);
+
+			//fff
+			val = Options->FloatToInt(Value * ((Sep_fs) * (Sep_ms)  * (Sep_ss)));
+			#pragma omp atomic
+			Mesh[fs + ms * s + ss * s*s] += val;
+			//tff
+			val = Options->FloatToInt(Value * ((1 - Sep_fs) * (Sep_ms)  * (Sep_ss)));
+			#pragma omp atomic
+			Mesh[(fs + 1) + ms * s + ss * s*s] += val;
+			//fft
+			val = Options->FloatToInt(Value * ((Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+			#pragma omp atomic
+			Mesh[(fs + 0) + ms * s + (ss + 1) * s*s] += val;
+			//tft
+			val = Options->FloatToInt(Value * ((1 - Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+			#pragma omp atomic
+			Mesh[(fs + 1) + ms * s + (ss + 1) * s*s] += val;
+			//ftf
+			val = Options->FloatToInt(Value * ((Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+			#pragma omp atomic
+			Mesh[(fs + 0) + (ms + 1) * s + (ss + 0) * s*s] += val;
+			//ttf
+			val = Options->FloatToInt(Value * ((1 - Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+			#pragma omp atomic
+			Mesh[(fs + 1) + (ms + 1) * s + (ss + 0) * s*s] += val;
+			//ftt
+			val = Options->FloatToInt(Value * ((Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+			#pragma omp atomic
+			Mesh[(fs + 0) + (ms + 1) * s + (ss + 1) * s*s] += val;
+			//ttt
+			val = Options->FloatToInt(Value * ((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+			#pragma omp atomic
+			Mesh[(fs + 1) + (ms + 1) * s + (ss + 1) * s*s] += val;
+
+			
+		}
 	}
 	else
 	{
 		ArrayOperators::Rotate(q_local, RotationM);
-		Atomic_Add_q_Entry(q_local, Value, InterpolationMode);
+		Atomic_Add_q_Entry(q_local, Value, SecondInterpolationMode);
 	}
 }
 void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode)

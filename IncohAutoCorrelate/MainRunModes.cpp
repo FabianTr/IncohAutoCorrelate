@@ -5,6 +5,7 @@
 
 #include "ProfileTime.h"
 #include "Detector.h"
+#include <boost/algorithm/string.hpp>
 
 
 //Helper
@@ -850,6 +851,46 @@ int MainRunModes::SortXMLHitsByMeanIntensity(std::string Arg1, std::string Arg2,
 	std::cout << "Done.\n";
 	return 0;
 
+	return 0;
+}
+
+int MainRunModes::GetHitListFromCSVFile(std::string Arg1, std::string Arg2, Settings & Options)
+{
+	Settings OptOut;
+	OptOut.HitEvents.clear();
+
+	std::ifstream csvFile(Arg1);
+	for (std::string line; std::getline(csvFile,line); )
+	{
+		std::vector<std::string> LineFrag;
+		LineFrag = CSV_Splitter(line, ";");
+		if (LineFrag.size() != 6)
+		{
+			std::cerr << "ERROR: CSV-HitList need to be in the format \"H5-Filename; H5-Dataset; Event; MeanInt; PhotonCount; RotationMatrix (x1,y1,z1,x2,...)\"" << std::endl;
+			std::cerr << "    -> in MainRunModes::GetHitListFromCSVFile()" << std::endl;
+			throw;
+		}
+		Settings::HitEvent currEvent;
+
+		currEvent.Filename =  LineFrag[0];
+		boost::trim(currEvent.Filename);
+		currEvent.Dataset = LineFrag[1];
+		boost::trim(currEvent.Dataset);
+		currEvent.Event = atoi(LineFrag[2].data());
+		currEvent.SerialNumber = currEvent.Event;
+		currEvent.MeanIntensity = (float)atof(LineFrag[3].data());
+		currEvent.PhotonCount = atoi(LineFrag[4].data());
+
+		float RM[9];
+		Settings::SplitString<float>(LineFrag[5], RM, 9, ",");
+
+		for (int i = 0; i < 9; i++)
+			currEvent.RotMatrix[i] = RM[i];
+
+		OptOut.HitEvents.push_back(currEvent);
+	}
+	OptOut.SafeHitEventListToFile(Arg2);
+	std::cout << "New XML-HitList saved as \"" << Arg2 <<"\""<< std::endl;
 	return 0;
 }
 

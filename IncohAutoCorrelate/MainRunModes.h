@@ -87,11 +87,15 @@ namespace MainRunModes
 	int AutoCorrelateData(std::string ConfigFile, Settings &Options);
 
 
-
+//HitList Handling
 	//Sort Events
 	int SortHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options);//xml_in, csv_out
 
 	int SortXMLHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options);//xml_in, xml_out
+
+	//Events from CSV
+
+	int GetHitListFromCSVFile(std::string Arg1, std::string Arg2, Settings &Options);
 
 	//Simulation
 	int Simulate(std::string ConfigFile, Settings &Options);

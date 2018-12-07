@@ -77,7 +77,7 @@ namespace RunIAC
 			Det.CreateSparseHitList(AC_Settings.PhotonOffset, AC_Settings.PhotonStep); //Sparsificate
 			std::cout << i << ": Pixels with hits: " << Det.SparseHitList.size()*100.0 / (Det.DetectorSize[0]* Det.DetectorSize[1]) << "%"<< "    Mean intensity: " << PrgSettings.HitEvents[i].MeanIntensity << "\n";
 
-			Det.AutoCorrelateSparseList(AC, AC_Settings.AC_FirstMap_Flags, AC_Settings.DoubleMap, PrgSettings);
+			Det.AutoCorrelateSparseList(AC, AC_Settings.AC_FirstMap_Flags, AC_Settings.AC_SecondMap_Flags, AC_Settings.DoubleMap, PrgSettings);
 		}
 
 
@@ -178,6 +178,7 @@ namespace RunIAC
 	}
 
 
+	//Current (Main evaluation routine)
 	IAC_Report Run_AutoCorr_DataEval(Settings & PrgSettings, CreateDataEval_Settings EvalSettings)
 	{
 		IAC_Report Report;
@@ -473,7 +474,7 @@ namespace RunIAC
 
 				Mesh_CQ.CreateBigMesh_CofQ_ForDetector(Det, EvalSettings.MeshSize, EvalSettings.QZoom);
 
-				Det.Merge_smallCofQ(Mesh_CQ, smallMesh, PrgSettings.HitEvents, lowerBound, upperBound, PrgSettings, Flags);
+				Det.Merge_smallCofQ(Mesh_CQ, smallMesh, PrgSettings.HitEvents, lowerBound, upperBound, PrgSettings, EvalSettings.AC_SecondMap_Flags);
 
 				//save big C(q)
 				if(EvalSettings.Out_Cq_Path != "")
@@ -532,7 +533,7 @@ namespace RunIAC
 					if (EvalSettings.EchoLevel > 4)
 						std::cout << i << ": Pixels with hits: " << Det.SparseHitList.size()*100.0 / (Det.DetectorSize[0] * Det.DetectorSize[1]) << "%" << "    Mean intensity: " << PrgSettings.HitEvents[i].MeanIntensity << "\n";
 					
-					Det.AutoCorrelateSparseList(AC_uw, Flags, EvalSettings.DoubleMap, PrgSettings);
+					Det.AutoCorrelateSparseList(AC_uw, EvalSettings.AC_FirstMap_Flags, EvalSettings.AC_SecondMap_Flags, EvalSettings.DoubleMap, PrgSettings);
 
 					Mean_ACuwTime += ACProfiler2.Toc(false) / (double)NumOfEvents;
 					Counter++;
