@@ -79,6 +79,7 @@
     <ClCompile Include="ArrayOperators.cpp" />
     <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="Statistics.cpp" />
+    <ClCompile Include="UnitTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AC1D.h" />
@@ -95,6 +96,7 @@
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Simulator.h" />
     <ClInclude Include="Statistics.h" />
+    <ClInclude Include="UnitTest.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.gitignore" />

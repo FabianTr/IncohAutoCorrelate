@@ -225,7 +225,6 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 		ms_l = (int)floorf(q_local[1] + 0.5) + Shape.Center[1];
 		ss_l = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
 
-
 		q_local[0] = (float)(fs_l - Shape.Center[0]);
 		q_local[1] = (float)(ms_l - Shape.Center[1]);
 		q_local[2] = (float)(ss_l - Shape.Center[2]);
@@ -261,7 +260,6 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 			ss = (int)floorf(q_local[2]) + Shape.Center[2];
 
 			int s = Shape.Size_AB;
-
 			unsigned int val;
 			//val = Options->FloatToInt(Value);
 
@@ -297,8 +295,6 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 			val = Options->FloatToInt(Value * ((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
 			#pragma omp atomic
 			Mesh[(fs + 1) + (ms + 1) * s + (ss + 1) * s*s] += val;
-
-			
 		}
 	}
 	else
@@ -336,7 +332,6 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 
 #pragma omp atomic
 		Mesh[fs + ms * s + ss * s*s] += val;
-
 		//if (std::max(std::max(fabs(q[0]), fabs(q[1])),fabs(q[2])) > 300)
 		//	std::cout << "q: " << q[0] << ", " << q[1] << ", " << q[2] << ";\t V = " << Value << " -> " << val << ";\t fs,ms,ss: " << fs << " " << ms << " " << ss << "\n";
 	}
@@ -358,24 +353,24 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 		val = Options->FloatToInt(Value);
 
 
-#pragma omp atomic
+		#pragma omp atomic
 		Mesh[fsf + msf * s + ssf * s*s] += val * (1 - SepF)*(1 - SepM)*(1 - SepS); // A + 0
 
-#pragma omp atomic
+		#pragma omp atomic
 		Mesh[(fsf + 1) + (msf + 0) * s + (ssf + 0) * s*s] += val * (SepF)*(1 - SepM)*(1 - SepS); //ssf + 1
-#pragma omp atomic
+		#pragma omp atomic
 		Mesh[(fsf + 0) + (msf + 1) * s + (ssf + 0) *s*s] += val * (1 - SepF)*(SepM)*(1 - SepS); //msf + 1
-#pragma omp atomic
+		#pragma omp atomic
 		Mesh[(fsf + 0) + (msf + 0) * s + (ssf + 1) * s*s] += val * (1 - SepF)*(1 - SepM)*(SepS); //ssf + 1
 
-#pragma omp atomic
+		#pragma omp atomic
 		Mesh[(fsf + 1) + (msf + 1) * s + (ssf + 0) * s*s] += val * (SepF)*(SepM)*(1 - SepS); //ffs + 1 ; msf + 1
-#pragma omp atomic
+		#pragma omp atomic
 		Mesh[(fsf + 0) + (msf + 1) * s + (ssf + 1) * s*s] += val * (1 - SepF)*(SepM)*(SepS); //msf + 1 ; ssf + 1
-#pragma omp atomic
+		#pragma omp atomic
 		Mesh[(fsf + 1) + (msf + 0) * s + (ssf + 1) * s*s] += val * (SepF)*(1 - SepM)*(SepS); //ffs + 1 ; ssf + 1
 
-#pragma omp atomic
+		#pragma omp atomic
 		Mesh[(fsf + 1) + (msf + 1) * s + (ssf + 1) * s*s] += val * (SepF)*(SepM)*(SepS); // A + 1
 
 	}
