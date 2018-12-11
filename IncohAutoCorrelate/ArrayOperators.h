@@ -246,6 +246,25 @@ namespace ArrayOperators
 		Vector[1] = r[1];
 		Vector[2] = r[2];
 	}
+	inline void RotateMatrix(float* Matrix, float RotationMatrix[9])
+	{
+		//V = M * q_local = { { V[0] * M[0] + V[1] * M[1] + V[2] * M[2] },{ V[0] * M[3] + V[1] * M[4] +... },{V[0] * M[6] ... } }
+		float m[9];
+		m[0] = RotationMatrix[0] * Matrix[0] + RotationMatrix[1] * Matrix[3] + RotationMatrix[2] * Matrix[6];
+		m[1] = RotationMatrix[0] * Matrix[1] + RotationMatrix[1] * Matrix[4] + RotationMatrix[2] * Matrix[7];
+		m[2] = RotationMatrix[0] * Matrix[2] + RotationMatrix[1] * Matrix[5] + RotationMatrix[2] * Matrix[8];
+
+		m[3] = RotationMatrix[3] * Matrix[0] + RotationMatrix[4] * Matrix[3] + RotationMatrix[5] * Matrix[6];
+		m[4] = RotationMatrix[3] * Matrix[1] + RotationMatrix[4] * Matrix[4] + RotationMatrix[5] * Matrix[7];
+		m[5] = RotationMatrix[3] * Matrix[2] + RotationMatrix[4] * Matrix[5] + RotationMatrix[5] * Matrix[8];
+
+		m[6] = RotationMatrix[6] * Matrix[0] + RotationMatrix[7] * Matrix[3] + RotationMatrix[8] * Matrix[6];
+		m[7] = RotationMatrix[6] * Matrix[1] + RotationMatrix[7] * Matrix[4] + RotationMatrix[8] * Matrix[7];
+		m[8] = RotationMatrix[6] * Matrix[2] + RotationMatrix[7] * Matrix[5] + RotationMatrix[8] * Matrix[8];
+
+		for (unsigned int i = 0; i < 9; i++)
+			Matrix[i] = m[i];
+	}//
 	inline int Sum(int* Array, int Size)
 	{//Annotation: parallelisation dosn't bring any measurable effect
 		int sum = 0;
@@ -274,7 +293,41 @@ namespace ArrayOperators
 		return sum;
 	}
 
-	void KabschRotationMatrixRetrieval3x3(float* Input, float* Reference, float* RotationMatrix);
+	template <typename T>
+	void KabschRotationMatrixRetrieval3x3(T * Input, T * Reference, T * RotationMatrix) 
+	{
+		// Returns rotation matrix, that rotates the Reference column vectors onto the Input column vectors.
+		// The input and output, however, is row-major!! ( a(0,0), a(0,1), a(0,2), , a(1,0), ...  ) or in vectors: (V1_x , V2_x, V3_x, V1_y, V2_y, ...)
+		//
+		// Kabsch algorithm, see https://en.wikipedia.org/wiki/Kabsch_algorithm 
+
+		Eigen::Matrix<T, 3, 3> M_in;
+		M_in << Input[0], Input[1], Input[2], Input[3], Input[4], Input[5], Input[6], Input[7], Input[8];
+
+		Eigen::Matrix<T, 3, 3> MReference;
+		MReference << Reference[0], Reference[1], Reference[2], Reference[3], Reference[4], Reference[5], Reference[6], Reference[7], Reference[8];
+
+
+
+		Eigen::JacobiSVD<Eigen::Matrix<T, 3, 3>> svd(MReference *  M_in.transpose(), Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+		T det;
+		det = (svd.matrixV()*svd.matrixU().transpose()).determinant();
+
+		Eigen::Matrix<T, 3, 3> Diag;
+		Diag << 1, 0, 0, 0, 1, 0, 0, 0, det;
+
+		Eigen::Matrix<T, 3, 3> Rot;
+		Rot = svd.matrixV()*Diag*svd.matrixU().transpose();
+
+		for (int k = 0; k < 3; k++)
+		{
+			for (int l = 0; l < 3; l++)
+				RotationMatrix[l + 3 * k] = Rot(k, l);
+		}
+
+
+	}//
 
 
 

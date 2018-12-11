@@ -15,6 +15,8 @@
 #include <CL/cl.hpp>
 #include <thread>
 
+#include "UnitTest.h"
+
 
 
 //QD Test incl
@@ -511,7 +513,13 @@ void QDTests(Settings & Options)
 	
 }
 
+void runUnitTest(Settings & Options)
+{
+	UnitTest UT;
 
+	UT.TestKabschImplementation();
+	
+}
 
 int main(int argc, char** argv)
 {
@@ -708,7 +716,7 @@ int main(int argc, char** argv)
 	{
 		if (argc < 4)
 		{
-			std::cerr << "-XmlFromCsv requires two additional arguments (\"EventList_IN.CSV\" \"EventList_Out.xmli\")\n";
+			std::cerr << "-XmlFromCsv requires two additional arguments (\"EventList_IN.CSV\" \"EventList_Out.xml\")\n";
 			return -1;
 		}
 		else
@@ -736,6 +744,11 @@ int main(int argc, char** argv)
 	else if (Arg1 == "qdtest" || Arg1 == "-qdtest" )
 	{
 		QDTests(Options);
+		return 0;
+	}
+	else if (Arg1 == "unittest" || Arg1 == "-unittest" || Arg1 == "ut" || Arg1 == "-ut")
+	{
+		runUnitTest(Options);
 		return 0;
 	}
 

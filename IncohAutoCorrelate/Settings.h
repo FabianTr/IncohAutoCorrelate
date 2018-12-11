@@ -51,7 +51,7 @@ public:
 
 	std::vector<HitEvent> HitEvents;
 
-	Eigen::Matrix<float, 3, 3> MReference;
+	Eigen::Matrix<float, 3, 3> MReference; //Rows, Colums
 	bool echo = true;
 
 	void LoadStreamFile(char * Filename, char* DatasetFIntensity, bool InclMultiHits); //Filename for StreamFile, DatasetFIntensity for the Intensity in CXIFile, include Hits with multiple segmented crystals

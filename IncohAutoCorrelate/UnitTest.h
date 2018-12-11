@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Crystal.h"
+#include "Settings.h"
 
 class UnitTest
 {
@@ -16,5 +17,7 @@ public:
 
 
 	bool TestKabschImplementation();
+
+	bool StreamFileReader(Settings & Options);
 };
 

@@ -79,7 +79,7 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 				ss >> x >> y >> z;
 				//         cout << line << endl;
 
-				Mprime(0, i) = x;
+				Mprime(0, i) = x; //Zeile, Spalte
 				Mprime(1, i) = y;
 				Mprime(2, i) = z;
 			}
@@ -90,7 +90,7 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 			det = (svd.matrixV()*svd.matrixU().transpose()).determinant();
 
 			Eigen::Matrix<float, 3, 3> Diag;
-			Diag << 1, 0, 0, 0, 1, 0, 0, 0, det;
+			Diag << 1.0, 0, 0, 0, 1.0, 0, 0, 0, det;
 
 			Eigen::Matrix<float, 3, 3> Rot;
 			Rot = svd.matrixV()*Diag*svd.matrixU().transpose();
