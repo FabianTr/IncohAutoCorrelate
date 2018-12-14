@@ -517,8 +517,11 @@ void runUnitTest(Settings & Options)
 {
 	UnitTest UT;
 
-	UT.TestKabschImplementation();
-	
+	Options.SetUp_OpenCL();
+
+	//UT.TestKabschImplementation();
+	//UT.StreamFileReader(Options);
+	UT.TestACandCQmapping(Options, "/gpfs/cfel/cxi/scratch/user/trostfab/LU56/Settings_Ind_nn_TEST.xml", 500, true);
 }
 
 int main(int argc, char** argv)
@@ -726,6 +729,21 @@ int main(int argc, char** argv)
 			return MainRunModes::GetHitListFromCSVFile (Arg2, Arg3, Options);
 		}
 	}
+	else if (Arg1 == "xmlfromstreamfile" || Arg1 == "-xmlfromstreamfile" || Arg1 == "xfs" || Arg1 == "-xfs")
+	{
+		if (argc < 4)
+		{
+			std::cerr << "-XmlFromStreamFile requires three additional arguments (\"EventList_IN.stream\" \"H5-Path\" \"EventList_Out.xml\")\n";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			std::string Arg3 = argv[3];
+			std::string Arg4 = argv[4];
+			return MainRunModes::GetHitListFromStreamFile(Arg2, Arg3, Arg4, Options);
+		}
+	}
 	else if (Arg1 == "simulate" || Arg1 == "-simulate" || Arg1 == "s" || Arg1 == "-s")
 	{
 		std::cout << "Run ICA in simulation mode - autocorrelation" << std::endl;;
@@ -757,6 +775,7 @@ int main(int argc, char** argv)
 		std::cout << "Invalid argument: \"" << Arg1 << "\"\n";
 		return 0;
 	}
+
 
 
 

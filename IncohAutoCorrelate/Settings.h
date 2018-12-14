@@ -54,7 +54,7 @@ public:
 	Eigen::Matrix<float, 3, 3> MReference; //Rows, Colums
 	bool echo = true;
 
-	void LoadStreamFile(char * Filename, char* DatasetFIntensity, bool InclMultiHits); //Filename for StreamFile, DatasetFIntensity for the Intensity in CXIFile, include Hits with multiple segmented crystals
+	void LoadStreamFile(std::string Filename, std::string DatasetFIntensity, bool InclMultiHits); //Filename for StreamFile, DatasetFIntensity for the Intensity in CXIFile, include Hits with multiple segmented crystals
 	std::array<unsigned int,2> ScanH5Files(std::vector<std::string> Filenames, std::vector<std::string> Datasets, bool ResumeOnError = false); //Loads all entrys out of H5 files, returns the 2x2 DetectorSize
 	void Echo(std::string output);
 
@@ -98,7 +98,7 @@ public:
 	struct FloatIntConversion
 	{
 		float Offset = 0.0f; //shift before rounding to int
-		float Step = 1.0f; //steps for discretization
+		float Step = 1000.0f; //steps for discretization
 	};
 	FloatIntConversion F_I_Conversion;
 	inline long FloatToInt(float f)

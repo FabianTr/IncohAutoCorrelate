@@ -124,6 +124,8 @@ namespace RunIAC
 		for (int i = 0; i < AC.Shape.Size_AB*AC.Shape.Size_AB*AC.Shape.Size_C; i++)
 		{
 			ACMesh[i] = PrgSettings.IntToFloat(AC.Mesh[i]);
+			//if (AC.Mesh[i] > 1)
+			//	std::cout << AC.Mesh[i] << " -> " << ACMesh[i] << std::endl;
 		}
 
 		Merge_ACandCQ(Output, ACMesh, CQ, PrgSettings);
@@ -141,11 +143,12 @@ namespace RunIAC
 		{
 			if (CQ.CQMesh[i] <= 0)
 			{
-				Output[i] = 0;
+				Output[i] = 0.0;
 			}
 			else
 			{
 				Output[i] = AC[i] / CQ.CQMesh[i];
+				std::cout << AC[i] << " / " << CQ.CQMesh[i] << " = " << Output[i] << std::endl;
 			}
 
 			if (std::isnan(Output[i]))
@@ -542,7 +545,6 @@ namespace RunIAC
 						std::cout << Counter << " / " << NumOfEvents << " events ^= " << 100 * (double)Counter / (double)NumOfEvents << "%; expired time: " << ACProfiler1.Toc(false)/60.0 <<"min." << std::endl;
 						CounterStep++;
 					}
-
 				}
 
 
@@ -616,7 +618,7 @@ namespace RunIAC
 					std::cout << "\n--------------------------\n Evaluation done in\n";
 					ProfileLevel_0.Toc(true);
 				}
-				//end of eval
+				//end of evaluation
 
 				return Report;
 			}

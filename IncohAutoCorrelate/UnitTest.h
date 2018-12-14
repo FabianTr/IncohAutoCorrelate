@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "Crystal.h"
 #include "Settings.h"
 
@@ -19,5 +21,8 @@ public:
 	bool TestKabschImplementation();
 
 	bool StreamFileReader(Settings & Options);
+
+
+	bool TestACandCQmapping(Settings & Options, std::string SettingsPath, int EventNum, bool Rotation = true);
 };
 

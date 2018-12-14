@@ -37,6 +37,31 @@ namespace PPP
 		std::string DatasetGain = "gain";
 	};
 
+	class Create_DarcCalSettings
+	{
+	public:
+		struct DarcCalSegment {
+			std::string DarcCalFile = "";
+			std::string H5Path = "";
+
+			std::string ForDataContainer = "";
+		};
+
+		std::vector<DarcCalSegment> DarcCals;
+		unsigned int DefaultIndex;
+
+		DarcCalSegment GetSegmentForh5DataContainer(std::string ContainerPath)
+		{
+			DarcCalSegment ret;
+			bool found = false;
+
+
+
+
+			return ret;
+		}
+	};
+
 	
 	//Find Photons by considering the adjacent Pixels.
 	void PhotonFinder_LargestAdjacentPixel(float * Intensity, std::vector<DetectorPanel> DetectorPanels, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);

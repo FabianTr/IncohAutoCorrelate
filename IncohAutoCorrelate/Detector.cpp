@@ -88,7 +88,10 @@ Detector::~Detector()
 
 inline float Detector::DiscretizeToPhotones(float Value, float Threshold, float PhotonSamplingStep) //create single Photon counting by simple thresholding
 {
-	return ceilf((Value - Threshold) / PhotonSamplingStep)*(Value >= Threshold);
+	float val = Value;
+	ArrayOperators::DiscretizeToPhotons(&val, Threshold, PhotonSamplingStep, 1);
+	return val;
+	//return ceilf((Value - Threshold) / PhotonSamplingStep)*(Value >= Threshold);
 }
 
 ////PixelMap
@@ -641,10 +644,13 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		int t_prog = -1; //for progress indicator only
 		for (int i = LowerBound; i < UpperBound; i++)//get  slides
 		{
-			if ((((i - LowerBound) * 100) / (UpperBound - LowerBound - 1)) > t_prog)
+			if (UpperBound - LowerBound > 1)
 			{
-				std::cout << "Load and Average: " << ((i - LowerBound) * 100) / (UpperBound - LowerBound - 1) << "%" << std::endl;
-				t_prog++;
+				if ((((i - LowerBound) * 100) / (UpperBound - LowerBound - 1)) > t_prog)
+				{
+					std::cout << "Load and Average: " << ((i - LowerBound) * 100) / (UpperBound - LowerBound - 1) << "%" << std::endl;
+					t_prog++;
+				}
 			}
 
 			GetSliceOutOfHDFCuboid(tmpIntensity, Events[i].Filename, Events[i].Dataset, Events[i].Event);
@@ -673,7 +679,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 					{
 						tmpIntensity[j] = DiscretizeToPhotones(tmpIntensity[j], Threshold, PhotonSamplingStep);
 						float yxc = tmpIntensity[j];
-						IntensityPhotonDiscr[j] += (long)tmpIntensity[j];
+						IntensityPhotonDiscr[j] += (long)floor(tmpIntensity[j]+0.5);
 					}
 					else
 					{
@@ -683,7 +689,6 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 
 				//update Event
 				Events[i].PhotonCount = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]);
-
 				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float)(DetectorSize[1] * DetectorSize[0]));
 			}
 		}
@@ -697,7 +702,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 			Intensity[i] = (float)IntensityPhotonDiscr[i];
 		}
 	}
-	ArrayOperators::ParMultiplyScalar(Intensity, 1.0 / ((double)(UpperBound - LowerBound)), DetectorSize[1] * DetectorSize[0]);
+	ArrayOperators::ParMultiplyScalar(Intensity, 1.0f / ((float)(UpperBound - LowerBound)), DetectorSize[1] * DetectorSize[0]);
 	Checklist.Intensity = true;
 }
 
@@ -856,6 +861,7 @@ void Detector::CreateSparseHitList(float Threshold)
 		}
 	}
 
+
 	Checklist.SparseHitList = true;
 }
 void Detector::CreateSparseHitList(float Threshold, float PhotonSamplingStep)
@@ -960,7 +966,7 @@ int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags FlagsFirst
 	{ //Implementation for GPU 
 		//calculate Multiplicator
 		//std::cout << "GPU Mode\n";
-		double Multiplicator = 10; //1 is sufficient for photon discretised values (only integer possible)
+		double Multiplicator = (double)Options.F_I_Conversion.Step; //1 should be sufficient for photon discretised values (only integer possible) for NN ???CHECK???
 
 		//set Parameter
 		double Params[9];
@@ -1043,15 +1049,14 @@ int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags FlagsFirst
 
 		//	Options.checkErr(err, "Launch Kernel in Detector::AutoCorrelateSparseList() ");
 		cl_event.wait();
-
 		//Profiler.Toc(true);
 
 		err = queue.enqueueReadBuffer(CL_AC, CL_TRUE, 0, ACsize, TempBigMesh);
 		Options.checkErr(err, "OpenCL kernel, launched in Detector::AutoCorrelateSparseList() ");
 
+
 		//Free Device
 		Options.OCL_FreeDevice(OpenCLDeviceNumber);
-
 
 		//Point reflection and add to Bigmesh
 		unsigned int MeshCenter = (BigMesh.Shape.Size_AB - 1) / 2;
@@ -1312,7 +1317,21 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	}
 	Multiplicator = Multiplicator / OOM;
 	Multiplicator *= 1e10;//1e16;
+	Multiplicator = round(Multiplicator);
 	std::cout << "Multiplicator: " << Multiplicator << std::endl;
+
+	//adjust accuracy of weights according to the multiplicator
+	ind = 0;
+	for (unsigned int i = LowerBound; i < UpperBound; i++)
+	{
+		float ReducedMultipl = roundf((float) Multiplicator);// / Options.F_I_Conversion.Step;
+		float t_weight = Rot_and_Weight[ind + 9];
+		t_weight *= ReducedMultipl;
+		t_weight = floorf(t_weight + 0.5);
+		Rot_and_Weight[ind + 9] = t_weight / ReducedMultipl;
+		ind += 10;
+	}
+
 	uint64_t * TempBigMesh = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB *SmallMesh.Shape.Size_AB]();
 
 
@@ -1413,7 +1432,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 #pragma omp parallel for
 	for (int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB; i++)
 	{
-		//DoubleBigMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
+
 		BigMesh.CQMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
 		//if (TempBigMesh[i] > 0)
 		//	std::cout << TempBigMesh[i] << "   " << BigMesh.CQMesh[i] << std::endl;

@@ -894,6 +894,17 @@ int MainRunModes::GetHitListFromCSVFile(std::string Arg1, std::string Arg2, Sett
 	return 0;
 }
 
+int MainRunModes::GetHitListFromStreamFile(std::string Arg1, std::string Arg2, std::string Arg3, Settings & Options)
+{
+	Settings OptOut;
+	OptOut.HitEvents.clear();
+
+	OptOut.LoadStreamFile(Arg1, Arg2, false);
+	OptOut.SafeHitEventListToFile(Arg3);
+
+	return 0;
+}
+
 int MainRunModes::Simulate(std::string ConfigFile, Settings & Options)
 {
 	//Setup Open CL Stuff

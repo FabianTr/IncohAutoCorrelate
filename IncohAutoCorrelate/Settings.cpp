@@ -26,7 +26,7 @@ Settings::~Settings()
 
 
 
-void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclMultiHits)
+void Settings::LoadStreamFile(std::string Filename, std::string DatasetFIntensity, bool InclMultiHits)
 {
 
 	Echo("Start reading stream-file.");
@@ -82,36 +82,54 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 				Mprime(0, i) = x; //Zeile, Spalte
 				Mprime(1, i) = y;
 				Mprime(2, i) = z;
+
+				//std::cout << line << std::endl;
 			}
-			//Kabsch algorithm, see https://en.wikipedia.org/wiki/Kabsch_algorithm 
-			Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3>> svd(Mprime.transpose() * MReference.inverse(), Eigen::ComputeFullU | Eigen::ComputeFullV);
 
-			float det;
-			det = (svd.matrixV()*svd.matrixU().transpose()).determinant();
+			//std::cout << Mprime(0, 0) << "\t" << Mprime(0, 1) << "\t" << Mprime(0, 2) << "\n"
+			//	<< Mprime(1, 0) << "\t" << Mprime(1, 1) << "\t" << Mprime(1, 2) << "\n"
+			//	<< Mprime(2, 0) << "\t" << Mprime(2, 1) << "\t" << Mprime(2, 2) << "\n" << std::endl;
 
-			Eigen::Matrix<float, 3, 3> Diag;
-			Diag << 1.0, 0, 0, 0, 1.0, 0, 0, 0, det;
+			Mprime = Mprime.inverse().eval();
 
-			Eigen::Matrix<float, 3, 3> Rot;
-			Rot = svd.matrixV()*Diag*svd.matrixU().transpose();
+			//std::cout << "Real Space: \n" 
+			//	<< Mprime(0, 0) << " \t" << Mprime(0, 1) << " \t" << Mprime(0, 2) << "\n"
+			//	<< Mprime(1, 0) << " \t" << Mprime(1, 1) << " \t" << Mprime(1, 2) << "\n"
+			//	<< Mprime(2, 0) << " \t" << Mprime(2, 1) << " \t" << Mprime(2, 2) << "\n" 
+			//	<< "------------------------\n"
+			//	<< sqrt(Mprime(0, 0) * Mprime(0, 0) + Mprime(1, 0) * Mprime(1, 0) + Mprime(2, 0) * Mprime(2, 0)) << " \t"
+			//	<< sqrt(Mprime(0, 1) * Mprime(0, 1) + Mprime(1, 1) *  Mprime(1, 1) + Mprime(2, 1) * Mprime(2, 1)) << " \t"
+			//	<< sqrt(Mprime(0, 2) * Mprime(0, 2) + Mprime(1, 2) * Mprime(1, 2) + Mprime(2, 2) * Mprime(2, 2)) << " \t"
+			//	<< "\n" <<std::endl;
 
-			//currEvent.RotMatrix[i * 3 + 0] = x;
-			//currEvent.RotMatrix[i * 3 + 1] = y;
-			//currEvent.RotMatrix[i * 3 + 2] = z;
-
-
+			float MInput[9];
 			for (int k = 0; k < 3; k++)
 			{
 				for (int l = 0; l < 3; l++)
 				{
-					currEvent.RotMatrix[l + 3*k] = Rot(k, l);
+					MInput[3 * k + l] = Mprime(k, l);
 				}
 			}
-			//std::cout << "\n\n";
-			//std::cout <<"Kabsch Rot\n" << Rot << "\n\n";
 
-			//int stop;
-			//std::cin >> stop;
+			ArrayOperators::KabschRotationMatrixRetrieval3x3(MInput, MReference.data(), currEvent.RotMatrix);
+
+			//std::cout << "Rot Matrix\n"
+			//	<< currEvent.RotMatrix[0] << " \t" << currEvent.RotMatrix[1] << " \t" << currEvent.RotMatrix[2] << "\n"
+			//	<< currEvent.RotMatrix[3] << " \t" << currEvent.RotMatrix[4] << " \t" << currEvent.RotMatrix[5] << "\n"
+			//	<< currEvent.RotMatrix[6] << " \t" << currEvent.RotMatrix[7] << " \t" << currEvent.RotMatrix[8] << "\n" << std::endl;
+
+
+			//float TestMat[9];
+			//for (int k = 0; k < 3; k++)
+			//	for (int l = 0; l < 3; l++)
+			//		TestMat[3 * k + l] = MReference(k, l);
+			//
+			//ArrayOperators::RotateMatrix(TestMat, currEvent.RotMatrix);
+			//std::cout << "TEST Matrix\n"
+			//	<< TestMat[0] << " \t" << TestMat[1] << " \t" << TestMat[2] << "\n"
+			//	<< TestMat[3] << " \t" << TestMat[4] << " \t" << TestMat[5] << "\n"
+			//	<< TestMat[6] << " \t" << TestMat[7] << " \t" << TestMat[8] << "\n" << std::endl;
+				
 
 			currEvent.Dataset = DatasetFIntensity;
 			tmpHitEvents.push_back(currEvent);
@@ -153,6 +171,7 @@ void Settings::LoadStreamFile(char* Filename,char* DatasetFIntensity, bool InclM
 	}
 	Echo("Done reading stream-file.\n");
 }
+
 
 
 std::array<unsigned int, 2> Settings::ScanH5Files(std::vector<std::string> Filenames, std::vector<std::string> Datasets, bool ResumeOnError)

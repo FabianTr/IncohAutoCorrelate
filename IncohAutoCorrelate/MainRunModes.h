@@ -52,7 +52,7 @@ namespace MainRunModes
 	int Create_XMLHitlist_from_H5Stack_script(std::string Arg1, std::string Arg2, Settings &Options);
 	int Create_XMLHitlist_from_H5Stack(std::vector<std::string> H5_Paths, std::vector<std::string> H5_Datasets, std::string XML_Output_Path, Settings &Options);
 
-	
+
 	//->Settings-Files Handle
 
 	//single mode
@@ -87,15 +87,17 @@ namespace MainRunModes
 	int AutoCorrelateData(std::string ConfigFile, Settings &Options);
 
 
-//HitList Handling
-	//Sort Events
+	//HitList Handling
+		//Sort Events
 	int SortHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options);//xml_in, csv_out
 
 	int SortXMLHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options);//xml_in, xml_out
 
 	//Events from CSV
 
-	int GetHitListFromCSVFile(std::string Arg1, std::string Arg2, Settings &Options);
+	int GetHitListFromCSVFile(std::string Arg1, std::string Arg2, Settings &Options); //CSV, XML
+
+	int GetHitListFromStreamFile(std::string Arg1, std::string Arg2, std::string Arg3, Settings &Options); //CSV, H5, XML
 
 	//Simulation
 	int Simulate(std::string ConfigFile, Settings &Options);
