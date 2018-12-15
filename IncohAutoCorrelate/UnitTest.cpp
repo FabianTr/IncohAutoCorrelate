@@ -272,50 +272,63 @@ bool UnitTest::TestACandCQmapping(Settings & Options, std::string SettingsPath, 
 	DetInt2.CreateSparseHitList(EvalSettings.PhotonOffset, EvalSettings.PhotonStep); //Sparsificate
 
 	std::cout << "Autocorrelate" << std::endl;
-	DetInt2.AutoCorrelateSparseList(AC_uw, EvalSettings.AC_FirstMap_Flags, EvalSettings.AC_SecondMap_Flags, EvalSettings.DoubleMap, Options);
+	DetInt2.AutoCorrelateSparseList(AC_uw, EvalSettings.AC_FirstMap_Flags, EvalSettings.AC_SecondMap_Flags, EvalSettings.DoubleMap, Options,1);
 
 
 	std::cout << "Apply C(q) to unweighted AC\n";
-
 
 	std::cout << "Options Int to Float ConvOffset = " << Options.F_I_Conversion.Offset << "; ConvStep = " << Options.F_I_Conversion.Step << std::endl;
 
 	double * FinalAC = nullptr;
 	RunIAC::Merge_ACandCQ(FinalAC, AC_uw, Mesh_CQ, Options);
 	
-	std::cout << "Check Output \"the stupid way\"" << std::endl;
-	std::set<double> ACVals0;
-	for (unsigned long i = 0; i < AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C; i++)
+	if(false)
 	{
-		if (AC_uw.Mesh[i] != 0 || Mesh_CQ.CQMesh[i] != 0)
-			int qweert = 1;
-		double t_AC = AC_uw.Mesh[i];
-		double t_CQ = Mesh_CQ.CQMesh[i];
-		double t = t_AC / t_CQ;
-		if (std::isnan(t))
-			t = 0.0;
-		ACVals0.insert(t);
-	}
-	for (double v : ACVals0)
-	{
-		std::cout << v << "; ";
-	}
-	int wait;
-	std::cin >> wait;
-
-
-	std::cout << "Check Output" << std::endl;
-	std::set<double> ACVals;
-	for (unsigned long i = 0; i < AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C; i++)
-	{
-		ACVals.insert(FinalAC[i]);
+		std::cout << "Check Output \"the stupid way\"" << std::endl;
+		std::set<double> ACVals0;
+		for (unsigned long i = 0; i < AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C; i++)
+		{
+			if (AC_uw.Mesh[i] != 0 || Mesh_CQ.CQMesh[i] != 0)
+				int qweert = 1;
+			double t_AC = AC_uw.Mesh[i];
+			double t_CQ = Mesh_CQ.CQMesh[i];
+			double t = t_AC / t_CQ;
+			if (std::isnan(t))
+				t = 0.0;
+			ACVals0.insert(t);
+		}
+		for (double v : ACVals0)
+		{
+			std::cout << v << "; ";
+		}
+		int wait;
+		std::cin >> wait;
 	}
 
-	for (double v : ACVals)
-	{
-		std::cout << v << "; ";
-	}
-	std::cout << std::endl;
+
+
+	//{
+	//	std::cout << "Check Output" << std::endl;
+	//	std::set<double> ACVals;
+	//	for (unsigned long i = 0; i < AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C; i++)
+	//	{
+	//		ACVals.insert(FinalAC[i]);
+	//	}
+
+	//	for (double v : ACVals)
+	//	{
+	//		std::cout << v << "; ";
+	//	}
+	//	std::cout << std::endl;
+	//}
+
+
+
+
+//Save result
+	ArrayOperators::SafeArrayToFile(EvalSettings.Out_Final_AC_Path, FinalAC, AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB, ArrayOperators::FileType::Binary);
+	std::cout << "-> Saved AC (Final form, formated as double) as \"" << EvalSettings.Out_Final_AC_Path << "\"\n";
+	std::cout << "--> Mesh shape: " << AC_uw.Shape.Size_AB << " x " << AC_uw.Shape.Size_AB << " x " << AC_uw.Shape.Size_C << std::endl;
 
 	std::cout << "\n\ndone." << std::endl;
 	return false;

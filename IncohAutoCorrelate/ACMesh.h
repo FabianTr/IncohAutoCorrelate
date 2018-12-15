@@ -22,6 +22,7 @@ public:
 		int Size_AB, Size_C; //Mesh size with padding (+1 in each direction)
 		int Center[3]; //Voxel where q is (0, 0, 0) in [q_A, q_B, q_C]
 		float dq_per_Voxel;
+		unsigned int Voxel_per_dq = 1;
 
 		float Max_Q; // is not dq_per_Voxel*Size_AB because of the rotation factor sqrt(2.00001)
 	};

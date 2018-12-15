@@ -148,7 +148,7 @@ namespace RunIAC
 			else
 			{
 				Output[i] = AC[i] / CQ.CQMesh[i];
-				std::cout << AC[i] << " / " << CQ.CQMesh[i] << " = " << Output[i] << std::endl;
+				//std::cout << AC[i] << " / " << CQ.CQMesh[i] << " = " << Output[i] << std::endl;
 			}
 
 			if (std::isnan(Output[i]))

@@ -966,13 +966,13 @@ int Detector::AutoCorrelateSparseList(ACMesh & BigMesh, AutoCorrFlags FlagsFirst
 	{ //Implementation for GPU 
 		//calculate Multiplicator
 		//std::cout << "GPU Mode\n";
-		double Multiplicator = (double)Options.F_I_Conversion.Step; //1 should be sufficient for photon discretised values (only integer possible) for NN ???CHECK???
+		double Multiplicator = (double)(1.0/Options.F_I_Conversion.Step); //1 should be sufficient for photon discretised values (only integer possible) for NN ???CHECK???
 
 		//set Parameter
 		double Params[9];
 		Params[0] = SparseHitList.size();
 
-		Params[1] = BigMesh.Shape.dq_per_Voxel; //dq per Voxel
+		Params[1] = BigMesh.Shape.Voxel_per_dq; //Voxel per dq
 		Params[2] = BigMesh.Shape.Size_AB; // Size perp
 		Params[3] = BigMesh.Shape.Size_C; // Size C
 
@@ -1139,7 +1139,7 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 	//set Parameter
 	double Params[10];
 	Params[0] = DetectorSize[0] * DetectorSize[1]; //Numer of pixels (size[0]*size[1])
-	Params[1] = SmallMesh.Shape.dq_per_Voxel; //dq per Voxel
+	Params[1] = SmallMesh.Shape.Voxel_per_dq; // Voxel per dq
 	Params[2] = SmallMesh.Shape.Size_AB; // Size perp
 	Params[3] = SmallMesh.Shape.Size_C; // Size C
 	Params[4] = SmallMesh.Shape.k_A; // Dimension Alignment
@@ -1338,7 +1338,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 
 	//set Parameter
 	double Params[9];
-	Params[0] = SmallMesh.Shape.dq_per_Voxel; //dq per Voxel
+	Params[0] = SmallMesh.Shape.Voxel_per_dq; //dq per Voxel
 	Params[1] = SmallMesh.Shape.Size_AB; // Size perp
 	Params[2] = SmallMesh.Shape.Size_C; // Size C
 	Params[3] = SmallMesh.Shape.k_A; // Dimension Alignment
@@ -1433,9 +1433,46 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	for (int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB; i++)
 	{
 
+		
 		BigMesh.CQMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
+
+		//if(TempBigMesh[i] != 0)
+		//	std::cout << TempBigMesh[i] << " -> " << BigMesh.CQMesh[i] << std::endl;
 		//if (TempBigMesh[i] > 0)
 		//	std::cout << TempBigMesh[i] << "   " << BigMesh.CQMesh[i] << std::endl;
+	}
+
+
+	//test by comparing to small c(q)
+	if(false)
+	{
+		double t = 0.0;
+		int SZ = SmallMesh.Shape.Size_AB;
+		for (int ss = 0; ss < SmallMesh.Shape.Size_C; ss++)
+		{
+			for (int ms = 0; ms < SmallMesh.Shape.Size_AB; ms++)
+			{
+				for (int fs = 0; fs < SmallMesh.Shape.Size_AB; fs++)
+				{
+					int scan[3];
+					scan[SmallMesh.Shape.k_A] = fs;
+					scan[SmallMesh.Shape.k_B] = ms;
+					scan[SmallMesh.Shape.k_C] = ss - ((SmallMesh.Shape.Size_C-1)/2) + ((SmallMesh.Shape.Size_AB - 1) / 2);
+
+					long indBig = scan[0] + scan[1] * SZ + scan[2] * SZ*SZ;
+					long indSmall = fs + ms * SZ + ss * SZ*SZ;
+
+					if (BigMesh.CQMesh[indBig] != 0)
+					{
+						if(BigMesh.CQMesh[indBig] / SmallMesh.CQMesh[indSmall] != t)
+							std::cout << BigMesh.CQMesh[indBig] << " / " << SmallMesh.CQMesh[indSmall] << " = " << BigMesh.CQMesh[indBig] / SmallMesh.CQMesh[indSmall] << " :: "<<(BigMesh.CQMesh[indBig] / SmallMesh.CQMesh[indSmall])/t << std::endl;
+						t = BigMesh.CQMesh[indBig] / SmallMesh.CQMesh[indSmall];
+					}
+
+				}
+			}
+		}
+
 	}
 
 
@@ -1505,7 +1542,7 @@ void Detector::AutoCorrelate_CofQ(ACMesh & BigMesh, AutoCorrFlags Flags, std::ve
 	//set Parameter
 	double Params[5];
 	Params[0] = DetectorSize[0] * DetectorSize[1]; //Numer of pixels (size[0]*size[1])
-	Params[1] = BigMesh.Shape.dq_per_Voxel; //dq per Voxel
+	Params[1] = BigMesh.Shape.Voxel_per_dq; // Voxel per dq
 	Params[2] = BigMesh.Shape.Size_AB; // a  (V = a*a*(a+1)/2)
 	Params[3] = (UpperBound - LowerBound); // how many events, for roataion and weight loop
 	Params[4] = Flags.InterpolationMode;

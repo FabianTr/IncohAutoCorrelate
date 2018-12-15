@@ -98,7 +98,7 @@ public:
 	struct FloatIntConversion
 	{
 		float Offset = 0.0f; //shift before rounding to int
-		float Step = 1000.0f; //steps for discretization
+		float Step = 0.001f; //steps for discretization
 	};
 	FloatIntConversion F_I_Conversion;
 	inline long FloatToInt(float f)

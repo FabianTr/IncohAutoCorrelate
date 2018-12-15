@@ -521,7 +521,7 @@ void runUnitTest(Settings & Options)
 
 	//UT.TestKabschImplementation();
 	//UT.StreamFileReader(Options);
-	UT.TestACandCQmapping(Options, "/gpfs/cfel/cxi/scratch/user/trostfab/LU56/Settings_Ind_nn_TEST.xml", 500, true);
+	UT.TestACandCQmapping(Options, "/gpfs/cfel/cxi/scratch/user/trostfab/LU56/Settings_Ind_lin_TEST.xml", 500, true);
 }
 
 int main(int argc, char** argv)

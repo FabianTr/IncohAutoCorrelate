@@ -61,7 +61,9 @@ void ACMesh::CreateSmallMeshForDetector(Detector & Det, int PerpSize, float q_Zo
 
 	Shape.Max_Q = MaxQ;
 	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2));// * sqrt(2.00001) //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
-
+	//regularize
+	Shape.Voxel_per_dq = (unsigned int)floor(1 / Shape.dq_per_Voxel);
+	Shape.dq_per_Voxel = 1.0f / ((float)Shape.Voxel_per_dq);
 
 	delete[] Mesh;
 	Mesh = new unsigned long[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
@@ -93,7 +95,8 @@ void ACMesh::CreateBigMeshForDetector(Detector & Det, int EdgeSize, float q_Zoom
 
 	Shape.Max_Q = MaxQ;
 	Shape.dq_per_Voxel = MaxQ / (((Shape.Size_AB - 1) / 2) - 2);//* sqrt(2.00001) //Calculate Voxel Size (the last -2 takes care of zero padding)//sqrt(2.00001) is factor to ensure every rotation fits in mesh
-
+	Shape.Voxel_per_dq = (unsigned int)floor(1 / Shape.dq_per_Voxel);
+	Shape.dq_per_Voxel = 1.0f / ((float)Shape.Voxel_per_dq);
 
 	delete[] Mesh;
 	Mesh = new unsigned long[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
@@ -125,7 +128,8 @@ void ACMesh::CreateBigMesh_CofQ_ForDetector(Detector & Det, int EdgeSize, float 
 	
 	Shape.Max_Q = MaxQ;
 	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2)); //Calculate Voxel Size (the last -2 takes care of zero padding)
-	//Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2));
+	Shape.Voxel_per_dq = (unsigned int)floor(1 / Shape.dq_per_Voxel);
+	Shape.dq_per_Voxel = 1.0f / ((float)Shape.Voxel_per_dq);
 
 	delete[] CQMesh;
 	CQMesh = new double[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
@@ -190,7 +194,9 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 
 	Shape.Max_Q = MaxQ;
 	Shape.dq_per_Voxel = (MaxQ / (((Shape.Size_AB - 1) / 2) - 2));//* sqrt(2.00001) //Calculate Voxel Size (the last -1 takes care of zero padding);sqrt(2.00001) is factor to ensure every rotation fits in mesh
-	
+	Shape.Voxel_per_dq = (unsigned int)floor(1 / Shape.dq_per_Voxel);
+	Shape.dq_per_Voxel = 1.0f / ((float)Shape.Voxel_per_dq);
+
 	delete[] CQMesh;
 	CQMesh = new double[Shape.Size_AB*Shape.Size_AB*Shape.Size_C]();
 
@@ -216,7 +222,23 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 			return;
 		}
 
-		ArrayOperators::MultiplyScalar(q_local, 1.0 / Shape.dq_per_Voxel, 3);
+		//float q0 = q_local[0];
+		//float q1 = q_local[1];
+		//float q2 = q_local[2];
+
+		//float rr0 = RotationM[0];
+		//float rr1 = RotationM[1];
+		//float rr2 = RotationM[2];
+		//float rr3 = RotationM[3];
+		//float rr4 = RotationM[4];
+		//float rr5 = RotationM[5];
+		//float rr6 = RotationM[6];
+		//float rr7 = RotationM[7];
+		//float rr8 = RotationM[8];
+
+
+
+		ArrayOperators::MultiplyScalar(q_local, (double)Shape.Voxel_per_dq, 3);
 		//First binning
 		int fs_l, ms_l, ss_l;
 		fs_l = (int)floorf(q_local[0] + 0.5) + Shape.Center[0];
@@ -227,7 +249,15 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 		q_local[1] = (float)(ms_l - Shape.Center[1]);
 		q_local[2] = (float)(ss_l - Shape.Center[2]);
 
+		 //q0 = q_local[0];
+		 //q1 = q_local[1];
+		 //q2 = q_local[2];
+
 		ArrayOperators::Rotate(q_local, RotationM);
+
+		 //q0 = q_local[0];
+		 //q1 = q_local[1];
+		 //q2 = q_local[2];
 
 		
 		//second binning
@@ -313,7 +343,7 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 		return;
 	}
 
-	ArrayOperators::MultiplyScalar(q, 1.0 / Shape.dq_per_Voxel, 3);
+	ArrayOperators::MultiplyScalar(q,  Shape.Voxel_per_dq, 3);
 	switch (InterpolationMode)
 	{
 	case  Settings::Interpolation::NearestNeighbour:

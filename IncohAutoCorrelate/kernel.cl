@@ -166,7 +166,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 	//Params[9] = Multiplicator; //Multiplicator for conversion to long
 
 	unsigned int DetSize = (unsigned int)Params[0];
-	float dqPerVox = (float)Params[1];
+	unsigned int VoxperdQ = (unsigned int)Params[1];
 	unsigned int MeshSizeAB = (unsigned int)Params[2];
 	unsigned int MeshSizeC = (unsigned int)Params[3];
 
@@ -188,7 +188,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		printf("Aind: %d\n", Aind);
 		printf("Bind: %d\n", Bind);
 		printf("Cind: %d\n", Cind);
-		//printf("dq per Vox: %f\n", dqPerVox);
+		printf("Vox per dQ: %d\n", VoxperdQ);
 		//printf("Max q: %f\n", MaxQ);
 	}
 	////END
@@ -235,9 +235,9 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 			continue;
 		}
 
-		q1[0] = q1[0] / dqPerVox;
-		q1[1] = q1[1] / dqPerVox;
-		q1[2] = q1[2] / dqPerVox;
+		q1[0] = q1[0] * VoxperdQ;
+		q1[1] = q1[1] * VoxperdQ;
+		q1[2] = q1[2] * VoxperdQ;
 
 		//Map to Mesh
 		int fs, ms, ss;//fast-scan, medium-scan, slow-scan
@@ -311,9 +311,9 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 	q_in[0] = 2;
 	int ss_in = 0, ms_in = 0, fs_in = 0;
 	//retrive scans from index
-	ss_in = ind / (smallMeshSize_AB*smallMeshSize_AB);
-	ms_in = (ind - ss_in * smallMeshSize_AB*smallMeshSize_AB) / (smallMeshSize_AB);
-	fs_in = ind - ss_in * smallMeshSize_AB*smallMeshSize_AB - ms_in * smallMeshSize_AB;
+	ss_in = ( ind / (smallMeshSize_AB*smallMeshSize_AB));
+	ms_in = ((ind - (ss_in * smallMeshSize_AB*smallMeshSize_AB)) / (smallMeshSize_AB));
+	fs_in = ind - (ss_in * smallMeshSize_AB*smallMeshSize_AB) - (ms_in * smallMeshSize_AB);
 	//retrive q vectros (in voxels) fromm small C(q) mesh
 	q_in[Aind] = fs_in - smallMeshCenterAB;
 	q_in[Bind] = ms_in - smallMeshCenterAB;
@@ -441,7 +441,7 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 
 
 	unsigned int ListSize = (unsigned int)Params[0]; //Entrys in sparse HitList
-	float dqdV = (float)Params[1]; // dq/dV
+	unsigned int dVdq = (unsigned int)Params[1]; // dq/dV
 
 	int MeshSize = (unsigned int)Params[2]; //Only cube Meshes allowed here
 	int MeshCenter = (MeshSize - 1) / 2;
@@ -453,17 +453,17 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	int InterpolMode_lvl1 = (int)Params[7];
 	int InterpolMode_lvl2 = (int)Params[8];
 
-	//Debug Bullshit
-	if (ind == 0)//ind == 0
-	{
-		printf("Kernel (AC uw) is alive\n");
-		printf("MeshShape A=B=C=: %d\n", MeshSize);
-		printf("dqdV: %f\n", dqdV);
+	////Debug Bullshit
+	//if (ind == 0)//ind == 0
+	//{
+	//	printf("\n\nKernel (AC uw) is alive\n");
+	//	printf("MeshShape A=B=C=: %d\n", MeshSize);
+	//	printf("dVdq: %d\n", dVdq);
 
-		printf("DoubleMapping: %d\n", DoubleMapping);
-		printf("Multiplicator: %f\n", Multiplicator);
-		printf("ListSize: %d\n", ListSize);
-	}
+	//	printf("DoubleMapping: %d\n", DoubleMapping);
+	//	printf("Multiplicator: %f\n", Multiplicator);
+	//	printf("ListSize: %d\n\n", ListSize);
+	//}
 
 	//obtain k-vector and value given by kernel index
 	float k1[3];
@@ -489,9 +489,9 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 
 
 		//convert q to units of voxel
-		q[0] = q[0] / dqdV;
-		q[1] = q[1] / dqdV;
-		q[2] = q[2] / dqdV;
+		q[0] = q[0] * dVdq;
+		q[1] = q[1] * dVdq;
+		q[2] = q[2] * dVdq;
 		
 
 		if(DoubleMapping == 1)
