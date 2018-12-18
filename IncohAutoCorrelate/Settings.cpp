@@ -14,6 +14,10 @@
 #include "ArrayOperators.h"
 
 
+const int Settings::XML_HITLIST_VERSION;
+const int Settings::INTERNAL_VERSION;
+const int Settings::INTERNAL_VERSION_Revision;
+
 Settings::Settings()
 {
 }
@@ -492,7 +496,7 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 	ptree pt;
 
 	pt.put("root.Info.Size", HitEventList.size());
-	pt.put("root.Info.Version", XML_HITLIST_VERSION);   //ACTIVATE for Version 0.02
+	pt.put("root.Info.Version", Settings::XML_HITLIST_VERSION);   //ACTIVATE for Version 0.02
 
 	if (AdditionalInformations)
 	{
@@ -518,6 +522,7 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 		pt.put(path + ".SerialNumber", HitEventList[i].SerialNumber);
 		pt.put(path + ".MeanIntensity", HitEventList[i].MeanIntensity);
 		pt.put(path + ".PhotonCount", HitEventList[i].PhotonCount);
+		pt.put(path + ".SupplementInfo", HitEventList[i].SupplementInfo);
 
 		////Version 0.01
 		//pt.put(path + ".R0", HitEventList[i].RotMatrix[0]);
@@ -618,7 +623,7 @@ void Settings::LoadHitEventListFromFile(std::string Filename)
 		tmp.SerialNumber = pt.get<int>(path + ".SerialNumber");
 		tmp.MeanIntensity = pt.get<float>(path + ".MeanIntensity");
 		tmp.PhotonCount = pt.get<int>(path + ".PhotonCount");
-
+		tmp.SupplementInfo = pt.get<std::string>(path + ".SupplementInfo","");
 		switch (Version)
 		{
 		case 1:
@@ -691,7 +696,7 @@ void Settings::LoadHitEventListFromFile(std::string Filename)
 
 		HitEvents.push_back(tmp);
 	}
-
+	
 	//Old Versions
 	{
 		////Version 0.01

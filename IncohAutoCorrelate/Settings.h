@@ -23,14 +23,30 @@
 //
 // ------------
 
+
 class Settings
 {
 	//Class containing all parameters the program has and its helpers functions
 private:
 	
 public:
-	const int XML_HITLIST_VERSION = 2; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
-	const int INTERNAL_VERSION = 2; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
+	const static int XML_HITLIST_VERSION = 3; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
+	const static int INTERNAL_VERSION = 3; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
+	const static int INTERNAL_VERSION_Revision = 8; //rr
+
+	static std::string GetVersion()
+	{
+		std::string ret = std::to_string(INTERNAL_VERSION/100);
+		ret += ".";
+		if (INTERNAL_VERSION % 100 < 10)
+			ret += "0";
+		ret += std::to_string(INTERNAL_VERSION % 100) + ".";
+		if (INTERNAL_VERSION_Revision / 10 == 0)
+			ret += "0";
+		ret += std::to_string(INTERNAL_VERSION_Revision);
+
+		return ret;
+	}
 
 	Settings();
 	~Settings();
@@ -47,6 +63,8 @@ public:
 		int PhotonCount = -1;
 
 		float HitsPixelRatio = -1.0f; // Number of Pixels with hits / Number of Pixel
+
+		std::string SupplementInfo = "";
 	};
 
 	std::vector<HitEvent> HitEvents;

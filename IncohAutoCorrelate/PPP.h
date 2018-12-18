@@ -62,6 +62,20 @@ namespace PPP
 		}
 	};
 
+	struct CreateDarkSettings {
+
+		std::string Output_Path = "";
+		std::string Output_Dataset = "";
+
+		std::string Dark_Path = "";
+		std::string Dark_Dataset = "";
+
+		std::string Output_NewXML = "";
+
+		bool RestrictToDataSource = false;
+		std::string DataSource_Path = "";
+	};
+
 	
 	//Find Photons by considering the adjacent Pixels.
 	void PhotonFinder_LargestAdjacentPixel(float * Intensity, std::vector<DetectorPanel> DetectorPanels, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);
@@ -71,5 +85,6 @@ namespace PPP
 
 	void GainCorrection(Detector & Det, std::string GainCorr_Path, std::string Dataset_Offset, std::string Dataset_Gain, Settings & Options);
 	
+	void ProcessData_DarkFieldCorrection(Detector & Det, CreateDarkSettings DarkSettings, std::string XML_In, Settings & Options);
 
 }

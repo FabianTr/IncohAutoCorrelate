@@ -526,7 +526,7 @@ void runUnitTest(Settings & Options)
 
 int main(int argc, char** argv)
 {
-	std::cout << "\n\n\n===================\n     IncohAutoCorrelate (IAC)\n===================\n\n";
+	std::cout << "\n\n\n===================\n     IncohAutoCorrelate (IAC)\n===================\n     Version "<< Settings::GetVersion() <<"\n" << std::endl;
 	Settings Options;
 
 	//Parse Arg for Run-Mode-Fork
@@ -685,6 +685,21 @@ int main(int argc, char** argv)
 		{
 			std::string Arg2 = argv[2];
 			return MainRunModes::GainCorrection(Arg2, Options);
+		}
+	}
+	else if (Arg1 == "darkcalibration" || Arg1 == "-darkcalibration" || Arg1 == "dc" || Arg1 == "-dc")
+	{
+		std::cout << "run dark calibration\n";
+		if (argc < 3)
+		{
+			std::cerr << "-DarkCalibration requires one additional argument (\"Settings.xml\")\n";
+			std::cerr << "Additional Info: -DarkCalibration uses the \"root.PatternPreProcessing.LargestAdjacentPixel. (...)\" part.\n ";
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			return MainRunModes::DarkCalibration(Arg2, Options);
 		}
 	}
 	else if (Arg1 == "sortbyintensity" || Arg1 == "-sortbyintensity" || Arg1 == "si" || Arg1 == "-si")

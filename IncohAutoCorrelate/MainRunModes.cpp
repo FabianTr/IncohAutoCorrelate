@@ -156,6 +156,35 @@ PPP::Create_LAPSettings MainRunModes::LoadPPPLAPSettings(std::string Filename, S
 	return LAPS;
 }
 
+PPP::CreateDarkSettings MainRunModes::LoadPPPDarkSettings(std::string Filename, Settings & Options)
+{
+	PPP::CreateDarkSettings Dark;
+
+	using boost::property_tree::ptree;
+	ptree pt;
+	boost::property_tree::read_xml(Filename, pt);
+
+	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
+
+	//LAP
+	{
+		//Load general content
+		Dark.Dark_Path = pt.get<std::string>("root.PatternPreProcessing.DarkFieldCorrection.DarkField_Path", "");
+		Dark.Dark_Dataset = pt.get<std::string>("root.PatternPreProcessing.DarkFieldCorrection.DarkField_Dataset", "");
+
+		Dark.Output_Path = pt.get<std::string>("root.PatternPreProcessing.DarkFieldCorrection.Output_Path", "");
+		Dark.Output_Dataset = pt.get<std::string>("root.PatternPreProcessing.DarkFieldCorrection.Output_Dataset", "");
+
+		Dark.Output_NewXML = pt.get<std::string>("root.PatternPreProcessing.DarkFieldCorrection.Output_XML", "");
+
+		Dark.RestrictToDataSource = pt.get<bool>("root.PatternPreProcessing.DarkFieldCorrection.RestrictToDataSource", false);
+		Dark.DataSource_Path = pt.get<std::string>("root.PatternPreProcessing.DarkFieldCorrection.DataSourcePath", "");
+	}
+
+	return Dark;
+}
+
+
 MainRunModes::AllSimSettings MainRunModes::LoadSimulationSettings(std::string Filename, Settings & Options)
 {
 	MainRunModes::AllSimSettings SimS;
@@ -164,7 +193,7 @@ MainRunModes::AllSimSettings MainRunModes::LoadSimulationSettings(std::string Fi
 	ptree pt;
 	boost::property_tree::read_xml(Filename, pt);
 
-	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
+	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Settings::INTERNAL_VERSION);
 
 
 	{
@@ -228,7 +257,8 @@ MainRunModes::AllSettings MainRunModes::LoadSettings(std::string Filename, Setti
 	SettingsStack.EvaluationSettings = MainRunModes::LoadEvaluationSettings(Filename, Options); //Evaluation & General
 	SettingsStack.StatisticsSettings = MainRunModes::LoadStatisticSettings(Filename, Options); //Statistics
 	SettingsStack.PPPLAPSettings = MainRunModes::LoadPPPLAPSettings(Filename, Options); //PPP.LAP
-	SettingsStack.AllSimulationSettings = MainRunModes::LoadSimulationSettings(Filename, Options);
+	SettingsStack.AllSimulationSettings = MainRunModes::LoadSimulationSettings(Filename, Options); //Simulation stuff
+	SettingsStack.PPPDarkSettings = MainRunModes::LoadPPPDarkSettings(Filename, Options); //PPP.Dark
 
 	return SettingsStack;
 }
@@ -266,6 +296,7 @@ int MainRunModes::Create_Example_Config_File(std::string Filename, Settings & Op
 	pt = Example_Evaluation_Config_PT(pt, Options);
 	pt = Example_Statistics_Config_PT(pt, Options);
 	pt = Example_PatternPreProcessing_LAP(pt, Options);
+	pt = Example_PatternPreProcessing_Dark(pt, Options);
 	pt = Example_Simulation_Config_PT(pt, Options);
 	//save to File
 	boost::property_tree::write_xml(Filename, pt);
@@ -342,7 +373,8 @@ boost::property_tree::ptree MainRunModes::Example_Evaluation_Config_PT(boost::pr
 	//Store Evaluation Settings in PT
 	{
 		pt.put("root.Info.Info_Evaluation", "In this file are all settings for data-evaluation (autocorrelation) stored. This is an example file, just edit it as you need. This file can be created with the argument \"-ec\" (evaluation config).");
-		pt.put("root.Info.Version", Options.INTERNAL_VERSION);
+		pt.put("root.Info.Version", Settings::INTERNAL_VERSION);
+		pt.put("root.Info.VersionRevision", Settings::INTERNAL_VERSION_Revision);
 
 		//->Input Files
 		pt.put("root.EvalSettings.InputFiles.EventList_Path", EES.XML_Path);
@@ -585,6 +617,39 @@ boost::property_tree::ptree MainRunModes::Example_Simulation_Config_PT(boost::pr
 	return pt;
 }
 
+boost::property_tree::ptree MainRunModes::Example_PatternPreProcessing_Dark(boost::property_tree::ptree pt, Settings & Options)
+{
+	//Example PPP_LAP Settings
+	PPP::CreateDarkSettings Dark;
+	PPP::DetectorPanel SamplePanel;
+	{
+		Dark.Dark_Path = "Darkfield.h5";
+		Dark.Dark_Dataset = "data/data";
+
+		Dark.Output_Path = "Output.h5";
+		Dark.Output_Dataset = "data/data";
+		
+		Dark.Output_NewXML = "NewHitList.xml";
+
+		Dark.RestrictToDataSource = false;
+		Dark.DataSource_Path = "Source.h5";
+	}
+	//Store Statistic Settings in PT
+	{
+		pt.put("root.PatternPreProcessing.DarkFieldCorrection.DarkField_Path", Dark.Dark_Path);
+		pt.put("root.PatternPreProcessing.DarkFieldCorrection.DarkField_Dataset", Dark.Dark_Dataset);
+
+		pt.put("root.PatternPreProcessing.DarkFieldCorrection.Output_Path", Dark.Output_Path);
+		pt.put("root.PatternPreProcessing.DarkFieldCorrection.Output_Dataset", Dark.Output_Dataset);
+
+		pt.put("root.PatternPreProcessing.DarkFieldCorrection.Output_XML", Dark.Output_NewXML);
+
+		pt.put("root.PatternPreProcessing.DarkFieldCorrection.RestrictToDataSource", Dark.RestrictToDataSource);
+		pt.put("root.PatternPreProcessing.DarkFieldCorrection.DataSourcePath", Dark.DataSource_Path);
+	}
+	return pt;
+}
+
 
 //Run Evaluations
 
@@ -671,6 +736,22 @@ int MainRunModes::GainCorrection(std::string Arg1, Settings & Options)
 
 	PPP::ProcessData_PF_LAP(Det, AS.PPPLAPSettings, AS.EvaluationSettings.XML_Path,false);
 	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
+	return 0;
+}
+
+int MainRunModes::DarkCalibration(std::string Arg1, Settings & Options)
+{
+	AllSettings AS = LoadSettings(Arg1, Options);
+	Detector Det;
+	Det.LoadPixelMap(AS.EvaluationSettings.PixelMap_Path, AS.EvaluationSettings.PixelMap_DataSet);
+	Det.LoadPixelMask(AS.EvaluationSettings.PixelMask_Path, AS.EvaluationSettings.PixelMask_Dataset);
+
+	ProfileTime Profiler;
+	Profiler.Tic();
+
+	PPP::ProcessData_DarkFieldCorrection(Det, AS.PPPDarkSettings, AS.EvaluationSettings.XML_Path, Options);
+	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
+
 	return 0;
 }
 
@@ -901,6 +982,8 @@ int MainRunModes::GetHitListFromStreamFile(std::string Arg1, std::string Arg2, s
 
 	OptOut.LoadStreamFile(Arg1, Arg2, false);
 	OptOut.SafeHitEventListToFile(Arg3);
+
+	std::cout << "Saved XML event-list as:\n\"" << Arg3 << "\"" << std::endl;
 
 	return 0;
 }

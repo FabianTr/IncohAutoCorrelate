@@ -342,6 +342,187 @@ namespace PPP
 		delete[] GM_Gain;
 	}
 
+	void ProcessData_DarkFieldCorrection(Detector & Det, CreateDarkSettings DarkSettings, std::string XML_In, Settings & Options)
+	{
+		Settings Set_In;
+		Settings Set_Out;
+		Options.Echo("Load event-list");
+		Set_In.LoadHitEventListFromFile(XML_In);
+
+		Options.Echo("Load dark field");
+		if (DarkSettings.Dark_Path == "" || DarkSettings.Dark_Dataset == "")
+		{
+			std::cerr << "ERROR: Invalid dark-field path and/or dataset. Check XML-config file.\n";
+			std::cerr << "     -> in PPP::ProcessData_DarkFieldCorrection()\n";
+			throw;
+		}
+
+		//load Dark Field
+		float * Dark = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
+		ArrayOperators::MultiplyScalar(Dark, -1.0f, Det.DetectorSize[0] * Det.DetectorSize[1]); //invert Darkfield
+
+		//H5 Darkfiled loading stuff
+		{
+			H5::H5File file(DarkSettings.Dark_Path, H5F_ACC_RDONLY);
+			H5::DataSet dataset = file.openDataSet(DarkSettings.Dark_Dataset);
+			if (dataset.getTypeClass() != H5T_FLOAT)
+			{
+				std::cerr << "ERROR: Darkfield is not stored as float array.\n";
+				std::cerr << "     -> in PPP::ProcessData_DarkFieldCorrection()\n";
+				throw;
+			}
+
+			H5::DataSpace DS = dataset.getSpace();
+			if (DS.getSimpleExtentNdims() != 2) //check if shape is [nE][nx][ny] or [ny][nx][nE]  nE =^ Number of Slices(Events)
+			{
+				std::cerr << "ERROR: DarkField data dimension is not 2, but " << DS.getSimpleExtentNdims() << " => shape is not (nx, ny)\n";
+				std::cerr << "     -> in PPP::ProcessData_DarkFieldCorrection()\n";
+				throw;
+			}
+
+
+			hsize_t dims[2];
+			DS.getSimpleExtentDims(dims, NULL);
+
+			if (dims[0] != Det.DetectorSize[0] || dims[1] != Det.DetectorSize[1])
+			{
+				std::cerr << "ERROR: Dark field size does not match pixle-map size.\n";
+				std::cerr << "     -> in PPP::ProcessData_DarkFieldCorrection()\n";
+				throw;
+			}
+
+			//Get Subset 
+			hsize_t offset[2], count[2], stride[2], block[2];
+			hsize_t dimsm[2];
+
+			offset[0] = 0;
+			offset[1] = 0;
+
+			count[0] = Det.DetectorSize[0];
+			count[1] = Det.DetectorSize[1];
+
+			block[0] = 1;
+			block[1] = 1;
+
+			stride[0] = 1;
+			stride[1] = 1;
+
+			dimsm[0] = Det.DetectorSize[0];
+			dimsm[1] = Det.DetectorSize[1];
+
+			//Load Data Darkfield
+			H5::DataSpace mspace(3, dimsm, NULL);
+			DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
+
+			H5::PredType type = H5::PredType::NATIVE_FLOAT;
+			dataset.read(Dark, type, mspace, DS);
+			//Close DS, dataset, mspace
+			DS.close();
+			dataset.close();
+			mspace.close();
+		}
+
+
+	//Correct DarkField ...
+		Options.Echo("Apply dark field correction ...");
+
+		unsigned int RelStackSize = 0;
+		if (DarkSettings.RestrictToDataSource)
+		{
+			for (unsigned int i = 0; i < Set_In.HitEvents.size(); i++)
+			{
+				if (DarkSettings.DataSource_Path == Set_In.HitEvents[i].Filename)
+				{
+					RelStackSize++;
+				}
+			}
+		}
+		else
+		{
+			RelStackSize = Set_In.HitEvents.size();
+		}
+
+		if (Options.echo && DarkSettings.RestrictToDataSource) std::cout <<  "Restriction to single data source!" << std::endl;
+		if (Options.echo) std::cout << RelStackSize << " events to be corrected." << std::endl;
+
+		//H5 Stuff
+		H5::H5File file(DarkSettings.Output_Path, H5F_ACC_TRUNC);
+		hsize_t dims[3];
+		dims[0] = RelStackSize;
+		dims[1] = Det.DetectorSize[0];
+		dims[2] = Det.DetectorSize[1];
+		H5::DataSpace dataspace(3, dims);
+
+		H5::DataSet dataset = file.createDataSet(DarkSettings.Output_Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
+
+		hsize_t start[3] = { 0, 0, 0 };  // Start of hyperslab, offset
+		hsize_t stride[3] = { 1, 1, 1 }; // Stride of hyperslab
+		hsize_t count[3] = { 1, 1, 1 };  // Block count
+		hsize_t block[3] = { 1, dims[1], dims[2] }; // Block sizes
+
+		H5::DataSpace mspace(3, block);
+
+		float CounterStep = ((float)RelStackSize) / 100.0f;
+		float Counter = 0;
+
+		//iterate over Events
+		unsigned int EventCounter = 0;
+		Set_Out.HitEvents.clear();
+		for (unsigned int i = 0; i < Set_In.HitEvents.size(); i++)
+		{
+			//Check (if restrict to one data-source), datasource path and if it doesn't match, continue
+			if (DarkSettings.RestrictToDataSource && (DarkSettings.DataSource_Path != Set_In.HitEvents[i].Filename))
+				continue;
+			//load intensity
+			Det.LoadIntensityData(&Set_In.HitEvents[i]);
+			
+			//Subtract Dark field (already inverted, therefore add)
+			ArrayOperators::ParAdd(Det.Intensity, Dark, Det.DetectorSize[0] * Det.DetectorSize[1]);
+			
+			//store in H5 File
+			start[0] = EventCounter;
+			dataspace.selectHyperslab(H5S_SELECT_SET, count, start, stride, block);
+			dataset.write(Det.Intensity, H5::PredType::NATIVE_FLOAT, mspace, dataspace);
+
+			//Create Event
+			{
+				Settings::HitEvent t_Event;
+				t_Event = Set_In.HitEvents[i];
+
+				t_Event.Dataset = DarkSettings.Output_Dataset;
+				t_Event.Event = Counter;
+				t_Event.Filename = DarkSettings.Output_Path;
+				t_Event.HitsPixelRatio = Set_In.HitEvents[i].HitsPixelRatio;
+				t_Event.MeanIntensity = Set_In.HitEvents[i].MeanIntensity;
+				t_Event.PhotonCount = Set_In.HitEvents[i].PhotonCount;
+				t_Event.SerialNumber = Set_In.HitEvents[i].SerialNumber;
+
+				for (int r = 0; r < 9; r++)
+					t_Event.RotMatrix[r] = Set_In.HitEvents[i].RotMatrix[r];
+
+				Set_Out.HitEvents.push_back(t_Event);
+			}
+			if ((float)EventCounter >= Counter)
+			{
+				std::cout << EventCounter << "/" << RelStackSize << "  ^= " << Counter / CounterStep << "%\n";
+				Counter += CounterStep;
+			}
+			EventCounter++;
+		}
+
+		mspace.close();
+		dataspace.close();
+		dataset.close();
+		file.close();
+
+		Set_Out.SafeHitEventListToFile(DarkSettings.Output_NewXML);
+
+		//CleanUp Memory
+		delete[] Dark;
+	}
+
+
+
 
 
 	

@@ -42,7 +42,8 @@ namespace MainRunModes
 		Statistics::StatisticsSettings StatisticsSettings;
 		//PPP.LAP
 		PPP::Create_LAPSettings PPPLAPSettings;
-
+		//PPP.Dark
+		PPP::CreateDarkSettings PPPDarkSettings;
 
 		std::string XMLSetting_Path = "";
 	};
@@ -59,6 +60,7 @@ namespace MainRunModes
 	RunIAC::CreateDataEval_Settings LoadEvaluationSettings(std::string Filename, Settings &Options);
 	Statistics::StatisticsSettings LoadStatisticSettings(std::string Filename, Settings &Options);
 	PPP::Create_LAPSettings LoadPPPLAPSettings(std::string Filename, Settings &Options);
+	PPP::CreateDarkSettings LoadPPPDarkSettings(std::string Filename, Settings &Options);
 	AllSimSettings LoadSimulationSettings(std::string Filename, Settings &Options);
 	//combined
 	MainRunModes::AllSettings LoadSettings(std::string Filename, Settings &Options);
@@ -71,14 +73,17 @@ namespace MainRunModes
 	boost::property_tree::ptree Example_Statistics_Config_PT(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
 	boost::property_tree::ptree Example_PatternPreProcessing_LAP(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
 	boost::property_tree::ptree Example_Simulation_Config_PT(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
+	boost::property_tree::ptree Example_PatternPreProcessing_Dark(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
 
 	//->Data Evaluation
 	int AverageIntensity(std::string EvaluationConfigFile, Settings &Options, bool UpdateEventXML = false);
 
-	//DataProcessing
+	//DataProcessing PPP
 	int GainCorrectionAndLAP(std::string Arg1, Settings &Options);
 
 	int GainCorrection(std::string Arg1, Settings &Options);
+
+	int DarkCalibration(std::string Arg1, Settings &Options);
 	//->Statistics
 	int CreateAllPixelHistograms(std::string ConfigFile, Settings &Options);
 
