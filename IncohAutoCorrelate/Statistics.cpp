@@ -101,7 +101,7 @@ namespace Statistics
 			{
 				if (i / CounterStep > Prog)
 				{
-					std::cout << "Pattern " << i << " / " << Options.HitEvents.size() << " \t^= " << Prog << "%\n";
+					std::cout << "Pattern " << i << " / " << Options.HitEvents.size() << " \t^= " << Prog << "%"<<std::endl;
 					profiler.Toc(true);
 					Prog++;
 				}

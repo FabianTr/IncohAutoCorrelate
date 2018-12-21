@@ -98,6 +98,8 @@ namespace MainRunModes
 
 	int SortXMLHitsByMeanIntensity(std::string Arg1, std::string Arg2, Settings &Options);//xml_in, xml_out
 
+	int MergeXMLHitLits(std::string Arg1, std::string Arg2, std::string Arg3, Settings &Options); //xml_out, xml_in[], SupplInfo[] (optional)
+
 	//Events from CSV
 
 	int GetHitListFromCSVFile(std::string Arg1, std::string Arg2, Settings &Options); //CSV, XML

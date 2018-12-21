@@ -7,6 +7,8 @@
 
 
 
+
+
 ACMesh::ACMesh(Settings *PrgSettings)
 {
 	if (CQMesh == nullptr)
@@ -210,148 +212,196 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 }
 void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation FirstInterpolationMode, Settings::Interpolation SecondInterpolationMode, bool DoubleBinning)
 {
-	if (DoubleBinning)
-	{
-		if (FirstInterpolationMode == Settings::Interpolation::Linear)
-		{
-			std::cerr << "ERROR: Linear interpolation (for first step) not implemented for double binning yet.\nContinue with nearest neighbor.\n";
-		}
-
-		if (sqrtf(q_local[0] * q_local[0] + q_local[1] * q_local[1] + q_local[2] * q_local[2]) > Shape.Max_Q)
-		{
-			return;
-		}
-
-		//float q0 = q_local[0];
-		//float q1 = q_local[1];
-		//float q2 = q_local[2];
-
-		//float rr0 = RotationM[0];
-		//float rr1 = RotationM[1];
-		//float rr2 = RotationM[2];
-		//float rr3 = RotationM[3];
-		//float rr4 = RotationM[4];
-		//float rr5 = RotationM[5];
-		//float rr6 = RotationM[6];
-		//float rr7 = RotationM[7];
-		//float rr8 = RotationM[8];
 
 
 
-		ArrayOperators::MultiplyScalar(q_local, (double)Shape.Voxel_per_dq, 3);
-		//First binning
-		int fs_l, ms_l, ss_l;
-		fs_l = (int)floorf(q_local[0] + 0.5) + Shape.Center[0];
-		ms_l = (int)floorf(q_local[1] + 0.5) + Shape.Center[1];
-		ss_l = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
-
-		q_local[0] = (float)(fs_l - Shape.Center[0]);
-		q_local[1] = (float)(ms_l - Shape.Center[1]);
-		q_local[2] = (float)(ss_l - Shape.Center[2]);
-
-		 //q0 = q_local[0];
-		 //q1 = q_local[1];
-		 //q2 = q_local[2];
-
-		ArrayOperators::Rotate(q_local, RotationM);
-
-		 //q0 = q_local[0];
-		 //q1 = q_local[1];
-		 //q2 = q_local[2];
-
-		
-		//second binning
-		if (SecondInterpolationMode == 0) //neares neighbour
-		{
-			int fs, ms, ss;
-			fs = (int)floorf(q_local[0] + 0.5) + Shape.Center[0];
-			ms = (int)floorf(q_local[1] + 0.5) + Shape.Center[1];
-			ss = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
-
-			int s = Shape.Size_AB;
-
-			unsigned int val;
-			val = Options->FloatToInt(Value);
-
-			#pragma omp atomic
-			Mesh[fs + ms * s + ss * s*s] += val;
-		}
-		if (SecondInterpolationMode == 1) //linear
-		{
-			double Sep_fs = 1 - (q_local[0] - floor(q_local[0]));
-			double Sep_ms = 1 - (q_local[1] - floor(q_local[1]));
-			double Sep_ss = 1 - (q_local[2] - floor(q_local[2]));
-			int fs, ms, ss;
-
-			fs = (int)floorf(q_local[0]) + Shape.Center[0];
-			ms = (int)floorf(q_local[1]) + Shape.Center[1];
-			ss = (int)floorf(q_local[2]) + Shape.Center[2];
-
-			int s = Shape.Size_AB;
-			unsigned int val;
-			//val = Options->FloatToInt(Value);
-
-			//fff
-			val = Options->FloatToInt(Value * ((Sep_fs) * (Sep_ms)  * (Sep_ss)));
-			#pragma omp atomic
-			Mesh[fs + ms * s + ss * s*s] += val;
-			//tff
-			val = Options->FloatToInt(Value * ((1 - Sep_fs) * (Sep_ms)  * (Sep_ss)));
-			#pragma omp atomic
-			Mesh[(fs + 1) + ms * s + ss * s*s] += val;
-			//fft
-			val = Options->FloatToInt(Value * ((Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
-			#pragma omp atomic
-			Mesh[(fs + 0) + ms * s + (ss + 1) * s*s] += val;
-			//tft
-			val = Options->FloatToInt(Value * ((1 - Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
-			#pragma omp atomic
-			Mesh[(fs + 1) + ms * s + (ss + 1) * s*s] += val;
-			//ftf
-			val = Options->FloatToInt(Value * ((Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
-			#pragma omp atomic
-			Mesh[(fs + 0) + (ms + 1) * s + (ss + 0) * s*s] += val;
-			//ttf
-			val = Options->FloatToInt(Value * ((1 - Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
-			#pragma omp atomic
-			Mesh[(fs + 1) + (ms + 1) * s + (ss + 0) * s*s] += val;
-			//ftt
-			val = Options->FloatToInt(Value * ((Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
-			#pragma omp atomic
-			Mesh[(fs + 0) + (ms + 1) * s + (ss + 1) * s*s] += val;
-			//ttt
-			val = Options->FloatToInt(Value * ((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
-			#pragma omp atomic
-			Mesh[(fs + 1) + (ms + 1) * s + (ss + 1) * s*s] += val;
-		}
-	}
-	else
-	{
-		ArrayOperators::Rotate(q_local, RotationM);
-		Atomic_Add_q_Entry(q_local, Value, SecondInterpolationMode);
-	}
-}
-void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode)
-{
-	//re normalize q to the Mesh spacing
-	//	std::cout << "q: " << q[0] << ", " << q[1] << ", " << q[2] << " \tdq_per_Voxel: " << Shape.dq_per_Voxel << "\n";
-
-
-	//Check if q is in Range
-	if (sqrtf(q[0] * q[0] + q[1] * q[1] + q[2] * q[2]) > Shape.Max_Q)
+	if (sqrtf(q_local[0] * q_local[0] + q_local[1] * q_local[1] + q_local[2] * q_local[2]) > Shape.Max_Q)
 	{
 		return;
 	}
 
-	ArrayOperators::MultiplyScalar(q,  Shape.Voxel_per_dq, 3);
-	switch (InterpolationMode)
+
+	ArrayOperators::MultiplyScalar(q_local, (double)Shape.Voxel_per_dq, 3);
+
+	if (DoubleBinning)
 	{
-	case  Settings::Interpolation::NearestNeighbour:
+		if (FirstInterpolationMode == Settings::Interpolation::NearestNeighbour)
+		{
+			//First binning
+			int fs_l, ms_l, ss_l;
+			fs_l = (int)floorf(q_local[0] + 0.5) + Shape.Center[0];
+			ms_l = (int)floorf(q_local[1] + 0.5) + Shape.Center[1];
+			ss_l = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
+
+			q_local[0] = (float)(fs_l - Shape.Center[0]);
+			q_local[1] = (float)(ms_l - Shape.Center[1]);
+			q_local[2] = (float)(ss_l - Shape.Center[2]);
+
+			ArrayOperators::Rotate(q_local, RotationM);
+			Atomic_Add_rotated_q_Entry(q_local, Value, SecondInterpolationMode);
+		}
+		if (FirstInterpolationMode == Settings::Interpolation::Linear)
+		{
+			double Sep_fs = 1.0 - (q_local[0] - floor(q_local[0]));
+			double Sep_ms = 1.0 - (q_local[1] - floor(q_local[1]));
+			double Sep_ss = 1.0 - (q_local[2] - floor(q_local[2]));
+
+			int fs_l, ms_l, ss_l;
+			fs_l = (int)floorf(q_local[0] ) + Shape.Center[0];
+			ms_l = (int)floorf(q_local[1] ) + Shape.Center[1];
+			ss_l = (int)floorf(q_local[2] ) + Shape.Center[2];
+
+			//fff
+			q_local[0] = (float)((fs_l + 0) - Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 0) - Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 0) - Shape.Center[2]);
+			ArrayOperators::Rotate(q_local, RotationM);
+			Atomic_Add_rotated_q_Entry(q_local, Value * (Sep_fs)*(Sep_ms)*(Sep_ss), SecondInterpolationMode);
+
+			//tff
+			q_local[0] = (float)((fs_l + 1) - Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 0) - Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 0) - Shape.Center[2]);
+			ArrayOperators::Rotate(q_local, RotationM);
+			Atomic_Add_rotated_q_Entry(q_local, Value * (1 - Sep_fs)*(Sep_ms)*(Sep_ss), SecondInterpolationMode);
+
+			//fft
+			q_local[0] = (float)((fs_l + 0) - Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 0) - Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 1) - Shape.Center[2]);
+			ArrayOperators::Rotate(q_local, RotationM);
+			Atomic_Add_rotated_q_Entry(q_local, Value * (Sep_fs)*(Sep_ms)*(1 - Sep_ss), SecondInterpolationMode);
+
+			//tft
+			q_local[0] = (float)((fs_l + 1) - Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 0) - Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 1) - Shape.Center[2]);
+			ArrayOperators::Rotate(q_local, RotationM);
+			Atomic_Add_rotated_q_Entry(q_local, Value * (1 - Sep_fs)*(Sep_ms)*(1 - Sep_ss), SecondInterpolationMode);
+
+			//ftf
+			q_local[0] = (float)((fs_l + 0) - Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 1) - Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 0) - Shape.Center[2]);
+			ArrayOperators::Rotate(q_local, RotationM);
+			Atomic_Add_rotated_q_Entry(q_local, Value * (Sep_fs)*(1 - Sep_ms)*(Sep_ss), SecondInterpolationMode);
+
+			//ttf
+			q_local[0] = (float)((fs_l + 1) - Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 1) - Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 0) - Shape.Center[2]);
+			ArrayOperators::Rotate(q_local, RotationM);
+			Atomic_Add_rotated_q_Entry(q_local, Value * (1 - Sep_fs)*(1 - Sep_ms)*(Sep_ss), SecondInterpolationMode);
+
+			//ftt
+			q_local[0] = (float)((fs_l + 0) - Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 1) - Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 1) - Shape.Center[2]);
+			ArrayOperators::Rotate(q_local, RotationM);
+			Atomic_Add_rotated_q_Entry(q_local, Value * (Sep_fs)*(1 - Sep_ms)*(1 - Sep_ss), SecondInterpolationMode);
+
+			//ttt
+			q_local[0] = (float)((fs_l + 1) - Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 1) - Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 1) - Shape.Center[2]);
+			ArrayOperators::Rotate(q_local, RotationM);
+			Atomic_Add_rotated_q_Entry(q_local, Value * (1 - Sep_fs)*(1 - Sep_ms)*(1 - Sep_ss), SecondInterpolationMode);
+		}
+
+	}
+	else
+	{
+		ArrayOperators::Rotate(q_local, RotationM);
+		Atomic_Add_rotated_q_Entry(q_local, Value, SecondInterpolationMode);
+	}
+
+	{
+		//	//q0 = q_local[0];
+		//	//q1 = q_local[1];
+		//	//q2 = q_local[2];
+
+		//
+
+		//	//q0 = q_local[0];
+		//	//q1 = q_local[1];
+		//	//q2 = q_local[2];
+
+		//	
+		////second binning
+		//if (SecondInterpolationMode == 0) //neares neighbour
+		//{
+		//	int fs, ms, ss;
+		//	fs = (int)floorf(q_local[0] + 0.5) + Shape.Center[0];
+		//	ms = (int)floorf(q_local[1] + 0.5) + Shape.Center[1];
+		//	ss = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
+
+		//	int s = Shape.Size_AB;
+
+		//	unsigned int val;
+		//	val = Options->FloatToInt(Value);
+
+		//	#pragma omp atomic
+		//	Mesh[fs + ms * s + ss * s*s] += val;
+		//}
+		//if (SecondInterpolationMode == 1) //linear
+		//{
+		//	double Sep_fs = 1 - (q_local[0] - floor(q_local[0]));
+		//	double Sep_ms = 1 - (q_local[1] - floor(q_local[1]));
+		//	double Sep_ss = 1 - (q_local[2] - floor(q_local[2]));
+		//	int fs, ms, ss;
+
+		//	fs = (int)floorf(q_local[0]) + Shape.Center[0];
+		//	ms = (int)floorf(q_local[1]) + Shape.Center[1];
+		//	ss = (int)floorf(q_local[2]) + Shape.Center[2];
+
+		//	int s = Shape.Size_AB;
+		//	unsigned int val;
+		//	//val = Options->FloatToInt(Value);
+
+		//	//fff
+		//	val = Options->FloatToInt(Value * ((Sep_fs) * (Sep_ms)  * (Sep_ss)));
+		//	#pragma omp atomic
+		//	Mesh[fs + ms * s + ss * s*s] += val;
+		//	//tff
+		//	val = Options->FloatToInt(Value * ((1 - Sep_fs) * (Sep_ms)  * (Sep_ss)));
+		//	#pragma omp atomic
+		//	Mesh[(fs + 1) + ms * s + ss * s*s] += val;
+		//	//fft
+		//	val = Options->FloatToInt(Value * ((Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+		//	#pragma omp atomic
+		//	Mesh[(fs + 0) + ms * s + (ss + 1) * s*s] += val;
+		//	//tft
+		//	val = Options->FloatToInt(Value * ((1 - Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+		//	#pragma omp atomic
+		//	Mesh[(fs + 1) + ms * s + (ss + 1) * s*s] += val;
+		//	//ftf
+		//	val = Options->FloatToInt(Value * ((Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+		//	#pragma omp atomic
+		//	Mesh[(fs + 0) + (ms + 1) * s + (ss + 0) * s*s] += val;
+		//	//ttf
+		//	val = Options->FloatToInt(Value * ((1 - Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+		//	#pragma omp atomic
+		//	Mesh[(fs + 1) + (ms + 1) * s + (ss + 0) * s*s] += val;
+		//	//ftt
+		//	val = Options->FloatToInt(Value * ((Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+		//	#pragma omp atomic
+		//	Mesh[(fs + 0) + (ms + 1) * s + (ss + 1) * s*s] += val;
+		//	//ttt
+		//	val = Options->FloatToInt(Value * ((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+		//	#pragma omp atomic
+		//	Mesh[(fs + 1) + (ms + 1) * s + (ss + 1) * s*s] += val;
+		//}
+	}
+}
+
+void ACMesh::Atomic_Add_rotated_q_Entry(float q_local[3], float Value, Settings::Interpolation SecondInterpolationMode)
+{
+	if (SecondInterpolationMode == 0) //neares neighbour
 	{
 		int fs, ms, ss;
-		fs = (int)floorf(q[0] + 0.5) + Shape.Center[0];
-		ms = (int)floorf(q[1] + 0.5) + Shape.Center[1];
-		ss = (int)floorf(q[2] + 0.5) + Shape.Center[2];
+		fs = (int)floorf(q_local[0] + 0.5) + Shape.Center[0];
+		ms = (int)floorf(q_local[1] + 0.5) + Shape.Center[1];
+		ss = (int)floorf(q_local[2] + 0.5) + Shape.Center[2];
 
 		int s = Shape.Size_AB;
 
@@ -360,53 +410,53 @@ void ACMesh::Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation
 
 #pragma omp atomic
 		Mesh[fs + ms * s + ss * s*s] += val;
-		//if (std::max(std::max(fabs(q[0]), fabs(q[1])),fabs(q[2])) > 300)
-		//	std::cout << "q: " << q[0] << ", " << q[1] << ", " << q[2] << ";\t V = " << Value << " -> " << val << ";\t fs,ms,ss: " << fs << " " << ms << " " << ss << "\n";
 	}
-	break;
-	case  Settings::Interpolation::Linear:
+	if (SecondInterpolationMode == 1) //linear
 	{
-		int fsf, msf, ssf; //fast-scan-, medium-scan-, slow-scan- floor
-		fsf = (int)floorf(q[0]) + Shape.Center[0];
-		msf = (int)floorf(q[1]) + Shape.Center[1];
-		ssf = (int)floorf(q[2]) + Shape.Center[2];
-		float SepF, SepM, SepS; //according Seperators
-		SepF = q[0] - floorf(q[0]);
-		SepM = q[1] - floorf(q[1]);
-		SepS = q[2] - floorf(q[2]);
+		double Sep_fs = 1 - (q_local[0] - floor(q_local[0]));
+		double Sep_ms = 1 - (q_local[1] - floor(q_local[1]));
+		double Sep_ss = 1 - (q_local[2] - floor(q_local[2]));
+		int fs, ms, ss;
+
+		fs = (int)floorf(q_local[0]) + Shape.Center[0];
+		ms = (int)floorf(q_local[1]) + Shape.Center[1];
+		ss = (int)floorf(q_local[2]) + Shape.Center[2];
 
 		int s = Shape.Size_AB;
+		unsigned int val;
+		//val = Options->FloatToInt(Value);
 
-		int val;
-		val = Options->FloatToInt(Value);
-
-
-		#pragma omp atomic
-		Mesh[fsf + msf * s + ssf * s*s] += val * (1 - SepF)*(1 - SepM)*(1 - SepS); // A + 0
-
-		#pragma omp atomic
-		Mesh[(fsf + 1) + (msf + 0) * s + (ssf + 0) * s*s] += val * (SepF)*(1 - SepM)*(1 - SepS); //ssf + 1
-		#pragma omp atomic
-		Mesh[(fsf + 0) + (msf + 1) * s + (ssf + 0) *s*s] += val * (1 - SepF)*(SepM)*(1 - SepS); //msf + 1
-		#pragma omp atomic
-		Mesh[(fsf + 0) + (msf + 0) * s + (ssf + 1) * s*s] += val * (1 - SepF)*(1 - SepM)*(SepS); //ssf + 1
-
-		#pragma omp atomic
-		Mesh[(fsf + 1) + (msf + 1) * s + (ssf + 0) * s*s] += val * (SepF)*(SepM)*(1 - SepS); //ffs + 1 ; msf + 1
-		#pragma omp atomic
-		Mesh[(fsf + 0) + (msf + 1) * s + (ssf + 1) * s*s] += val * (1 - SepF)*(SepM)*(SepS); //msf + 1 ; ssf + 1
-		#pragma omp atomic
-		Mesh[(fsf + 1) + (msf + 0) * s + (ssf + 1) * s*s] += val * (SepF)*(1 - SepM)*(SepS); //ffs + 1 ; ssf + 1
-
-		#pragma omp atomic
-		Mesh[(fsf + 1) + (msf + 1) * s + (ssf + 1) * s*s] += val * (SepF)*(SepM)*(SepS); // A + 1
-
-	}
-	break;
-	default:
-		std::cerr << "ERROR: No valid interpolation mode choosen\n";
-		std::cerr << "   ->: in ACMesh::Atomic_Add_q_Entry\n";
-		throw;
+		//fff
+		val = Options->FloatToInt(Value * ((Sep_fs) * (Sep_ms)  * (Sep_ss)));
+#pragma omp atomic
+		Mesh[fs + ms * s + ss * s*s] += val;
+		//tff
+		val = Options->FloatToInt(Value * ((1 - Sep_fs) * (Sep_ms)  * (Sep_ss)));
+#pragma omp atomic
+		Mesh[(fs + 1) + ms * s + ss * s*s] += val;
+		//fft
+		val = Options->FloatToInt(Value * ((Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+#pragma omp atomic
+		Mesh[(fs + 0) + ms * s + (ss + 1) * s*s] += val;
+		//tft
+		val = Options->FloatToInt(Value * ((1 - Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+#pragma omp atomic
+		Mesh[(fs + 1) + ms * s + (ss + 1) * s*s] += val;
+		//ftf
+		val = Options->FloatToInt(Value * ((Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+#pragma omp atomic
+		Mesh[(fs + 0) + (ms + 1) * s + (ss + 0) * s*s] += val;
+		//ttf
+		val = Options->FloatToInt(Value * ((1 - Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+#pragma omp atomic
+		Mesh[(fs + 1) + (ms + 1) * s + (ss + 0) * s*s] += val;
+		//ftt
+		val = Options->FloatToInt(Value * ((Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+#pragma omp atomic
+		Mesh[(fs + 0) + (ms + 1) * s + (ss + 1) * s*s] += val;
+		//ttt
+		val = Options->FloatToInt(Value * ((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+#pragma omp atomic
+		Mesh[(fs + 1) + (ms + 1) * s + (ss + 1) * s*s] += val;
 	}
 }
-

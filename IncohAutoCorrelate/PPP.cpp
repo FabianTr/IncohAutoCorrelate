@@ -490,7 +490,7 @@ namespace PPP
 				t_Event = Set_In.HitEvents[i];
 
 				t_Event.Dataset = DarkSettings.Output_Dataset;
-				t_Event.Event = Counter;
+				t_Event.Event = EventCounter;
 				t_Event.Filename = DarkSettings.Output_Path;
 				t_Event.HitsPixelRatio = Set_In.HitEvents[i].HitsPixelRatio;
 				t_Event.MeanIntensity = Set_In.HitEvents[i].MeanIntensity;

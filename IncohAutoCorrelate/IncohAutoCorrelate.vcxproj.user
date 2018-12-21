@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-dc /gpfs/cfel/cxi/scratch/user/trostfab/LR17/Setting_Dark_210.xml</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-ut</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

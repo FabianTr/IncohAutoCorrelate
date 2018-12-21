@@ -108,7 +108,6 @@ bool UnitTest::TestKabschImplementation()
 		<< KRot[6] << " \t" << KRot[7] << " \t" << KRot[8] << "\n" << std::endl;
 
 	//<\Test Kansch Algo>
-
 	return true;
 }
 
@@ -117,18 +116,24 @@ bool UnitTest::StreamFileReader(Settings & Options)
 	Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1;
 	Options.LoadStreamFile("/gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/stream files/3fs_JF.stream", "entry_1/instrument_1/detector_2", false);
 
-
 	return true;
 }
 
 bool UnitTest::TestACandCQmapping(Settings & Options, std::string SettingsPath, int EventNum, bool Rotation)
 {
+	int CPUGPU = 0;
+
 	std::cout << "Options Int to Float ConvOffset = " << Options.F_I_Conversion.Offset << "; ConvStep = " << Options.F_I_Conversion.Step << std::endl;
 	ACMesh Mesh_CQ(&Options);
 //Load Settings and Event XML
 	std::cout << "Load XML Settings" << std::endl;
 	MainRunModes::AllSettings RunSettings = MainRunModes::LoadSettings(SettingsPath, Options);
 	RunIAC::CreateDataEval_Settings EvalSettings = RunSettings.EvaluationSettings;
+
+	std::cout << "\nINTERPOLATIONS:" << std::endl;
+	std::cout << "FirstLevelInterpo = " << EvalSettings.AC_FirstMap_Flags.InterpolationMode << std::endl;
+	std::cout << "SecondLevelInterpo = " << EvalSettings.AC_SecondMap_Flags.InterpolationMode << "\n"<< std::endl;
+
 
 	std::cout << "Load XML HitList" << std::endl;
 	Options.LoadHitEventListFromFile(RunSettings.EvaluationSettings.XML_Path);
@@ -153,7 +158,6 @@ bool UnitTest::TestACandCQmapping(Settings & Options, std::string SettingsPath, 
 			<< Options.HitEvents[EventNum].RotMatrix[3] << " \t" << Options.HitEvents[EventNum].RotMatrix[4] << " \t" << Options.HitEvents[EventNum].RotMatrix[5] << "\n"
 			<< Options.HitEvents[EventNum].RotMatrix[6] << " \t" << Options.HitEvents[EventNum].RotMatrix[7] << " \t" << Options.HitEvents[EventNum].RotMatrix[8] << std::endl;
 	}
-
 
 
 //Load and "average (1)" intensity
@@ -200,9 +204,10 @@ bool UnitTest::TestACandCQmapping(Settings & Options, std::string SettingsPath, 
 	smallMesh.CreateSmallMesh_CofQ_ForDetector(DetInt, EvalSettings.MeshSize, EvalSettings.QZoom);
 
 	Detector::AutoCorrFlags Flags;
-	Flags.InterpolationMode = Settings::NearestNeighbour; // First level is always NN by now
+	Flags.InterpolationMode = EvalSettings.AC_FirstMap_Flags.InterpolationMode; // First level is always NN by now
 	DetInt.AutoCorrelate_CofQ_SmallMesh(smallMesh, Flags, Options);
 
+	if(EvalSettings.AC_FirstMap_Flags.InterpolationMode == 0)
 	{
 		std::cout << "Check small C(q) to be integer" << std::endl;
 		for (unsigned int i = 0; i < smallMesh.Shape.Size_AB*smallMesh.Shape.Size_AB*smallMesh.Shape.Size_C; i++)
@@ -272,7 +277,7 @@ bool UnitTest::TestACandCQmapping(Settings & Options, std::string SettingsPath, 
 	DetInt2.CreateSparseHitList(EvalSettings.PhotonOffset, EvalSettings.PhotonStep); //Sparsificate
 
 	std::cout << "Autocorrelate" << std::endl;
-	DetInt2.AutoCorrelateSparseList(AC_uw, EvalSettings.AC_FirstMap_Flags, EvalSettings.AC_SecondMap_Flags, EvalSettings.DoubleMap, Options,1);
+	DetInt2.AutoCorrelateSparseList(AC_uw, EvalSettings.AC_FirstMap_Flags, EvalSettings.AC_SecondMap_Flags, EvalSettings.DoubleMap, Options,CPUGPU);
 
 
 	std::cout << "Apply C(q) to unweighted AC\n";

@@ -7,7 +7,8 @@
 class ACMesh
 {
 private:
-	
+	//not to be used from outside because of missing double mapping handling, use unity matrix as rotation matrix instead!
+	void Atomic_Add_rotated_q_Entry(float q_local[3], float Value, Settings::Interpolation SecondInterpolationMode);
 
 public:
 	ACMesh(Settings* PrgSettings);
@@ -41,10 +42,10 @@ public:
 
 	void CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, float q_Zoom = 1.0f);
 
-	void Atomic_Add_q_Entry(float q[3], float Value, Settings::Interpolation InterpolationMode);
+	
 	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation InterpolationMode );
 	void Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation FirstInterpolationMode, Settings::Interpolation SecondInterpolationMode, bool DoubleBinning);
-	
+
 
 
 	struct ACMesh_Checklist {

@@ -837,7 +837,8 @@ int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 		std::ofstream file;
 		file.open(EVS.EvaluationSettings.Out_Report);
 		
-		file << " *** IAC - Report (autocorrelation mode) *** \n" << std::endl;
+		file << " *** IAC - Report (autocorrelation mode) *** " << std::endl;
+		file << "Ver: " << Settings::GetVersion() << "\n" << std::endl;
 		file << "From settings file: \"" << EVS.XMLSetting_Path << "\"\n" << std::endl;
 
 		if (EVS.EvaluationSettings.AngularAveraged) //Aav
@@ -932,6 +933,47 @@ int MainRunModes::SortXMLHitsByMeanIntensity(std::string Arg1, std::string Arg2,
 	std::cout << "Done.\n";
 	return 0;
 
+	return 0;
+}
+
+int MainRunModes::MergeXMLHitLits(std::string Arg1, std::string Arg2, std::string Arg3, Settings & Options)
+{
+	std::vector<std::string> XML_in = CSV_Splitter(Arg2, ",");
+	std::vector<std::string> SupplInfoList;
+	if (Arg3 == "")
+	{
+		for (unsigned int i = 0; i < XML_in.size(); i++)
+			SupplInfoList.push_back("");
+	}
+	else
+	{
+		SupplInfoList = CSV_Splitter(Arg3, ",");
+		if (SupplInfoList.size() != XML_in.size())
+		{
+			std::cerr << "ERROR: XML input path list must have the same length as supplementary information list.\n";
+			std::cerr << "Note: \"supplementary information list\" is optional, but if set the size needs to match"<< std::endl;
+			return -1;
+		}
+	}
+
+	Options.HitEvents.clear();
+	for (unsigned int i = 0; i < XML_in.size(); i++)
+	{
+		std::cout << "Copy " << i + 1 << " of " << XML_in.size() << " Hit-Lits to new list." << std::endl;
+		Settings Set_In;
+		Set_In.LoadHitEventListFromFile(XML_in[i]);
+		for (unsigned int j = 0; j < Set_In.HitEvents.size(); j++)
+		{
+			Settings::HitEvent t_Event;
+			t_Event = Set_In.HitEvents[j];
+
+			t_Event.SupplementInfo += SupplInfoList[i];
+
+			Options.HitEvents.push_back(t_Event);
+		}
+	}
+	Options.SafeHitEventListToFile(Arg1);
+	std::cout << "Saved new Hit-List as \"" << Arg1 << "\"" << std::endl;
 	return 0;
 }
 

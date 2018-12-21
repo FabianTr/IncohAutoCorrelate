@@ -521,7 +521,8 @@ void runUnitTest(Settings & Options)
 
 	//UT.TestKabschImplementation();
 	//UT.StreamFileReader(Options);
-	UT.TestACandCQmapping(Options, "/gpfs/cfel/cxi/scratch/user/trostfab/LU56/Settings_Ind_lin_TEST.xml", 500, true);
+	UT.TestACandCQmapping(Options, "/gpfs/cfel/cxi/scratch/user/trostfab/LU56/UT_lin_nn_UO.xml", 500, true);
+
 }
 
 int main(int argc, char** argv)
@@ -758,6 +759,32 @@ int main(int argc, char** argv)
 			std::string Arg4 = argv[4];
 			return MainRunModes::GetHitListFromStreamFile(Arg2, Arg3, Arg4, Options);
 		}
+	}
+	else if (Arg1 == "mergexmllists" || Arg1 == "-mergexmllists" || Arg1 == "mxl" || Arg1 == "-mxl")
+	{
+	std::cout << "Merge XML-Hit lits - mode " << std::endl;
+		std::string Arg2;
+		std::string Arg3;
+		std::string Arg4; 
+		if (argc < 3)
+		{
+			std::cerr << "-MergeXmlLists requires two additional arguments (\"HitListOut.xml\" \"List1.xml, List2.xml, ...\" )\n";
+			std::cerr << "-MergeXmlLists can also have three additional arguments (\"HitListOut.xml\" \"List1.xml, List2.xml, ...\" \"SuplInfo1, SuplInfo2, ...\" )\n";
+			return -1;
+		}
+		if (argc == 3)
+		{
+			Arg2 = argv[2];
+			Arg3 = argv[3];
+			Arg4 = "";
+		}
+		else
+		{
+			Arg2 = argv[2];
+			Arg3 = argv[3];
+			Arg4 = argv[4];
+		}
+		return MainRunModes::MergeXMLHitLits(Arg2, Arg3, Arg4, Options);
 	}
 	else if (Arg1 == "simulate" || Arg1 == "-simulate" || Arg1 == "s" || Arg1 == "-s")
 	{

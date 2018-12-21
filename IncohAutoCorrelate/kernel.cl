@@ -5,9 +5,6 @@
 __constant double PI = 3.1415926535897932;
 
 
-
-
-
 // Atomic add of floats or double
 // Adapted from:
 // https://streamcomputing.eu/blog/2016-02-09/atomic-operations-for-floats-in-opencl-improved/
@@ -24,128 +21,6 @@ inline void atomic_add_float(__global double *source, const double value) {
 	} while (current.int_val != expected.int_val);
 }
 
-
-
-//__kernel void AutoCorr_CQ(__global const float *IntensityData,
-//	__global const float *KMap,
-//	__global const float *Rotations_and_Weights,
-//	__global const double *Params,
-//	__global double *CQ)
-//{
-//	unsigned int ind = get_global_id(0);
-//	//double Params[5];
-//	//Params[0] = DetSize; //Numer of pixels (size[0]*size[1])
-//	//Params[1] = deltaV; //dq per Voxel
-//	//Params[2] = MeshSize; //  a  (V = a*a*(a+1)/2)
-//	//Params[3] = NumberOfEvents; // how many events, for roataion and weight loop
-//	//Params[4] = InterpolationMode;
-//
-//	unsigned int DetSize = (unsigned int)Params[0];
-//	float dqPerVox = (float)Params[1];
-//	unsigned int MeshSize = (unsigned int)Params[2];
-//	unsigned int NumEvents = (unsigned int)Params[3];
-//	int InterpolMode = (unsigned int)Params[4];
-//
-//
-//	////Debug Bullshit
-//	//if (ind == 0)//ind == 0
-//	//{
-//	//	printf("Kernel is alive\n");
-//	//	printf("Detector Size: %d\n", DetSize);
-//	//	printf("Number of Events: %d\n", NumEvents);
-//	//	printf("Interpolation mode: %d\n", InterpolMode);
-//	//	printf("Mesh Size: %d\n", MeshSize);
-//	//	printf("dq per Vox: %f\n", dqPerVox);
-//	//}
-//	////END
-//		//local Variables
-//	float k1[3];
-//	float k2[3];
-//	float q_RAW[3];
-//
-//	k1[0] = KMap[0 + 3 * ind];
-//	k1[1] = KMap[1 + 3 * ind];
-//	k1[2] = KMap[2 + 3 * ind];
-//
-//	float q[3];
-//
-//
-//	for (unsigned int i = 0; i < DetSize; ++i) //Loop over all Pixel
-//	{
-//		//if (i == ind) //exclude zeroth peak
-//		//{
-//		//	continue;
-//		//}
-//
-//		float Val_RAW = IntensityData[ind] * IntensityData[i];
-//		k2[0] = KMap[0 + 3 * i];
-//		k2[1] = KMap[1 + 3 * i];
-//		k2[2] = KMap[2 + 3 * i];
-//		q_RAW[0] = k1[0] - k2[0];
-//		q_RAW[1] = k1[1] - k2[1];
-//		q_RAW[2] = k1[2] - k2[2];
-//
-//		int MeshCenter = (MeshSize - 1) / 2;
-//
-//
-//		for (unsigned int j = 0; j < NumEvents; ++j)//Loop over all Events
-//		{
-//			//rotate
-//			q[0] = q_RAW[0] * Rotations_and_Weights[0 + 10 * j] + q_RAW[1] * Rotations_and_Weights[1 + 10 * j] + q_RAW[2] * Rotations_and_Weights[2 + 10 * j];
-//			q[1] = q_RAW[0] * Rotations_and_Weights[3 + 10 * j] + q_RAW[1] * Rotations_and_Weights[4 + 10 * j] + q_RAW[2] * Rotations_and_Weights[5 + 10 * j];
-//			q[2] = q_RAW[0] * Rotations_and_Weights[6 + 10 * j] + q_RAW[1] * Rotations_and_Weights[7 + 10 * j] + q_RAW[2] * Rotations_and_Weights[8 + 10 * j];
-//			// HALF MESH:
-//			// Meshsize: [-fs/2, fs/2][-ms/2, ms/2],[0, ss/2] needed to save memory (1000x1000x500*8Byte ~= 4GB)
-//			if (q[2] < 0) //needs to be mirrowed in postprocessing on the CPU!
-//			{
-//				continue;
-//			}
-//			//weight (by square of mean intensity)
-//			float Val = Val_RAW * Rotations_and_Weights[9 + 10 * j] * Rotations_and_Weights[9 + 10 * j];
-//
-//			//resize (for Mapping)
-//			q[0] = q[0] / dqPerVox;
-//			q[1] = q[1] / dqPerVox;
-//			q[2] = q[2] / dqPerVox;
-//
-//			//Map to Mesh
-//
-//			if (InterpolMode == 0) //nearest Neighbor
-//			{
-//				unsigned int fs, ms, ss;//fast-scan-, medium-scan-, slow-scan- floor
-//				fs = (unsigned int)floor(q[0] + 0.5) + MeshCenter;
-//				ms = (unsigned int)floor(q[1] + 0.5) + MeshCenter;
-//				ss = (unsigned int)floor(q[2] + 0.5);
-//
-//				atomic_add_float(&(CQ[fs + ms * MeshSize + ss * MeshSize*MeshSize]), Val);
-//			}
-//			if (InterpolMode == 1) //linear
-//			{
-//				unsigned int fsf, msf, ssf;//fast-scan-, medium-scan-, slow-scan- floor
-//				fsf = (unsigned int)floor(q[0]) + MeshCenter;
-//				msf = (unsigned int)floor(q[1]) + MeshCenter;
-//				ssf = (unsigned int)floor(q[2]);
-//				float SepF, SepM, SepS; //according Seperators
-//				SepF = q[0] - floor(q[0]);
-//				SepM = q[1] - floor(q[1]);
-//				SepS = q[2] - floor(q[2]);
-//
-//				//add to mesh (8 entries each)
-//				atomic_add_float(&(CQ[fsf + msf * MeshSize + ssf * MeshSize*MeshSize]), Val * (1 - SepF)*(1 - SepM)*(1 - SepS));              //A + 0
-//				atomic_add_float(&(CQ[(fsf + 1) + (msf + 0) * MeshSize + (ssf + 0) * MeshSize*MeshSize]), Val * (SepF)*(1 - SepM)*(1 - SepS));//ssf + 1
-//				atomic_add_float(&(CQ[(fsf + 0) + (msf + 1) * MeshSize + (ssf + 0) * MeshSize*MeshSize]), Val * (1 - SepF)*(SepM)*(1 - SepS));//msf + 1
-//				atomic_add_float(&(CQ[(fsf + 0) + (msf + 0) * MeshSize + (ssf + 1) * MeshSize*MeshSize]), Val * (1 - SepF)*(1 - SepM)*(SepS));//ssf + 1
-//				atomic_add_float(&(CQ[(fsf + 1) + (msf + 1) * MeshSize + (ssf + 0) * MeshSize*MeshSize]), Val * (SepF)*(SepM)*(1 - SepS));    //ffs + 1 ; msf + 1
-//				atomic_add_float(&(CQ[(fsf + 0) + (msf + 1) * MeshSize + (ssf + 1) * MeshSize*MeshSize]), Val * (1 - SepF)*(SepM)*(SepS));    //msf + 1 ; ssf + 1
-//				atomic_add_float(&(CQ[(fsf + 1) + (msf + 0) * MeshSize + (ssf + 1) * MeshSize*MeshSize]), Val * (SepF)*(1 - SepM)*(SepS));    //ffs + 1 ; ssf + 1
-//				atomic_add_float(&(CQ[(fsf + 1) + (msf + 1) * MeshSize + (ssf + 1) * MeshSize*MeshSize]), Val * (SepF)*(SepM)*(SepS));        // A + 1
-//			}
-//
-//
-//
-//		}
-//	}
-//}
 
 
 //Autocorrelation for C(q)
@@ -174,7 +49,7 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 	int Bind = (int)Params[5];
 	int Cind = (int)Params[6];
 
-	int InterpolMode = (unsigned int)Params[7];
+	unsigned int InterpolMode = (unsigned int)Params[7];
 
 	float MaxQ = (float)Params[8];
 	double Multiplicator = (double)Params[9];
@@ -189,6 +64,8 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		printf("Bind: %d\n", Bind);
 		printf("Cind: %d\n", Cind);
 		printf("Vox per dQ: %d\n", VoxperdQ);
+		printf("Interpolation Mode: %d\n", InterpolMode);
+		printf("\n");
 		//printf("Max q: %f\n", MaxQ);
 	}
 	////END
@@ -241,15 +118,65 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 
 		//Map to Mesh
 		int fs, ms, ss;//fast-scan, medium-scan, slow-scan
-		fs = (int)(floor(q1[Aind] + 0.5f) + MeshCenterAB);
-		ms = (int)(floor(q1[Bind] + 0.5f) + MeshCenterAB);
-		ss = (int)(floor(q1[Cind] + 0.5f) + MeshCenterC);
-		atomic_add(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), ValConv);
-
-		if (ss >= MeshSizeC || ms >= MeshSizeAB || fs >= MeshSizeAB)//Check scans and display overflows.
+		if (InterpolMode == 0) //((Nearest Neighbor))
 		{
-			printf("ME: scans:%d, %d, %d   q: %f, %f, %f\n", ss, ms, fs, q1[0], q1[1], q1[2]);
+			fs = (int)(floor(q1[Aind] + 0.5f) + MeshCenterAB);
+			ms = (int)(floor(q1[Bind] + 0.5f) + MeshCenterAB);
+			ss = (int)(floor(q1[Cind] + 0.5f) + MeshCenterC);
+			atomic_add(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), ValConv);
+
+			//if (ss >= MeshSizeC || ms >= MeshSizeAB || fs >= MeshSizeAB)//Check scans and display overflows.
+			//{
+			//	printf("ME: scans:%d, %d, %d   q: %f, %f, %f\n", ss, ms, fs, q1[0], q1[1], q1[2]);
+			//}
 		}
+		if (InterpolMode == 1) //(Linear)
+		{
+
+			double Sep_fs = 1 - (q1[Aind] - floor(q1[Aind]));
+			double Sep_ms = 1 - (q1[Bind] - floor(q1[Bind]));
+			double Sep_ss = 1 - (q1[Cind] - floor(q1[Cind]));
+
+			fs = (int)(floor(q1[Aind]) + MeshCenterAB);
+			ms = (int)(floor(q1[Bind]) + MeshCenterAB);
+			ss = (int)(floor(q1[Cind]) + MeshCenterC);
+
+			unsigned long Val_out;
+			//fff  (fs: floor, ms: floor, ss: floor)
+			double Val_fff = Val * Multiplicator  * (Sep_fs*Sep_ms*Sep_ss);
+			Val_out = (unsigned long)Val_fff;
+			atomic_add(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), Val_out);
+			//fft (fs: floor, ms: floor, ss: top)
+			double Val_fft = Val * Multiplicator *(Sep_fs*Sep_ms*(1 - Sep_ss));
+			Val_out = (unsigned long)Val_fft;
+			atomic_add(&(CQsmall[(fs + 0) + (ms + 0) * MeshSizeAB + (ss + 1) * MeshSizeAB * MeshSizeAB]), Val_out);
+			//tff
+			double Val_tff = Val * Multiplicator  * ((1 - Sep_fs)*Sep_ms*Sep_ss);
+			Val_out = (unsigned long)Val_tff;
+			atomic_add(&(CQsmall[(fs + 1) + (ms + 0) * MeshSizeAB + (ss + 0) * MeshSizeAB * MeshSizeAB]), Val_out);
+			//tft
+			double Val_tft = Val * Multiplicator  * ((1 - Sep_fs)*Sep_ms*(1 - Sep_ss));
+			Val_out = (unsigned long)Val_tft;
+			atomic_add(&(CQsmall[(fs + 1) + (ms + 0) * MeshSizeAB + (ss + 1) * MeshSizeAB * MeshSizeAB]), Val_out);
+			//ftf
+			double Val_ftf = Val * Multiplicator * ((Sep_fs) * (1 - Sep_ms) * (Sep_ss));
+			Val_out = (unsigned long)Val_ftf;
+			atomic_add(&(CQsmall[(fs + 0) + (ms + 1) * MeshSizeAB + (ss + 0) * MeshSizeAB * MeshSizeAB]), Val_out);
+			//ftt
+			double Val_ftt = Val * Multiplicator *((Sep_fs) * (1 - Sep_ms) * (1 - Sep_ss));
+			Val_out = (unsigned long)Val_ftt;
+			atomic_add(&(CQsmall[(fs + 0) + (ms + 1) * MeshSizeAB + (ss + 1) * MeshSizeAB * MeshSizeAB]), Val_out);
+			//ttf
+			double Val_ttf = Val * Multiplicator *  ((1 - Sep_fs) * (1 - Sep_ms) * (Sep_ss));
+			Val_out = (unsigned long)Val_ttf;
+			atomic_add(&(CQsmall[(fs + 1) + (ms + 1) * MeshSizeAB + (ss + 0) * MeshSizeAB * MeshSizeAB]), Val_out);
+			//ttt
+			double Val_ttt = Val * Multiplicator * ((1 - Sep_fs) * (1 - Sep_ms) * (1 - Sep_ss));
+			Val_out = (unsigned long)Val_ttt;
+			atomic_add(&(CQsmall[(fs + 1) + (ms + 1) * MeshSizeAB + (ss + 1) * MeshSizeAB * MeshSizeAB]), Val_out);
+
+		}
+
 	}
 }
 
@@ -411,7 +338,7 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 
 
 
-inline void AddQToPositiveSS(__global unsigned long * AC, int MeshSize, int MeshCenter, int fs, int ms, int ss, unsigned long val)
+inline void AddQToPositiveSS(__global unsigned long * AC, int MeshSize, int MeshCenter, int fs, int ms, int ss, unsigned long val, bool QisZero)
 {
 	if (ss > 0) //positive half of slow scan dimension
 	{
@@ -420,14 +347,95 @@ inline void AddQToPositiveSS(__global unsigned long * AC, int MeshSize, int Mesh
 	else
 	{
 		if (ss == 0)
+		{
 			atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), val);
+		}
 
-		//Mirrowed Entry
-		fs = 2 * MeshCenter - fs;
-		ms = 2 * MeshCenter - ms;
-		ss = -ss;
+		if (!QisZero)
+		{
+			//Mirrowed Entry
+			fs = 2 * MeshCenter - fs;
+			ms = 2 * MeshCenter - ms;
+			ss = 0 - ss;
 
-		atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), val);
+			atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), val);
+		}
+	}
+}
+
+void AddRotatedQToMesh(__global unsigned long * AC, double Multiplicator, int MeshSize, int MeshCenter, double val, float q0, float q1, float q2, int InterpolMode_lvl2,bool QisZero)
+{
+	float q[3];
+	q[0] = q0;
+	q[1] = q1;
+	q[2] = q2;
+	if (InterpolMode_lvl2 == 0) //nearest neighbour
+	{
+		unsigned long Val = (unsigned long)(val * Multiplicator);
+
+		int fs, ms, ss;
+		fs = (int)(MeshCenter + floor(q[0] + 0.5f));
+		ms = (int)(MeshCenter + floor(q[1] + 0.5f));
+		ss = (int)(floor(q[2] + 0.5f));
+		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms, ss, Val, QisZero);
+	}
+
+	if (InterpolMode_lvl2 == 1) //linear
+	{
+		double Sep_fs = 1.0 - (q[0] - floor(q[0]));
+		double Sep_ms = 1.0 - (q[1] - floor(q[1]));
+		double Sep_ss = 1.0 - (q[2] - floor(q[2]));
+
+		int fs, ms, ss;
+		ss = (int)(floor(q[2]));
+		double t_Val = val;
+		unsigned long Val;
+
+
+
+		fs = (int)(MeshCenter + floor(q[0]));
+		ms = (int)(MeshCenter + floor(q[1]));
+		ss = (int)(floor(q[2]));
+		//fff
+		Val = (unsigned long)(t_Val * Multiplicator *((Sep_fs) * (Sep_ms)  * (Sep_ss)));
+		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms, ss, Val, QisZero);
+		//atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
+
+		//tff
+		Val = (unsigned long)(t_Val * Multiplicator *((1 - Sep_fs) * (Sep_ms)  * (Sep_ss)));
+		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs + 1, ms, ss, Val, QisZero);
+		//atomic_add(&(AC[(fs + 1) + (ms + 0) * MeshSize + (ss + 0) * MeshSize * MeshSize]), Val);
+
+		//fft
+		Val = (unsigned long)(t_Val * Multiplicator *((Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms, ss + 1, Val, QisZero);
+		//atomic_add(&(AC[(fs + 0) + (ms + 0) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
+
+		//tft
+		Val = (unsigned long)(t_Val * Multiplicator *((1 - Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
+		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs + 1, ms, ss + 1, Val, QisZero);
+		//atomic_add(&(AC[(fs + 1) + (ms + 0) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
+
+		//ftf
+		Val = (unsigned long)(t_Val * Multiplicator *((Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms + 1, ss, Val, QisZero);
+		//atomic_add(&(AC[(fs + 0) + (ms + 1) * MeshSize + (ss + 0) * MeshSize * MeshSize]), Val);
+
+		//ttf
+		Val = (unsigned long)(t_Val * Multiplicator *((1 - Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
+		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs + 1, ms + 1, ss, Val, QisZero);
+		//atomic_add(&(AC[(fs + 1) + (ms + 1) * MeshSize + (ss + 0) * MeshSize * MeshSize]), Val);
+
+		//ftt
+		Val = (unsigned long)(t_Val * Multiplicator *((Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms + 1, ss + 1, Val, QisZero);
+		//atomic_add(&(AC[(fs + 0) + (ms + 1) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
+
+		//ttt
+		Val = (unsigned long)(t_Val * Multiplicator *((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
+		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs + 1, ms + 1, ss + 1, Val, QisZero);
+		//atomic_add(&(AC[(fs + 1) + (ms + 1) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
+		// ###########################################################	
 	}
 }
 
@@ -453,17 +461,17 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	int InterpolMode_lvl1 = (int)Params[7];
 	int InterpolMode_lvl2 = (int)Params[8];
 
-	////Debug Bullshit
-	//if (ind == 0)//ind == 0
-	//{
-	//	printf("\n\nKernel (AC uw) is alive\n");
-	//	printf("MeshShape A=B=C=: %d\n", MeshSize);
-	//	printf("dVdq: %d\n", dVdq);
-
-	//	printf("DoubleMapping: %d\n", DoubleMapping);
-	//	printf("Multiplicator: %f\n", Multiplicator);
-	//	printf("ListSize: %d\n\n", ListSize);
-	//}
+	//Debug Bullshit
+	if (ind == 0)//ind == 0
+	{
+		printf("\n\nKernel (AC uw) is alive\n");
+		printf("MeshShape A=B=C=: %d\n", MeshSize);
+		printf("MeshCenter: %d\n", MeshCenter);
+		printf("dVdq: %d\n", dVdq);
+		printf("DoubleMapping: %d\n", DoubleMapping);
+		printf("Multiplicator: %f\n", Multiplicator);
+		printf("ListSize: %d\n\n", ListSize);
+	}
 
 	//obtain k-vector and value given by kernel index
 	float k1[3];
@@ -479,14 +487,18 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 		q[1] = k1[1] - SparseHitList[4 * i + 1];
 		q[2] = k1[2] - SparseHitList[4 * i + 2];
 
+		if (i == ind) //Q is exact zero >> QisZero = true
+		{
+			AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, f_Val * SparseHitList[4 * i + 3], 0, 0, 0, InterpolMode_lvl2, true);
+			continue;
+		}
+		//Q can never be exact zero from here on >> QisZero = false
 
+		//Check if inside of range
 		if (sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2]) > MaxQ) //check if q is in range
 		{
 			continue;
 		}
-
-		
-
 
 		//convert q to units of voxel
 		q[0] = q[0] * dVdq;
@@ -496,118 +508,137 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 
 		if(DoubleMapping == 1)
 		{ 
-			//map to mesh             //Todo: implement first lvl interpolation
-			int fs_l, ms_l, ss_l;
-			fs_l = (int)(floor(q[0] + 0.5) + MeshCenter);
-			ms_l = (int)(floor(q[1] + 0.5) + MeshCenter);
-			ss_l = (int)(floor(q[2] + 0.5) + MeshCenter);
-			//printf("t_scan = [%d, %d, %d]\n", fs_l, ms_l, ss_l);
-			//convert back to q
-			q[0] = (float)(fs_l - MeshCenter);
-			q[1] = (float)(ms_l - MeshCenter);
-			q[2] = (float)(ss_l - MeshCenter);
+			if (InterpolMode_lvl1 == 0) //1. lvl interpol: Nearest Neighbor
+			{
+				//map to mesh             
+				int fs_l, ms_l, ss_l;
+				fs_l = (int)(floor(q[0] + 0.5) + MeshCenter);
+				ms_l = (int)(floor(q[1] + 0.5) + MeshCenter);
+				ss_l = (int)(floor(q[2] + 0.5) + MeshCenter);
+				//printf("t_scan = [%d, %d, %d]\n", fs_l, ms_l, ss_l);
+				//convert back to q
+				q[0] = (float)(fs_l - MeshCenter);
+				q[1] = (float)(ms_l - MeshCenter);
+				q[2] = (float)(ss_l - MeshCenter);
+
+				//Rotation
+				float t_q[3];
+				t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+				t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+				t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+
+				//map to mesh
+				AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, f_Val * SparseHitList[4 * i + 3], t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
+			}
+			if (InterpolMode_lvl1 == 1) //1. lvl interpol: Linear
+			{
+				double Sep_fs = 1.0 - (q[0] - floor(q[0]));
+				double Sep_ms = 1.0 - (q[1] - floor(q[1]));
+				double Sep_ss = 1.0 - (q[2] - floor(q[2]));
+
+				int fs, ms, ss;
+				fs = (int)(MeshCenter + floor(q[0]));
+				ms = (int)(MeshCenter + floor(q[1]));
+				ss = (int)(MeshCenter + floor(q[2]));
+
+
+
+				float BaseVal = f_Val * SparseHitList[4 * i + 3];
+				float t_val = 0.0;
+
+				float t_q[3];
+				//fff
+				t_val = BaseVal * ((Sep_fs) * (Sep_ms)  * (Sep_ss));
+				q[0] = (float)(fs - MeshCenter);
+				q[1] = (float)(ms - MeshCenter);
+				q[2] = (float)(ss - MeshCenter);
+				t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+				t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+				t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+				AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, t_val, t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
+
+				//tff
+				t_val = BaseVal * ((1 - Sep_fs) * (Sep_ms)  * (Sep_ss));
+				q[0] = (float)((fs + 1) - MeshCenter);
+				q[1] = (float)((ms + 0) - MeshCenter);
+				q[2] = (float)((ss + 0) - MeshCenter);
+				t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+				t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+				t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+				AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, t_val, t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
+
+				//fft
+				t_val = BaseVal * ((Sep_fs) * (Sep_ms)  * (1 - Sep_ss));
+				q[0] = (float)((fs + 0) - MeshCenter);
+				q[1] = (float)((ms + 0) - MeshCenter);
+				q[2] = (float)((ss + 1) - MeshCenter);
+				t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+				t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+				t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+				AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, t_val, t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
+
+				//tft
+				t_val = BaseVal * ((1 - Sep_fs) * (Sep_ms)  * (1 - Sep_ss));
+				q[0] = (float)((fs + 1) - MeshCenter);
+				q[1] = (float)((ms + 0) - MeshCenter);
+				q[2] = (float)((ss + 1) - MeshCenter);
+				t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+				t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+				t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+				AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, t_val, t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
+
+				//ftf
+				t_val = BaseVal * ((Sep_fs) * (1 - Sep_ms)  * (Sep_ss));
+				q[0] = (float)((fs + 0) - MeshCenter);
+				q[1] = (float)((ms + 1) - MeshCenter);
+				q[2] = (float)((ss + 0) - MeshCenter);
+				t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+				t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+				t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+				AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, t_val, t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
+
+				//ttf
+				t_val = BaseVal * ((1 - Sep_fs) * (1 - Sep_ms)  * (Sep_ss));
+				q[0] = (float)((fs + 1) - MeshCenter);
+				q[1] = (float)((ms + 1) - MeshCenter);
+				q[2] = (float)((ss + 0) - MeshCenter);
+				t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+				t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+				t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+				AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, t_val, t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
+
+				//ftt
+				t_val = BaseVal * ((Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss));
+				q[0] = (float)((fs + 0) - MeshCenter);
+				q[1] = (float)((ms + 1) - MeshCenter);
+				q[2] = (float)((ss + 1) - MeshCenter);
+				t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+				t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+				t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+				AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, t_val, t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
+
+				//ttt
+				t_val = BaseVal * ((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss));
+				q[0] = (float)((fs + 1) - MeshCenter);
+				q[1] = (float)((ms + 1) - MeshCenter);
+				q[2] = (float)((ss + 1) - MeshCenter);
+				t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+				t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+				t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
+				AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, t_val, t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
+			}
 		}
-
-		//Rotation
-		float t_q[3];
-		t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
-		t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
-		t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
-
-
-		q[0] = t_q[0];
-		q[1] = t_q[1];
-		q[2] = t_q[2];
-
-		//map to mesh
-		if (InterpolMode_lvl2 == 0) //nearest neighbour
+		else
 		{
-			double t_Val = f_Val * SparseHitList[4 * i + 3];
-			long Val = (long)(t_Val * Multiplicator);
+			//Rotation
+			float t_q[3];
+			t_q[0] = q[0] * RotMatrix[0] + q[1] * RotMatrix[1] + q[2] * RotMatrix[2];
+			t_q[1] = q[0] * RotMatrix[3] + q[1] * RotMatrix[4] + q[2] * RotMatrix[5];
+			t_q[2] = q[0] * RotMatrix[6] + q[1] * RotMatrix[7] + q[2] * RotMatrix[8];
 
-			int fs, ms, ss;
-			fs = (int)(MeshCenter + floor(q[0] + 0.5f));
-			ms = (int)(MeshCenter + floor(q[1] + 0.5f));
-			ss = (int)(floor(q[2] + 0.5f));
-			AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms, ss, Val);
-			//if (ss > 0) //positive half of slow scan dimension
-			//{
-			//	//atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
-			//	 int MeshSize, int MeshCenter, int fs, int ms, int ss, unsigned long val
-			//	
-			//}
-			//else
-			//{
-			//	if (ss == 0)
-			//		atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
-
-			//	//Mirrowed Entry
-			//	fs = (int)(MeshCenter - floor(q[0] + 0.5));
-			//	ms = (int)(MeshCenter - floor(q[1] + 0.5));
-			//	ss = (int)(-floor(q[2] + 0.5));
-
-			//	atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
-			//}
+			//map to mesh
+			AddRotatedQToMesh(AC, Multiplicator, MeshSize, MeshCenter, f_Val * SparseHitList[4 * i + 3], t_q[0], t_q[1], t_q[2], InterpolMode_lvl2, false);
 		}
-
-		if (InterpolMode_lvl2 == 1) //linear
-		{
-			double Sep_fs = 1.0 - (q[0] - floor(q[0]));
-			double Sep_ms = 1.0 - (q[1] - floor(q[1]));
-			double Sep_ss = 1.0 - (q[2] - floor(q[2]));
-
-			int fs, ms, ss;
-			ss = (int)(floor(q[2]));
-			double t_Val = f_Val * SparseHitList[4 * i + 3];
-			long Val;
-
-
-
-			fs = (int)(MeshCenter + floor(q[0]));
-			ms = (int)(MeshCenter + floor(q[1]));
-			ss = (int)(floor(q[2]));
-			//fff
-			Val = (long)(t_Val * Multiplicator *((Sep_fs) * (Sep_ms)  * (Sep_ss)));
-			AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms, ss, Val);
-			//atomic_add(&(AC[fs + ms * MeshSize + ss * MeshSize * MeshSize]), Val);
-
-			//tff
-			Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (Sep_ms)  * (Sep_ss)));
-			AddQToPositiveSS(AC, MeshSize, MeshCenter, fs + 1, ms, ss, Val);
-			//atomic_add(&(AC[(fs + 1) + (ms + 0) * MeshSize + (ss + 0) * MeshSize * MeshSize]), Val);
-
-			//fft
-			Val = (long)(t_Val * Multiplicator *((Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
-			AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms, ss + 1, Val);
-			//atomic_add(&(AC[(fs + 0) + (ms + 0) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
-
-			//tft
-			Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (Sep_ms)  * (1 - Sep_ss)));
-			AddQToPositiveSS(AC, MeshSize, MeshCenter, fs + 1, ms, ss + 1, Val);
-			//atomic_add(&(AC[(fs + 1) + (ms + 0) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
-
-			//ftf
-			Val = (long)(t_Val * Multiplicator *((Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
-			AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms + 1, ss, Val);
-			//atomic_add(&(AC[(fs + 0) + (ms + 1) * MeshSize + (ss + 0) * MeshSize * MeshSize]), Val);
-
-			//ttf
-			Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (1 - Sep_ms)  * (Sep_ss)));
-			AddQToPositiveSS(AC, MeshSize, MeshCenter, fs + 1, ms + 1, ss, Val);
-			//atomic_add(&(AC[(fs + 1) + (ms + 1) * MeshSize + (ss + 0) * MeshSize * MeshSize]), Val);
-
-			//ftt
-			Val = (long)(t_Val * Multiplicator *((Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
-			AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms + 1, ss + 1, Val);
-			//atomic_add(&(AC[(fs + 0) + (ms + 1) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
-
-			//ttt
-			Val = (long)(t_Val * Multiplicator *((1 - Sep_fs) * (1 - Sep_ms)  * (1 - Sep_ss)));
-			AddQToPositiveSS(AC, MeshSize, MeshCenter, fs + 1, ms + 1, ss + 1, Val);
-			//atomic_add(&(AC[(fs + 1) + (ms + 1) * MeshSize + (ss + 1) * MeshSize * MeshSize]), Val);
-			// ###########################################################	
-		}
-
 	}
 
 }
