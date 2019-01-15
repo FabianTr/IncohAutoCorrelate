@@ -40,9 +40,9 @@ namespace PPP
 
 		for (int i_pan = 0; i_pan < DetectorPanels.size(); i_pan++)
 		{
-			unsigned int fs = DetectorPanels[i_pan].Scans[0];
-			unsigned int ss = DetectorPanels[i_pan].Scans[1];
-			unsigned int DetSize = fs * ss;
+			int fs = DetectorPanels[i_pan].Scans[0];
+			int ss = DetectorPanels[i_pan].Scans[1];
+			int DetSize = fs * ss;
 			#pragma omp parallel for
 			for (int ind = DetectorPanels[i_pan].FirstInd; ind < (DetectorPanels[i_pan].FirstInd + DetSize); ind++)
 			{
@@ -53,17 +53,17 @@ namespace PPP
 				{
 					float LAP = 0; //Value of Largest Adjacet Pixel
 
-					if (i%fs != 0) // check for left boundary
+					if (i % fs != 0) // check for left boundary
 					{
 						if (FragmentedPhotons[ind - 1] > LAP)
 							LAP = FragmentedPhotons[ind - 1];
 					} 
-					if ((i+1)%fs != 0 && i < DetSize) // check for right boundary
+					if ((i + 1)%fs != 0 && i < DetSize) // check for right boundary
 					{
 						if (FragmentedPhotons[ind + 1] > LAP)
 							LAP = FragmentedPhotons[ind + 1];
 					}
-					if (i-fs > 0) // check for upper boundary
+					if (i - fs > 0) // check for upper boundary
 					{
 						if (FragmentedPhotons[ind - fs] > LAP)
 							LAP = FragmentedPhotons[ind - fs];
@@ -118,6 +118,20 @@ namespace PPP
 		float ADU_perPhoton = LAPSettings.ADU_perPhoton;
 		float SeedThershold = LAPSettings.SeedThershold;
 		float CombinedThershold = LAPSettings.CombinedThershold;
+
+		if (true)
+		{
+			std::cout << "\nLAP correction - Parameter:\n";
+			std::cout << "ADU per photon: " << LAPSettings.ADU_perPhoton << "\n";
+			std::cout << "Seed threshold: " << LAPSettings.SeedThershold << "\n";
+			std::cout << "Combined threshold: " << LAPSettings.CombinedThershold << "\n";
+			std::cout << "Number of detector panels: " << LAPSettings.DetPanels_Num << "\n";
+			for (unsigned int i = 0; i < LAPSettings.DetectorPanels.size(); i++)
+			{
+				std::cout << "Panel " << i << ": Start index = "<<LAPSettings.DetectorPanels[i].FirstInd << "; ss = " << LAPSettings.DetectorPanels[i].Scans[1]  << "; fs = " << LAPSettings.DetectorPanels[i].Scans[0] << "\n";
+			}
+		std::cout << std::endl;
+		}
 
 		unsigned FullDetSize = 0; 
 		for (unsigned int j = 0; j < LAPSettings.DetPanels_Num; j++)
@@ -205,6 +219,8 @@ namespace PPP
 
 		//Save XML File
 		OptionsOut.SafeHitEventListToFile(XML_Out);
+		std::cout << "New H5-File saved as \"" << LAPSettings.Output_Path << "\" with dataset \"" << LAPSettings.Output_Dataset << "\"\n";
+		std::cout << "New XML-EventList saved as \"" << XML_Out << "\"" << std::endl;
 	}
 
 	void GainCorrection(Detector & Det, std::string GainCorr_Path, std::string Dataset_Offset, std::string Dataset_Gain, Settings & Options)

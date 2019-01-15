@@ -25,6 +25,8 @@ namespace MainRunModes
 	struct AllSimSettings
 	{
 		Simulator::SimulationSettings SimSettings;
+		Simulator::GeneratePMSettings GPMSettings;
+
 		std::vector<std::array<double, 3>> UnitCell;
 
 		double LatticeVector[3][3];
@@ -38,6 +40,7 @@ namespace MainRunModes
 		RunIAC::CreateDataEval_Settings EvaluationSettings;
 		//Simulator
 		AllSimSettings AllSimulationSettings;
+		
 		//Statistics
 		Statistics::StatisticsSettings StatisticsSettings;
 		//PPP.LAP
@@ -108,4 +111,6 @@ namespace MainRunModes
 
 	//Simulation
 	int Simulate(std::string ConfigFile, Settings &Options);
+
+	int GeneratePixelMap(std::string Arg1, Settings &Options);
 }

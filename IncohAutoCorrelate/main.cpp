@@ -746,7 +746,7 @@ int main(int argc, char** argv)
 		}
 	}
 	else if (Arg1 == "xmlfromstreamfile" || Arg1 == "-xmlfromstreamfile" || Arg1 == "xfs" || Arg1 == "-xfs")
-	{
+	{ //implement a reference matrix input for oritentation calculation!!!
 		if (argc < 4)
 		{
 			std::cerr << "-XmlFromStreamFile requires three additional arguments (\"EventList_IN.stream\" \"H5-Path\" \"EventList_Out.xml\")\n";
@@ -754,6 +754,15 @@ int main(int argc, char** argv)
 		}
 		else
 		{
+			//Options.MReference << 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0;
+			Options.MReference << 6.227, 0, 0, 0, 8.066, 0, 0, 0, 11.1; //LR17-Hb
+
+
+			std::cout << "Use reference unit cell:\n";
+			std::cout << Options.MReference(0, 0) << ", " << Options.MReference(0, 1) << ", " << Options.MReference(0, 2) << "\n";
+			std::cout << Options.MReference(1, 0) << ", " << Options.MReference(1, 1) << ", " << Options.MReference(1, 2) << "\n";
+			std::cout << Options.MReference(2, 0) << ", " << Options.MReference(2, 1) << ", " << Options.MReference(2, 2) << std::endl;
+
 			std::string Arg2 = argv[2];
 			std::string Arg3 = argv[3];
 			std::string Arg4 = argv[4];
@@ -800,7 +809,20 @@ int main(int argc, char** argv)
 			return MainRunModes::Simulate(Arg2, Options);
 		}
 	}
-	
+	else if (Arg1 == "generatepixelmap" || Arg1 == "-generatepixelmap" || Arg1 == "gpm" || Arg1 == "-gpm")
+	{
+	std::cout << "Run ICA in simulation mode - Generate PixelMap" << std::endl;;
+	if (argc < 3)
+	{
+		std::cerr << "-GeneratePixelMap requires one additional argument (\"Settings.xml\")\n";
+		return -1;
+	}
+	else
+	{
+		std::string Arg2 = argv[2];
+		return MainRunModes::GeneratePixelMap(Arg2, Options);
+	}
+	}
 	else if (Arg1 == "qdtest" || Arg1 == "-qdtest" )
 	{
 		QDTests(Options);

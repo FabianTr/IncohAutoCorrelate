@@ -227,8 +227,13 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 		printf("Multiplicator: %f\n", Multiplicator);
 		printf("Listsize: %d\n", ListSize);
 
-		printf("Params[6]: %f\n", Params[6]);
+		printf("Params[6]: %d\n", Params[6]);
 		printf("InterPolMode: %d\n", InterpolMode);
+
+		//for (int j = 0; j < ListSize; j++)
+		//{
+		//	printf("M&W: %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", RW[j*10+0], RW[j * 10 + 1], RW[j * 10 + 2], RW[j * 10 + 3], RW[j * 10 + 4], RW[j * 10 + 5], RW[j * 10 + 6], RW[j * 10 + 7], RW[j * 10 + 8], RW[j * 10 + 9]);
+		//}
 	}
 	//END
 
@@ -248,6 +253,7 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 
 	double Val_in = smallMesh[ind];
 
+
 	if (Val_in < 1e-37f)
 	{
 		return;
@@ -255,6 +261,7 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 
 	for (unsigned int i = 0; i < ListSize; i++)
 	{
+	
 		float q_out[3];
 		//Rotate Vector
 		q_out[0] = RW[10 * i + 0] * q_in[0] + RW[10 * i + 1] * q_in[1] + RW[10 * i + 2] * q_in[2];
@@ -262,19 +269,13 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 		q_out[2] = RW[10 * i + 6] * q_in[0] + RW[10 * i + 7] * q_in[1] + RW[10 * i + 8] * q_in[2];
 
 
-		//weight entry and transform to int64
-		//double Val_in = smallMesh[ind];
-
-		//if (Val_in < 1e-37f)
-		//{
-		//	continue;
-		//}
-
 		Val_in = smallMesh[ind];
+
+
 
 		if (InterpolMode == 0) //Nearest Neighbour
 		{
-			Val_in = Val_in * Multiplicator * (double)RW[10 * i + 9];
+			Val_in = Val_in  * (double)RW[10 * i + 9] * Multiplicator;
 			unsigned long Val_out = (unsigned long)Val_in;
 			//get new scans
 			int fs = 0, ms = 0, ss = 0;
@@ -284,6 +285,11 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 
 			atomic_add(&(CQ[fs + ms * smallMeshSize_AB + ss * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
 
+
+			//if (smallMesh[ind] != 0)
+			//{
+			//	printf("%d: ValIn: %f; Weight: %f; ValOut %d\n",i, smallMesh[ind], RW[10 * i + 9], Val_out);
+			//}
 		}
 		if (InterpolMode == 1) //Linear
 		{
@@ -462,16 +468,16 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 	int InterpolMode_lvl2 = (int)Params[8];
 
 	//Debug Bullshit
-	if (ind == 0)//ind == 0
-	{
-		printf("\n\nKernel (AC uw) is alive\n");
-		printf("MeshShape A=B=C=: %d\n", MeshSize);
-		printf("MeshCenter: %d\n", MeshCenter);
-		printf("dVdq: %d\n", dVdq);
-		printf("DoubleMapping: %d\n", DoubleMapping);
-		printf("Multiplicator: %f\n", Multiplicator);
-		printf("ListSize: %d\n\n", ListSize);
-	}
+	//if (ind == 0)//ind == 0
+	//{
+	//	printf("\n\nKernel (AC uw) is alive\n");
+	//	printf("MeshShape A=B=C=: %d\n", MeshSize);
+	//	printf("MeshCenter: %d\n", MeshCenter);
+	//	printf("dVdq: %d\n", dVdq);
+	//	printf("DoubleMapping: %d\n", DoubleMapping);
+	//	printf("Multiplicator: %f\n", Multiplicator);
+	//	printf("ListSize: %d\n\n", ListSize);
+	//}
 
 	//obtain k-vector and value given by kernel index
 	float k1[3];

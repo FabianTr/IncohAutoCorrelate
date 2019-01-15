@@ -244,6 +244,15 @@ MainRunModes::AllSimSettings MainRunModes::LoadSimulationSettings(std::string Fi
 			SimS.UnitCell.push_back(UcEm);
 		}
 
+
+		SimS.GPMSettings.Filename = pt.get<std::string>("root.GeneratePixelMap.Filename", "");
+		SimS.GPMSettings.Dataset = pt.get<std::string>("root.GeneratePixelMap.Dataset", "");
+		SimS.GPMSettings.SizeA = pt.get<int>("root.GeneratePixelMap.SizeA", 0);
+		SimS.GPMSettings.SizeB = pt.get<int>("root.GeneratePixelMap.SizeB", 0);
+		SimS.GPMSettings.PixelSize = pt.get<int>("root.GeneratePixelMap.PixelSize", 0.0f);
+		Settings::SplitString(pt.get<std::string >("root.GeneratePixelMap.Center", "0.0; 0.0; 0.0"), SimS.GPMSettings.Center.data(), 3, delimiter);
+		Settings::SplitString(pt.get<std::string >("root.GeneratePixelMap.VecA", "1.0; 0.0; 0.0"), SimS.GPMSettings.VecA.data(), 3, delimiter);
+		Settings::SplitString(pt.get<std::string >("root.GeneratePixelMap.VecB", "0.0; 1.0; 0.0"), SimS.GPMSettings.VecB.data(), 3, delimiter);
 	}
 
 
@@ -501,6 +510,7 @@ boost::property_tree::ptree MainRunModes::Example_PatternPreProcessing_LAP(boost
 boost::property_tree::ptree MainRunModes::Example_Simulation_Config_PT(boost::property_tree::ptree pt, Settings & Options)
 {
 	Simulator::SimulationSettings SimS;
+	std::string SimS_InfoText = "Settings for Simulation.\nWavelength has the same unit as the lattice verctors and the emitter position. This unit can be choosen arbitrarily.";
 
 	SimS.Filename_XML = "OutputEventList.xml";
 	SimS.Filename_Intensity = "OutputIntensities.h5";
@@ -563,8 +573,32 @@ boost::property_tree::ptree MainRunModes::Example_Simulation_Config_PT(boost::pr
 	UnitCell.push_back(t_pos);
 
 
+	//Generate Pixelmap
+	Simulator::GeneratePMSettings GPMS;
+	std::string GPMS_InfoText = "Settings to create a simple pixel map (-SGP -SimulateGeneratePixelMap). PixelSize and Center in mum, SizeA & SizeB in pixel (integer), VecA & VecB for pixel orientation does not need to be normalized.";
+
+	GPMS.Filename = "NewPixelMap.h5";
+	GPMS.Dataset = "PixelMap";
+
+	GPMS.SizeA = 100;
+	GPMS.SizeB = 100;
+	GPMS.PixelSize = 50.0;
+
+	GPMS.Center[0] = 0.0f;
+	GPMS.Center[1] = 0.0f;
+	GPMS.Center[3] = 100000.0f;
+
+	GPMS.VecA[0] = 1.0f;
+	GPMS.VecA[1] = 0.0f;
+	GPMS.VecA[2] = 0.0f;
+
+	GPMS.VecB[0] = 0.0f;
+	GPMS.VecB[1] = 1.0f;
+	GPMS.VecB[2] = 0.0f;
+
 
 	{
+		pt.put("root.Simulation.InfoText", GPMS_InfoText);
 		pt.put("root.Simulation.OutputPath_EventList", SimS.Filename_XML);
 		pt.put("root.Simulation.OutputPath_Intensities", SimS.Filename_Intensity);
 		pt.put("root.Simulation.OutputDataset_Intensities", SimS.Dataset);
@@ -611,6 +645,22 @@ boost::property_tree::ptree MainRunModes::Example_Simulation_Config_PT(boost::pr
 
 		std::string EM = std::to_string(UnitCell[0][0]) + "; " + std::to_string(UnitCell[0][1]) + "; " + std::to_string(UnitCell[0][2]);
 		pt.put("root.Simulation.UnitCell.Emitter_1", EM);
+
+		//Generate Pixel Map
+		pt.put("root.GeneratePixelMap.InfoText", GPMS_InfoText);
+
+		pt.put("root.GeneratePixelMap.Filename", GPMS.Filename);
+		pt.put("root.GeneratePixelMap.Dataset", GPMS.Dataset);
+
+		pt.put("root.GeneratePixelMap.SizeA", GPMS.SizeA);
+		pt.put("root.GeneratePixelMap.SizeB", GPMS.SizeB);
+
+		pt.put("root.GeneratePixelMap.PixelSize", GPMS.PixelSize);
+
+		pt.put("root.GeneratePixelMap.Center", std::to_string(GPMS.Center[0]) + "; " + std::to_string(GPMS.Center[1]) + "; " + std::to_string(GPMS.Center[2]));
+
+		pt.put("root.GeneratePixelMap.VecA", std::to_string(GPMS.VecA[0]) + "; " + std::to_string(GPMS.VecA[1]) + "; " + std::to_string(GPMS.VecA[2]));
+		pt.put("root.GeneratePixelMap.VecB", std::to_string(GPMS.VecB[0]) + "; " + std::to_string(GPMS.VecB[1]) + "; " + std::to_string(GPMS.VecB[2]));
 
 	}
 
@@ -1019,11 +1069,11 @@ int MainRunModes::GetHitListFromCSVFile(std::string Arg1, std::string Arg2, Sett
 
 int MainRunModes::GetHitListFromStreamFile(std::string Arg1, std::string Arg2, std::string Arg3, Settings & Options)
 {
-	Settings OptOut;
-	OptOut.HitEvents.clear();
+	//Settings OptOut;
+	Options.HitEvents.clear();
 
-	OptOut.LoadStreamFile(Arg1, Arg2, false);
-	OptOut.SafeHitEventListToFile(Arg3);
+	Options.LoadStreamFile(Arg1, Arg2, false);
+	Options.SafeHitEventListToFile(Arg3);
 
 	std::cout << "Saved XML event-list as:\n\"" << Arg3 << "\"" << std::endl;
 
@@ -1069,6 +1119,29 @@ int MainRunModes::Simulate(std::string ConfigFile, Settings & Options)
 	Sim.ParSimulate(Cryst, Sim_Det, SIS.AllSimulationSettings.SimSettings, Sim_Output, Options);
 
 	std::cout << "Simulation performed within " << Profiler.Toc() / 3600 << "h" << std::endl;
+
+	return 0;
+}
+
+int MainRunModes::GeneratePixelMap(std::string Arg1, Settings & Options)
+{
+	MainRunModes::AllSettings SIS = LoadSettings(Arg1, Options);
+
+	if (Options.echo)
+	{
+		std::cout << "\nSettings:\n";
+		std::cout << "Size: " << SIS.AllSimulationSettings.GPMSettings.SizeA << " x " << SIS.AllSimulationSettings.GPMSettings.SizeB << " pixel\n";
+		std::cout << "Center: (" << SIS.AllSimulationSettings.GPMSettings.Center[0] << ", " << SIS.AllSimulationSettings.GPMSettings.Center[1] << ", " << SIS.AllSimulationSettings.GPMSettings.Center[2] << ")\n";
+		std::cout << "Pixel edge-size: " << SIS.AllSimulationSettings.GPMSettings.PixelSize << "\n";
+		std::cout << "Fast scan vector: (" << SIS.AllSimulationSettings.GPMSettings.VecA[0] << ", " << SIS.AllSimulationSettings.GPMSettings.VecA[1] << ", " << SIS.AllSimulationSettings.GPMSettings.VecA[2] << ")\n";
+		std::cout << "Slow scan vector: (" << SIS.AllSimulationSettings.GPMSettings.VecB[0] << ", " << SIS.AllSimulationSettings.GPMSettings.VecB[1] << ", " << SIS.AllSimulationSettings.GPMSettings.VecB[2] << ")\n";
+		std::cout << std::endl;
+	}
+	Simulator Sim;
+	Sim.GeneratePixelMap(SIS.AllSimulationSettings.GPMSettings);
+
+	std::cout << "Pixel-map saved as \"" << SIS.AllSimulationSettings.GPMSettings.Filename << "\"\n";
+	std::cout << "Dataset: \"" << SIS.AllSimulationSettings.GPMSettings.Dataset << "\"" << std::endl;
 
 	return 0;
 }

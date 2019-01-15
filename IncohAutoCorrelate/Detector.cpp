@@ -1292,14 +1292,13 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 
 
 		//weight (mean intensity)
-		Rot_and_Weight[ind + 9] = Events[i].MeanIntensity*Events[i].MeanIntensity;
+		Rot_and_Weight[ind + 9] = (float)((double)Events[i].MeanIntensity*(double)Events[i].MeanIntensity);
 
 		if (Events[i].MeanIntensity > MaxWeight)
 			MaxWeight = Events[i].MeanIntensity;
 
 		ind += 10;
 	}
-
 
 	std::cout << "Max weight: " << MaxWeight << "\n";
 
@@ -1322,14 +1321,19 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	}
 	Multiplicator = Multiplicator / OOM;
 	Multiplicator *= 1e10;//1e16;
-	Multiplicator = round(Multiplicator);
+	if (Multiplicator > 0.6)
+		Multiplicator = round(Multiplicator);
+	if (Multiplicator < 1 && Multiplicator > 0.1)
+		Multiplicator = 1;
 	std::cout << "Multiplicator: " << Multiplicator << std::endl;
 
 	//adjust accuracy of weights according to the multiplicator
 	ind = 0;
 	for (unsigned int i = LowerBound; i < UpperBound; i++)
 	{
-		float ReducedMultipl = roundf((float) Multiplicator);// / Options.F_I_Conversion.Step;
+		float ReducedMultipl = (float)Multiplicator;
+		if(Multiplicator > 0.6)
+			ReducedMultipl = roundf((float) Multiplicator);// / Options.F_I_Conversion.Step;
 		float t_weight = Rot_and_Weight[ind + 9];
 		t_weight *= ReducedMultipl;
 		t_weight = floorf(t_weight + 0.5);
@@ -1337,10 +1341,10 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		ind += 10;
 	}
 
+
 	uint64_t * TempBigMesh = new uint64_t[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB *SmallMesh.Shape.Size_AB]();
 
-
-
+	
 	//set Parameter
 	double Params[9];
 	Params[0] = SmallMesh.Shape.Voxel_per_dq; //dq per Voxel
@@ -1381,7 +1385,6 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	cl::Event cl_event;
 
 
-
 	//profiler stuff
 	ProfileTime Profiler;
 
@@ -1392,6 +1395,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	//Input:
 	size_t ACsizeSmall = sizeof(double) * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
 	cl::Buffer CL_CQ_Small(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ACsizeSmall, SmallMesh.CQMesh, &err);
+
 	size_t RotWeightSize = sizeof(float) * 10 * (UpperBound - LowerBound);
 	cl::Buffer CL_RW(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, RotWeightSize, Rot_and_Weight, &err);
 	cl::Buffer CL_Params(Options.CL_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Params), &Params, &err);
@@ -1409,7 +1413,6 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	kernel.setArg(2, CL_Params);
 	kernel.setArg(3, CL_CQ);
 	const size_t &global_size = SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_C;
-
 
 
 	//launch Kernel
@@ -1437,8 +1440,6 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 #pragma omp parallel for
 	for (int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB; i++)
 	{
-
-		
 		BigMesh.CQMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
 
 		//if(TempBigMesh[i] != 0)
@@ -1446,6 +1447,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		//if (TempBigMesh[i] > 0)
 		//	std::cout << TempBigMesh[i] << "   " << BigMesh.CQMesh[i] << std::endl;
 	}
+
 
 
 	//test by comparing to small c(q)
@@ -1479,12 +1481,10 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		}
 
 	}
-
-
+	
 	//Free memory
 	delete[] Rot_and_Weight;
 	delete[] TempBigMesh;
-
 }
 
 

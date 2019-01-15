@@ -490,6 +490,10 @@ void Simulator::SaveSimulationOutput(SimulationOutput & Output, std::string HDF5
 
 }
 
+void Simulator::GeneratePixelMap(GeneratePMSettings GPMSettings)
+{
+	GeneratePixelMap(GPMSettings.Filename, GPMSettings.Dataset, GPMSettings.SizeA, GPMSettings.SizeB, GPMSettings.PixelSize, GPMSettings.Center, GPMSettings.VecA, GPMSettings.VecB);
+}
 void Simulator::GeneratePixelMap(std::string Filename, std::string Dataset, int SizeA, int SizeB, float PixelSize, std::array<float, 3> Center, std::array<float, 3> VecA, std::array<float, 3> VecB)
 {
 	float * PixelMap = new float[3 * SizeA * SizeB];

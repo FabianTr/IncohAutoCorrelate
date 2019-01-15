@@ -63,12 +63,24 @@ public:
 		unsigned int DetectorSize[2] = { 0, 0 };
 	};
 
+	struct GeneratePMSettings
+	{
+		std::string Filename;
+		std::string Dataset;
+		int SizeA;
+		int SizeB;
+		float PixelSize;
+		std::array<float, 3> Center;
+		std::array<float, 3> VecA;
+		std::array<float, 3> VecB;
+	};
+
 	void Simulate(Crystal EmitterCrystal,Detector &Det, SimulationSettings SimSettings, SimulationOutput & Output, Settings & Options); //Detector needs a PixleMap
 	void ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSettings SimSettings, SimulationOutput & Output, Settings & Options);
 
 	void SaveSimulationOutput(SimulationOutput &Output, std::string HDF5_Path, std::string XML_Path, SimulationSettings SimSettings);
 
-
+	void GeneratePixelMap(GeneratePMSettings GPMSettings);
 	void GeneratePixelMap(std::string Filename, std::string Dataset,int SizeA, int SizeB, float PixelSize, std::array<float,3> Center, std::array<float, 3> VecA, std::array<float, 3> VecB);
 
 	void DisturbePixelMap(Detector &Det, double Translation, double Roatation); //Rotation in Degree [0, 360)
