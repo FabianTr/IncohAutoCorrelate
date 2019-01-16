@@ -1309,7 +1309,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 
 	std::cout << "Small C(q):: Min = " << Min_Cq << "; Max = " << Max_Cq << "; Mean = " << Mean_Cq << "\n";
 
-	double Multiplicator = 1e-15;
+	double Multiplicator = 1e-12;
 	for (; 1 > MaxWeight*MaxWeight*Mean_Cq*Multiplicator;) //Order of magnitude of largest weight //=> goto largest weight^2
 	{
 		Multiplicator *= 10;
@@ -1325,6 +1325,8 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 		Multiplicator = round(Multiplicator);
 	if (Multiplicator < 1 && Multiplicator > 0.1)
 		Multiplicator = 1;
+	if (Multiplicator < 1e-12)
+		Multiplicator = 1e-12;
 	std::cout << "Multiplicator: " << Multiplicator << std::endl;
 
 	//adjust accuracy of weights according to the multiplicator
