@@ -818,9 +818,9 @@ __kernel void SimulateCrystal(__global const float *PixelMap,
 			{
 				//Calculate k
 				float Curr_Pos[3];
-				Curr_Pos[0] = PixelCentPos[0] + (v * v_Step[0]) + (u * v_Step[0]);
-				Curr_Pos[1] = PixelCentPos[1] + (v * v_Step[1]) + (u * v_Step[1]);
-				Curr_Pos[2] = PixelCentPos[2] + (v * v_Step[2]) + (u * v_Step[2]);
+				Curr_Pos[0] = PixelCentPos[0] + (v * v_Step[0]) + (u * u_Step[0]);
+				Curr_Pos[1] = PixelCentPos[1] + (v * v_Step[1]) + (u * u_Step[1]);
+				Curr_Pos[2] = PixelCentPos[2] + (v * v_Step[2]) + (u * u_Step[2]);
 				//calculate k
 				float k[3];
 				float Norm_k = 1.0 / sqrt(Curr_Pos[0] * Curr_Pos[0] + Curr_Pos[1] * Curr_Pos[1] + Curr_Pos[2] * Curr_Pos[2]);
