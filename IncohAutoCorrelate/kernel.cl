@@ -86,11 +86,11 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 	int MeshCenterAB = (MeshSizeAB - 1) / 2;
 	int MeshCenterC = (MeshSizeC - 1) / 2;
 
-	float INT_ind = IntensityData[ind];
+	//float INT_ind = IntensityData[ind];
 
 	for (int i = 0; i < DetSize; i++) //Loop over all Pixel //< DetSize
 	{
-		double Val = (double)INT_ind * (double)IntensityData[i];
+		double Val = (double)(IntensityData[ind] * IntensityData[i]);
 
 		if (Val < 1e-37f) //no entry shortcut
 		{
@@ -103,9 +103,9 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		k2[0] = KMap[0 + 3 * i];
 		k2[1] = KMap[1 + 3 * i];
 		k2[2] = KMap[2 + 3 * i];
-		q1[0] = (k1[0] - k2[0]);
-		q1[1] = (k1[1] - k2[1]);
-		q1[2] = (k1[2] - k2[2]);
+		q1[0] = k1[0] - k2[0];
+		q1[1] = k1[1] - k2[1];
+		q1[2] = k1[2] - k2[2];
 
 		if (sqrt(q1[0] * q1[0] + q1[1] * q1[1] + q1[2] * q1[2]) > MaxQ)
 		{
@@ -116,13 +116,16 @@ __kernel void AutoCorr_CQ_small(__global const float *IntensityData,
 		q1[1] = q1[1] * VoxperdQ;
 		q1[2] = q1[2] * VoxperdQ;
 
+
+
 		//Map to Mesh
 		int fs, ms, ss;//fast-scan, medium-scan, slow-scan
 		if (InterpolMode == 0) //((Nearest Neighbor))
 		{
-			fs = (int)(floor(q1[Aind] + 0.5f) + MeshCenterAB);
-			ms = (int)(floor(q1[Bind] + 0.5f) + MeshCenterAB);
-			ss = (int)(floor(q1[Cind] + 0.5f) + MeshCenterC);
+			fs = (int)(round(q1[Aind]) + MeshCenterAB);
+			ms = (int)(round(q1[Bind]) + MeshCenterAB);
+			ss = (int)(round(q1[Cind]) + MeshCenterC);
+
 			atomic_add(&(CQsmall[fs + ms * MeshSizeAB + ss * MeshSizeAB * MeshSizeAB]), ValConv);
 
 			//if (ss >= MeshSizeC || ms >= MeshSizeAB || fs >= MeshSizeAB)//Check scans and display overflows.
@@ -279,9 +282,9 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 			unsigned long Val_out = (unsigned long)Val_in;
 			//get new scans
 			int fs = 0, ms = 0, ss = 0;
-			fs = (int)(floor(q_out[0] + 0.5f) + smallMeshCenterAB);
-			ms = (int)(floor(q_out[1] + 0.5f) + smallMeshCenterAB);
-			ss = (int)(floor(q_out[2] + 0.5f) + smallMeshCenterAB);//ss = (unsigned int)(floor(q_out[2] + 0.5);
+			fs = (int)(round(q_out[0] ) + smallMeshCenterAB);
+			ms = (int)(round(q_out[1] ) + smallMeshCenterAB);
+			ss = (int)(round(q_out[2] ) + smallMeshCenterAB);//ss = (unsigned int)(floor(q_out[2] + 0.5);
 
 			atomic_add(&(CQ[fs + ms * smallMeshSize_AB + ss * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
 
@@ -335,7 +338,6 @@ __kernel void Merge_CQ(__global const double *smallMesh,
 			double Val_ttt = Val_in * Multiplicator * (double)RW[10 * i + 9] * ((1 - Sep_fs) * (1 - Sep_ms) * (1 - Sep_ss));
 			Val_out = (unsigned long)Val_ttt;
 			atomic_add(&(CQ[(fs + 1) + (ms + 1) * smallMeshSize_AB + (ss + 1) * smallMeshSize_AB * smallMeshSize_AB]), Val_out);
-
 		}
 
 	}
@@ -380,9 +382,9 @@ void AddRotatedQToMesh(__global unsigned long * AC, double Multiplicator, int Me
 		unsigned long Val = (unsigned long)(val * Multiplicator);
 
 		int fs, ms, ss;
-		fs = (int)(MeshCenter + floor(q[0] + 0.5f));
-		ms = (int)(MeshCenter + floor(q[1] + 0.5f));
-		ss = (int)(floor(q[2] + 0.5f));
+		fs = (int)(MeshCenter + round(q[0]));
+		ms = (int)(MeshCenter + round(q[1]));
+		ss = (int)(round(q[2]));
 		AddQToPositiveSS(AC, MeshSize, MeshCenter, fs, ms, ss, Val, QisZero);
 	}
 
@@ -518,9 +520,9 @@ __kernel void Autocor_sparseHL(__global const float *SparseHitList,
 			{
 				//map to mesh             
 				int fs_l, ms_l, ss_l;
-				fs_l = (int)(floor(q[0] + 0.5) + MeshCenter);
-				ms_l = (int)(floor(q[1] + 0.5) + MeshCenter);
-				ss_l = (int)(floor(q[2] + 0.5) + MeshCenter);
+				fs_l = (int)(round(q[0] ) + MeshCenter);
+				ms_l = (int)(round(q[1] ) + MeshCenter);
+				ss_l = (int)(round(q[2] ) + MeshCenter);
 				//printf("t_scan = [%d, %d, %d]\n", fs_l, ms_l, ss_l);
 				//convert back to q
 				q[0] = (float)(fs_l - MeshCenter);

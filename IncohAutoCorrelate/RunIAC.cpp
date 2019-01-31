@@ -450,7 +450,7 @@ namespace RunIAC
 				smallMesh.CreateSmallMesh_CofQ_ForDetector(Det, EvalSettings.MeshSize, EvalSettings.QZoom);
 
 				Detector::AutoCorrFlags Flags;
-				Flags.InterpolationMode = Settings::NearestNeighbour; //TODO implement more modes
+				Flags.InterpolationMode = EvalSettings.AC_FirstMap_Flags.InterpolationMode;
 				Det.AutoCorrelate_CofQ_SmallMesh(smallMesh, Flags, PrgSettings);
 
 				//save small C(q)
@@ -465,7 +465,7 @@ namespace RunIAC
 				}
 				if (EvalSettings.EchoLevel > 0)
 				{
-					std::cout << "C(q) small Mesh calculation done in" << std::endl;
+					std::cout << "C(q) small Mesh calculation done in\n" << std::endl;
 					ProfileLevel_1.Toc(true);
 				}
 				// -> </C(q)_small>
@@ -491,7 +491,7 @@ namespace RunIAC
 				}
 				if (EvalSettings.EchoLevel > 0)
 				{
-					std::cout << "C(q) merge and weight done in" << std::endl;
+					std::cout << "C(q) merge and weight done in\n" << std::endl;
 					ProfileLevel_1.Toc(true);
 				}
 				// -> </Merge CQ>

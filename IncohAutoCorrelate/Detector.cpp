@@ -312,7 +312,7 @@ void Detector::Calc_kMap()
 		y = PixelMap[3 * i + 1];
 		z = PixelMap[3 * i + 2];
 
-		r = sqrtf(x*x + y * y + z * z);
+		r = sqrtf(x*x + y*y + z*z);
 
 		x = x / r;
 		y = y / r;
@@ -1222,8 +1222,6 @@ void Detector::AutoCorrelate_CofQ_SmallMesh(ACMesh & SmallMesh, AutoCorrFlags Fl
 		mean += SmallMesh.CQMesh[i];
 	}
 	std::cout << "Mean cq: " << mean / SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_AB* SmallMesh.Shape.Size_C << "\n";
-
-
 
 
 	//Free Memory
