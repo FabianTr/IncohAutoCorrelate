@@ -465,8 +465,9 @@ namespace RunIAC
 				}
 				if (EvalSettings.EchoLevel > 0)
 				{
-					std::cout << "C(q) small Mesh calculation done in\n" << std::endl;
+					std::cout << "C(q) small Mesh calculation done in" << std::endl;
 					ProfileLevel_1.Toc(true);
+					std::cout << "\n\n";
 				}
 				// -> </C(q)_small>
 
@@ -491,8 +492,9 @@ namespace RunIAC
 				}
 				if (EvalSettings.EchoLevel > 0)
 				{
-					std::cout << "C(q) merge and weight done in\n" << std::endl;
+					std::cout << "C(q) merge and weight done in" << std::endl;
 					ProfileLevel_1.Toc(true);
+					std::cout << "\n\n";
 				}
 				// -> </Merge CQ>
 				// </C(q)>
@@ -587,7 +589,7 @@ namespace RunIAC
 
 				// <Apply C(q) to AC_uw>
 				if (EvalSettings.EchoLevel > 0)
-					std::cout << "Apply C(q) to unweighted AC\n";
+					std::cout << "\nApply C(q) to unweighted AC\n";
 				double * FinalAC = nullptr;
 				Merge_ACandCQ(FinalAC, AC_uw, Mesh_CQ, PrgSettings);
 

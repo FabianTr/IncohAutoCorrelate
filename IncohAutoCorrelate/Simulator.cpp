@@ -13,10 +13,6 @@
 #include "Settings.h"
 
 
-
-
-
-
 inline double Simulator::Drand()
 {
 	return rnd(mt);
@@ -989,7 +985,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 			if ((i + 1) % (N / 100) == 0)
 			{
 				g_echo_mutex_Sim.lock();
-				std::cout << "Thread " << ThreadNum << ": Pattern " << (i + 1) << "/" << N << " ^= " << ((i + 1) * 100 / N) << "\% \t in: " << Profiler.Toc(false) << "s\n";
+				std::cout << "Thread " << ThreadNum << ": Pattern " << (i + 1) << "/" << N << " ^= " << ((i + 1) * 100 / N) << "\% \t in: " << Profiler.Toc(false) << "s" << std::endl;
 				//std::cout << "Current Intensity: " << ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1])
 				//	<< " =^ " << (int)(ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1]) / SimSettings.Value_per_Photon)
 				//	<< " Photons\n";
@@ -1159,4 +1155,3 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 		PrintSimInfos(SimSettings);
 
 }
-
