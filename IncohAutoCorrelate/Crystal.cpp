@@ -106,7 +106,7 @@ std::vector<Crystal::Emitter> Crystal::GetEmitters(EmittingCrystSettings Setting
 		if (Settings.Incoherent)
 		{
 			//EM.Phase = (ThrRand(mt) * 2 * M_PIl);
-			EM.Phase = Drand() * 2 * M_PIl;
+			EM.Phase = Drand() * 2.0 * M_PIl;
 			
 		}
 		else

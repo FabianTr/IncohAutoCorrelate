@@ -51,6 +51,7 @@ namespace MainRunModes
 		std::string XMLSetting_Path = "";
 	};
 
+
 	//Functions
 	//-> Data handling
 	int Create_XMLHitlist_from_H5Stack_script(std::string Arg1, std::string Arg2, Settings &Options);
@@ -89,6 +90,7 @@ namespace MainRunModes
 	int DarkCalibration(std::string Arg1, Settings &Options);
 	//->Statistics
 	int CreateAllPixelHistograms(std::string ConfigFile, Settings &Options);
+	int GenerateSpeckleContrastStatistics(std::string ConfigFile, Settings &Options);
 
 
 	//EVALUATE - AUTOCORRELATION mode

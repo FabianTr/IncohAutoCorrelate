@@ -148,49 +148,7 @@ namespace Statistics
 	}
 
 
-	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector & RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound, double & StDev)
-	{
-		if (UpperBound - LowerBound < 1)
-			return 0.0;
 
-		std::vector<double> MeanVal;
-		MeanVal.resize(UpperBound - LowerBound);
-
-		for (unsigned int ind = 0; ind < UpperBound - LowerBound; ind++)
-		{
-			RefDet.LoadIntensityData(&Options.HitEvents[ind + LowerBound]);
-
-			//Count Pixel with value >= Offset
-			unsigned int Counter = 0;
-			for (int i = 0; i < RefDet.DetectorSize[0] * RefDet.DetectorSize[1]; i++)
-			{
-				if (RefDet.Intensity[i] >= Offset)
-					Counter++;
-			}
-
-			//Get ratio
-			MeanVal[ind] = ((double)Counter) / ((double)(RefDet.DetectorSize[0] * RefDet.DetectorSize[1]));
-		}
-
-
-
-
-		return 0.0;
-	}
-	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector & RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound)
-	{
-		double temp;
-		return GetAverageRatioOfPixelsWithHits(Options, RefDet, Offset, LowerBound, UpperBound, *&temp);
-	}
-	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector & RefDet, float Offset, double & StDev)
-	{
-		return GetAverageRatioOfPixelsWithHits(Options, RefDet, Offset, 0, Options.HitEvents.size(), StDev);
-	}
-	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector & RefDet, float Offset)
-	{
-		double temp;
-		return GetAverageRatioOfPixelsWithHits(Options,RefDet,Offset,0,Options.HitEvents.size(), *&temp);
-	}
 
 	SpeckleContrastStatistics GetSpeckleContrastStatistics(Settings & Options, Detector & RefDet, unsigned int LowerBound, unsigned int UpperBound, float Offset, float Step)
 	{
@@ -207,14 +165,16 @@ namespace Statistics
 		SCS.SCC_Statistics.resize(UpperBound - LowerBound);
 
 		//Loop through patterns --- can be parallized therefore clone det, ...
+		unsigned int counter = 0.0;
+		const unsigned int modulo = (UpperBound - LowerBound + 50 )/100;
 		#pragma omp parallel for
-		for (unsigned int i = LowerBound; i < UpperBound; i++)
+		for (unsigned int i = 0; i < UpperBound - LowerBound; i++)
 		{
 			//Load Intensity
 			Detector Det(RefDet, true);
 			#pragma omp critical
 			{
-				Det.LoadIntensityData(&Options.HitEvents[i]);
+				Det.LoadIntensityData(&Options.HitEvents[i + LowerBound]);
 			}
 			Det.ApplyPixelMask();
 			//Loop through Pixel
@@ -236,7 +196,20 @@ namespace Statistics
 				//updates mean number of photons
 				SCS.SCC_Statistics[i].MeanPhotonDensity += (double)Photons / ((double)SCS.NumberOfUnmaskedPixels);
 			}
+			//Calculate Variance
+			double Var = 0.0;
+			for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
+			{
+				Var += ((double)Det.Intensity[j] - SCS.SCC_Statistics[i].MeanPhotonDensity)*((double)Det.Intensity[j] - SCS.SCC_Statistics[i].MeanPhotonDensity);		
+			}
+			SCS.SCC_Statistics[i].VariancePhotonDensity = Var / ((double)SCS.NumberOfUnmaskedPixels);
 
+			#pragma omp critical
+			{
+				if ((++counter) % modulo == 0) {
+					std::cout << counter/modulo << "%" << std::endl;
+				}
+			}
 		}
 
 		return SCS;

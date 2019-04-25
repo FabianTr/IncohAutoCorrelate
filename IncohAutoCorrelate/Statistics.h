@@ -25,9 +25,15 @@ namespace Statistics
 		std::string OutputPath = "";
 	};
 
+	struct Create_SpeckleContrastSettings 
+	{
+		std::string CSVOutputPath = "";
+	};
+
 	struct StatisticsSettings
 	{
 		Statistics::Create_PixelHistogramSettings PixelHistogramSettings;
+		Statistics::Create_SpeckleContrastSettings SpeckleContrastSettings;
 	};
 
 	void Get_OrientationSphere(float*& Vectors, std::vector<Settings::HitEvent> EventList);
@@ -65,19 +71,14 @@ namespace Statistics
 	void CreateAndSaveAllPixelHistograms(Create_PixelHistogramSettings HistSettings, Detector &RefDet, Settings & Options);
 	
 
-
-	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound, double & StDev);
-	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset, unsigned int LowerBound, unsigned int UpperBound);
-	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset, double & StDev);
-	double GetAverageRatioOfPixelsWithHits(Settings & Options, Detector &RefDet, float Offset);
-	
  
 	struct SpeckleContrastStatistics
 	{
 		struct SCC_Pattern
 		{
 			std::vector<double> Probability;
-			double MeanPhotonDensity;
+			double MeanPhotonDensity = 0.0;
+			double VariancePhotonDensity = 0.0;
 		};
 		std::vector<SCC_Pattern> SCC_Statistics;
 		unsigned int Nmax = 1;

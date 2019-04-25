@@ -823,6 +823,20 @@ int main(int argc, char** argv)
 		return MainRunModes::GeneratePixelMap(Arg2, Options);
 	}
 	}
+	else if (Arg1 == "specklecontraststatistic" || Arg1 == "-specklecontraststatistic" || Arg1 == "scs" || Arg1 == "-scs")
+	{
+	std::cout << "Run ICA to generate \"speckle contrast statistics\"" << std::endl;
+	if (argc < 3)
+	{
+		std::cerr << "-SpeckleContrastStatistic requires one additional argument (\"Settings.xml\")\n";
+		return -1;
+	}
+	else
+	{
+		std::string Arg2 = argv[2];
+		return MainRunModes::GenerateSpeckleContrastStatistics(Arg2, Options);
+	}
+	}
 	else if (Arg1 == "qdtest" || Arg1 == "-qdtest" )
 	{
 		QDTests(Options);
@@ -833,6 +847,8 @@ int main(int argc, char** argv)
 		runUnitTest(Options);
 		return 0;
 	}
+
+
 
 	else
 	{

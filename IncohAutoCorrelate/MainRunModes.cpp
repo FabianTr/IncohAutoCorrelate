@@ -98,8 +98,9 @@ Statistics::StatisticsSettings MainRunModes::LoadStatisticSettings(std::string F
 
 	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
 
-	//PixelHisto
+	
 	{
+		//PixelHisto
 		StatSet.PixelHistogramSettings.OutputPath = pt.get<std::string>("root.StatisticsSettings.PixelHistograms.OutputPath", "");
 
 		StatSet.PixelHistogramSettings.Bins = pt.get<unsigned int>("root.StatisticsSettings.PixelHistograms.Bins", 100);
@@ -107,6 +108,9 @@ Statistics::StatisticsSettings MainRunModes::LoadStatisticSettings(std::string F
 		StatSet.PixelHistogramSettings.LargestValue = pt.get<double>("root.StatisticsSettings.PixelHistograms.LargestValue", 100.0);
 
 		StatSet.PixelHistogramSettings.Normalized = pt.get<bool>("root.StatisticsSettings.PixelHistograms.Normalize", true);
+
+		//Speckle Contrast
+		StatSet.SpeckleContrastSettings.CSVOutputPath = pt.get<std::string>("root.StatisticsSettings.SpeckleContrastStatistics.CSVOutputPath", "");
 	}
 
 	return StatSet;
@@ -436,23 +440,29 @@ boost::property_tree::ptree MainRunModes::Example_Statistics_Config_PT(boost::pr
 {
 	//Example Statistic Settings
 	Statistics::Create_PixelHistogramSettings EPHS;
+	Statistics::Create_SpeckleContrastSettings SCSS;
+
 	{
+		//Pixel Histogram
 		EPHS.Bins = 100;
 		EPHS.SmalestValue = 0.0;
 		EPHS.LargestValue = 100.0;
 		EPHS.OutputPath = "PixelwiseHistograms.bin";
 
 		EPHS.Normalized = true;
+		//Speckle Contrast
+		SCSS.CSVOutputPath = "SpecleContrastStatistics.csv";
 	}
 	//Store Statistic Settings in PT
 	{
+		//Pixel Histogram
 		pt.put("root.StatisticsSettings.PixelHistograms.OutputPath", EPHS.OutputPath);
 		pt.put("root.StatisticsSettings.PixelHistograms.Bins", EPHS.Bins);
 		pt.put("root.StatisticsSettings.PixelHistograms.SmallestValue", EPHS.SmalestValue);
 		pt.put("root.StatisticsSettings.PixelHistograms.LargestValue", EPHS.LargestValue);
 		pt.put("root.StatisticsSettings.PixelHistograms.Normalize", EPHS.Normalized);
-
-
+		//Speckle Contrast
+		pt.put("root.StatisticsSettings.SpeckleContrastStatistics.CSVOutputPath", SCSS.CSVOutputPath);
 	}
 	return pt;
 }
@@ -818,6 +828,73 @@ int MainRunModes::CreateAllPixelHistograms(std::string ConfigFile, Settings & Op
 
 	//Statistics::Histogram Hist = Statistics
 
+
+	return 0;
+}
+
+int MainRunModes::GenerateSpeckleContrastStatistics(std::string ConfigFile, Settings & Options)
+{
+
+	MainRunModes::AllSettings AllSet = LoadSettings(ConfigFile,Options);
+
+	if (AllSet.StatisticsSettings.SpeckleContrastSettings.CSVOutputPath == "")
+	{
+		std::cerr << "ERROR: No output path set\n";
+		std::cerr << "Please set \"StatisticsSettings.SpeckleContrastStatistics.CSVOutputPath\" to an valid value in the configuration file." << std::endl;
+		return -1;
+	}
+	
+	//Load HitList
+	Options.LoadHitEventListFromFile(AllSet.EvaluationSettings.XML_Path);
+
+	//Create Detector
+	Detector RefDet;
+	RefDet.LoadPixelMap(AllSet.EvaluationSettings.PixelMap_Path, AllSet.EvaluationSettings.PixelMap_DataSet);
+	RefDet.LoadPixelMask(AllSet.EvaluationSettings.PixelMask_Path, AllSet.EvaluationSettings.PixelMask_Dataset); 
+
+	unsigned int LowBound = 0;
+	unsigned int UpBound = (unsigned int)Options.HitEvents.size();
+
+	if (AllSet.EvaluationSettings.RestrictStackToBoundaries)
+	{
+		LowBound = AllSet.EvaluationSettings.LowerBoundary;
+		UpBound = AllSet.EvaluationSettings.UpperBoundary;
+	}
+
+	//Get SC-Statistics
+	Statistics::SpeckleContrastStatistics SCS;
+	SCS = Statistics::GetSpeckleContrastStatistics(Options, RefDet, LowBound, UpBound, AllSet.EvaluationSettings.PhotonOffset, AllSet.EvaluationSettings.PhotonStep);
+
+	//Write results to File
+	std::ofstream File(AllSet.StatisticsSettings.SpeckleContrastSettings.CSVOutputPath, std::ofstream::out);
+
+	File << "#IntMean, IntVar";
+	for (unsigned int i = 1; i <= SCS.Nmax; i++) //starts with 1 photon
+	{
+		File << ", P" << i;
+	}
+	File << std::endl;
+
+	for (unsigned int i = 0; i < (unsigned int)SCS.SCC_Statistics.size(); i++)
+	{
+		File << SCS.SCC_Statistics[i].MeanPhotonDensity << ", " << SCS.SCC_Statistics[i].VariancePhotonDensity;
+		for (unsigned int  j = 0; j < SCS.Nmax; j++)
+		{
+			if (j < SCS.SCC_Statistics[i].Probability.size())
+			{
+				File << ", " << SCS.SCC_Statistics[i].Probability[j];
+			}
+			else
+			{
+				File << ", 0.0";
+			}
+		}
+		File << std::endl;
+	}
+
+	File.close();
+	if (Options.echo)
+		std::cout << "Speckle statistics saved as \"" << AllSet.StatisticsSettings.SpeckleContrastSettings.CSVOutputPath << "\"" << std::endl;
 
 	return 0;
 }

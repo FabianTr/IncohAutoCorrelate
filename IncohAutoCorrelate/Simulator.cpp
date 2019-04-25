@@ -294,6 +294,7 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 
 
 			//add up intensity (incoherent for mode simulation)
+			ArrayOperators::ParMultiplyScalar(t_Intensity, 1.0/((float)SimSettings.Modes), Det.DetectorSize[0] * Det.DetectorSize[1]);
 			ArrayOperators::ParAdd(Intensity, t_Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
 
@@ -311,19 +312,19 @@ void Simulator::Simulate(Crystal EmitterCrystal, Detector & Det, SimulationSetti
 			delete[] t_Intensity;
 			delete[] EM;
 		}
-
+		
 		//PostProcess 
 
 
 
 		//Rescale for expected number of photons
 		float ExpNumOfPhotones = (float)(SimSettings.AveragePhotonesPerEmitterOnDetector * SimSettings.CrystSettings.FlYield * EmitterCrystal.AtomPositions.size());
-		float IntegratedIntensity = 0.0f;
+		double IntegratedIntensity = 0.0f;
 		for (unsigned int l = 0; l < Det.DetectorSize[0] * Det.DetectorSize[1]; l++)
 		{ //Reminder: don't even think about to parallelize this!
 			IntegratedIntensity += Intensity[l];
 		}
-		float t_IntFactor = ExpNumOfPhotones / IntegratedIntensity;
+		float t_IntFactor = ExpNumOfPhotones / (float)IntegratedIntensity;
 		ArrayOperators::ParMultiplyScalar(Intensity, t_IntFactor, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
 		//Poisson Sample (if required)
