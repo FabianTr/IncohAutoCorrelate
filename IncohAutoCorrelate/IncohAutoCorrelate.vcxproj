@@ -111,10 +111,10 @@
     <ClCompile>
       <AdditionalIncludeDirectories>/usr/include/eigen3;/usr/lib64 /opt/opencl/intel/lib64;$(RemoteRootDir)/opt/opencl/intel/include/;$(RemoteRootDir)/usr/lib64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ShowIncludes>true</ShowIncludes>
-      <AdditionalOptions>-lOpenCL -fopenmp %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-lOpenCL -fopenmp -O3 %(AdditionalOptions)</AdditionalOptions>
       <CAdditionalWarning />
       <CppAdditionalWarning />
-      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <Optimization>Custom</Optimization>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/opt/opencl/intel/lib64;/usr/lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

@@ -441,7 +441,7 @@ void QDSpeckleContr(Settings & Options)
 	std::ofstream myfile;
 	myfile.open("/home/trostfab/scratch/LU56/eval/SCS.csv");
 
-	for (int i = 0; i < SCS.SCC_Statistics.size(); i++)
+	for (unsigned int i = 0; i < SCS.SCC_Statistics.size(); i++)
 	{
 		myfile << SCS.SCC_Statistics[i].MeanPhotonDensity << "; ";
 		for (int j = 0; j < SCS.Nmax; j++)
@@ -580,7 +580,7 @@ int main(int argc, char** argv)
 	{
 		if (argc < 4)
 		{
-			std::cerr << "-XMLfromH5 requires two additional arguments (\"H5path1, Dataset1; H5path2, ...\" \"Output.xml\")\n";
+			std::cerr << "-XMLfromH5 requires two additional arguments (\"H5path1, H5path2, ... ;Dataset1, Dataset2, ...\" \"Output.xml\")\n";
 			return -1;
 		}
 		else 
@@ -694,7 +694,7 @@ int main(int argc, char** argv)
 		if (argc < 3)
 		{
 			std::cerr << "-DarkCalibration requires one additional argument (\"Settings.xml\")\n";
-			std::cerr << "Additional Info: -DarkCalibration uses the \"root.PatternPreProcessing.LargestAdjacentPixel. (...)\" part.\n ";
+			std::cerr << "Additional Info: -DarkCalibration uses the \"root.PatternPreProcessing.DarkFieldCorrection. (...)\" part.\n ";
 			return -1;
 		}
 		else
@@ -775,13 +775,13 @@ int main(int argc, char** argv)
 		std::string Arg2;
 		std::string Arg3;
 		std::string Arg4; 
-		if (argc < 3)
+		if (argc < 4)
 		{
 			std::cerr << "-MergeXmlLists requires two additional arguments (\"HitListOut.xml\" \"List1.xml, List2.xml, ...\" )\n";
 			std::cerr << "-MergeXmlLists can also have three additional arguments (\"HitListOut.xml\" \"List1.xml, List2.xml, ...\" \"SuplInfo1, SuplInfo2, ...\" )\n";
 			return -1;
 		}
-		if (argc == 3)
+		if (argc == 4)
 		{
 			Arg2 = argv[2];
 			Arg3 = argv[3];

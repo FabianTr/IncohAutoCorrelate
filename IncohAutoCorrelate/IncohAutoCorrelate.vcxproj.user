@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-s Settings_M10.xml</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-ph /gpfs/cfel/cxi/scratch/user/trostfab/LU56/ePix/DetCalib/scripts/Settings_PixelHistos.xml</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

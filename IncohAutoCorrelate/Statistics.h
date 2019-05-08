@@ -60,6 +60,7 @@ namespace Statistics
 		unsigned long long Entries = 0;
 
 		void AddValue(double Value);
+		void CalcEntries();
 		void SafeToFile(std::string Filename);
 	};
 

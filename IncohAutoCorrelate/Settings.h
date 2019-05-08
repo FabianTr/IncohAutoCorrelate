@@ -32,7 +32,7 @@ private:
 public:
 	const static int XML_HITLIST_VERSION = 6; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
 	const static int INTERNAL_VERSION = 7; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
-	const static int INTERNAL_VERSION_Revision = 0; //rr
+	const static int INTERNAL_VERSION_Revision = 2; //rr
 
 	static std::string GetVersion()
 	{

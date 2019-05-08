@@ -794,7 +794,7 @@ int MainRunModes::GainCorrection(std::string Arg1, Settings & Options)
 	ProfileTime Profiler;
 	Profiler.Tic();
 
-	PPP::ProcessData_PF_LAP(Det, AS.PPPLAPSettings, AS.EvaluationSettings.XML_Path,false);
+	PPP::ProcessData_PF_LAP(Det, AS.PPPLAPSettings, AS.EvaluationSettings.XML_Path,true);
 	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
 	return 0;
 }
@@ -814,6 +814,7 @@ int MainRunModes::DarkCalibration(std::string Arg1, Settings & Options)
 
 	return 0;
 }
+
 
 int MainRunModes::CreateAllPixelHistograms(std::string ConfigFile, Settings & Options)
 {

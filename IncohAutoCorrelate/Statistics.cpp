@@ -91,11 +91,13 @@ namespace Statistics
 			if (Det.Checklist.PixelMask)
 				Det.ApplyPixelMask();
 
-			#pragma omp parallel for
+			//Do NOT parallelize this!!!
 			for (int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
 			{
 				HistStack[j].AddValue(Det.Intensity[j]);
 			}
+
+
 
 			if (Options.echo)
 			{
@@ -110,13 +112,17 @@ namespace Statistics
 		}
 		profiler.Toc(Options.echo);
 
+
+
 		return HistStack;
 	}
 
 	void CreateAndSaveAllPixelHistograms(Create_PixelHistogramSettings HistSettings, Detector & RefDet, Settings & Options)
 	{
+		//Main Work happens here:
 		std::vector<Statistics::Histogram> HistStack = Statistics::MakePixelHistogramStack(Options, RefDet, HistSettings.Bins, HistSettings.SmalestValue, HistSettings.LargestValue);
-		
+		// \
+
 		double * FinalHistStack = new double[HistSettings.Bins * RefDet.DetectorSize[0] * RefDet.DetectorSize[1]]();
 	
 		for (unsigned int i = 0; i < RefDet.DetectorSize[0] * RefDet.DetectorSize[1]; i++)
@@ -232,25 +238,35 @@ namespace Statistics
 	}
 	void Histogram::AddValue(double Value)
 	{
-		#pragma omp critical
+		//#pragma omp critical
 		Entries ++;
 		Value = Value - FirstBin;
 		if (Value < 0)
 		{
-			#pragma omp critical
+			//#pragma omp critical
 			UnderflowBin++;
 			return;
 		}
 		unsigned int ind = (unsigned int)floor((Value / BinSize) + 0.5);
 		if (ind >= Size)
 		{
-			#pragma omp critical
+			//#pragma omp critical
 			OverflowBin++;
 			return;
 		}
 		#pragma omp critical
 		HistogramContent[ind] ++;
 	}
+	void Histogram::CalcEntries()
+	{
+		Entries = 0;
+		for (size_t i = 0; i < HistogramContent.size(); i++)
+		{
+			Entries += HistogramContent[i];
+		} 
+		Entries += (UnderflowBin + UnderflowBin);
+	}
+
 	void Histogram::SafeToFile(std::string Filename)
 	{
 		double * Hist = new double[Size + 2]();

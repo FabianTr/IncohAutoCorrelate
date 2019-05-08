@@ -121,14 +121,20 @@ namespace PPP
 
 		if (true)
 		{
-			std::cout << "\nLAP correction - Parameter:\n";
-			std::cout << "ADU per photon: " << LAPSettings.ADU_perPhoton << "\n";
-			std::cout << "Seed threshold: " << LAPSettings.SeedThershold << "\n";
-			std::cout << "Combined threshold: " << LAPSettings.CombinedThershold << "\n";
-			std::cout << "Number of detector panels: " << LAPSettings.DetPanels_Num << "\n";
-			for (unsigned int i = 0; i < LAPSettings.DetectorPanels.size(); i++)
+			if (GainOnly)
 			{
-				std::cout << "Panel " << i << ": Start index = "<<LAPSettings.DetectorPanels[i].FirstInd << "; ss = " << LAPSettings.DetectorPanels[i].Scans[1]  << "; fs = " << LAPSettings.DetectorPanels[i].Scans[0] << "\n";
+				std::cout << "\nRun gain correction only\n";
+			}
+			else {
+				std::cout << "\nLAP correction - Parameter:\n";
+				std::cout << "ADU per photon: " << LAPSettings.ADU_perPhoton << "\n";
+				std::cout << "Seed threshold: " << LAPSettings.SeedThershold << "\n";
+				std::cout << "Combined threshold: " << LAPSettings.CombinedThershold << "\n";
+				std::cout << "Number of detector panels: " << LAPSettings.DetPanels_Num << "\n";
+				for (unsigned int i = 0; i < LAPSettings.DetectorPanels.size(); i++)
+				{
+					std::cout << "Panel " << i << ": Start index = " << LAPSettings.DetectorPanels[i].FirstInd << "; ss = " << LAPSettings.DetectorPanels[i].Scans[1] << "; fs = " << LAPSettings.DetectorPanels[i].Scans[0] << "\n";
+				}
 			}
 		std::cout << std::endl;
 		}

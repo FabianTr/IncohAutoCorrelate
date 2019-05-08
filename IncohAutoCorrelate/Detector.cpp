@@ -542,12 +542,11 @@ void Detector::LoadPixelMask(std::string Path, std::string DataSet )
 			dimsm[1] = DetectorSize[1];
 
 
-			H5::DataSpace mspace(3, dimsm, NULL);
+			H5::DataSpace mspace(2, dimsm, NULL);
 			DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
 
 			H5::PredType type = H5::PredType::NATIVE_INT;
 			dataset.read(PixelMask, type, mspace, DS);
-
 
 			//DetectorEvent->SerialNumber
 
