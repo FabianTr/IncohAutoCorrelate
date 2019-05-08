@@ -19,9 +19,9 @@ public:
 
 
 	struct MeshShape { 
-		int k_A, k_B, k_C; //the Dimension alignement k_A is, by definition, the biggest, and K_C the smallest |:| K_A is fast scan and K_C is slow scan
-		int Size_AB, Size_C; //Mesh size with padding (+1 in each direction)
-		int Center[3]; //Voxel where q is (0, 0, 0) in [q_A, q_B, q_C]
+		unsigned int k_A, k_B, k_C; //the Dimension alignement k_A is, by definition, the biggest, and K_C the smallest |:| K_A is fast scan and K_C is slow scan
+		unsigned int Size_AB, Size_C; //Mesh size with padding (+1 in each direction)
+		unsigned int Center[3]; //Voxel where q is (0, 0, 0) in [q_A, q_B, q_C]
 		float dq_per_Voxel;
 		unsigned int Voxel_per_dq = 1;
 

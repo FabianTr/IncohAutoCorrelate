@@ -181,8 +181,8 @@ bool UnitTest::TestACandCQmapping(Settings & Options, std::string SettingsPath, 
 		std::set<double> val;
 		for (unsigned long i = 0; i < DetInt.DetectorSize[0] * DetInt.DetectorSize[1]; i++)
 		{
-			if (DetInt.Intensity[i] != 0)
-				int ascasc = 0;
+			//if (DetInt.Intensity[i] != 0)
+			//	int ascasc = 0;
 
 			double t = DetInt.Intensity[i];
 
@@ -293,8 +293,8 @@ bool UnitTest::TestACandCQmapping(Settings & Options, std::string SettingsPath, 
 		std::set<double> ACVals0;
 		for (unsigned long i = 0; i < AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C; i++)
 		{
-			if (AC_uw.Mesh[i] != 0 || Mesh_CQ.CQMesh[i] != 0)
-				int qweert = 1;
+			//if (AC_uw.Mesh[i] != 0 || Mesh_CQ.CQMesh[i] != 0)
+			//	1+1;
 			double t_AC = AC_uw.Mesh[i];
 			double t_CQ = Mesh_CQ.CQMesh[i];
 			double t = t_AC / t_CQ;

@@ -99,7 +99,7 @@ namespace RunIAC
 		{
 			double* ACMesh = new double[AC.Shape.Size_AB*AC.Shape.Size_AB*AC.Shape.Size_C]();
 #pragma omp parallel for
-			for (int i = 0; i < AC.Shape.Size_AB*AC.Shape.Size_AB*AC.Shape.Size_C; i++)
+			for (unsigned int i = 0; i < AC.Shape.Size_AB*AC.Shape.Size_AB*AC.Shape.Size_C; i++)
 			{
 				ACMesh[i] = PrgSettings.IntToFloat(AC.Mesh[i]);
 			}
@@ -121,7 +121,7 @@ namespace RunIAC
 	{
 		double* ACMesh = new double[AC.Shape.Size_AB*AC.Shape.Size_AB*AC.Shape.Size_C]();
 #pragma omp parallel for
-		for (int i = 0; i < AC.Shape.Size_AB*AC.Shape.Size_AB*AC.Shape.Size_C; i++)
+		for (unsigned int i = 0; i < AC.Shape.Size_AB*AC.Shape.Size_AB*AC.Shape.Size_C; i++)
 		{
 			ACMesh[i] = PrgSettings.IntToFloat(AC.Mesh[i]);
 			//if (AC.Mesh[i] > 1)
@@ -292,7 +292,7 @@ namespace RunIAC
 		//check if fractional C(q) eval is required
 		if (EvalSettings.FractionalCq)
 		{
-			int Fractions_Num = StackSize / EvalSettings.SizeOfCqFraction;
+			// int Fractions_Num = StackSize / EvalSettings.SizeOfCqFraction;
 			
 			//To Implement
 			std::cerr << "Fractional C(q) is not implemented yet\n";
@@ -567,7 +567,7 @@ namespace RunIAC
 				{
 					double* ACMesh = new double[AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C]();
 					#pragma omp parallel for
-					for (int i = 0; i < AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C; i++)
+					for (unsigned int i = 0; i < AC_uw.Shape.Size_AB*AC_uw.Shape.Size_AB*AC_uw.Shape.Size_C; i++)
 					{
 						ACMesh[i] = PrgSettings.IntToFloat(AC_uw.Mesh[i]);
 					}
@@ -1100,14 +1100,8 @@ namespace RunIAC
 		std::cerr << "To Implement.\n";
 		throw;
 
-
 		double * PixelMap;
 		PixelMap = new double[SizeFS * SizeSS];
-
-
-		double OrientNormLength;
-
-
 
 		delete[] PixelMap;
 	}

@@ -572,7 +572,7 @@ void Detector::LoadPixelMask(std::string Path, std::string DataSet )
 	{
 		// No Pixelmask given => set every entry to one
 #pragma omp parallel for
-		for (int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
+		for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
 		{
 			PixelMask[i] = 1;
 		}
@@ -677,7 +677,6 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 					if (tmpIntensity[j] >= Threshold)
 					{
 						tmpIntensity[j] = DiscretizeToPhotones(tmpIntensity[j], Threshold, PhotonSamplingStep);
-						float yxc = tmpIntensity[j];
 						IntensityPhotonDiscr[j] += (long)floor(tmpIntensity[j]+0.5);
 					}
 					else
@@ -1437,7 +1436,7 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	//double * DoubleBigMesh = new double[SmallMesh.Shape.Size_AB * SmallMesh.Shape.Size_AB * ((SmallMesh.Shape.Size_AB + 1) / 2)];
 
 #pragma omp parallel for
-	for (int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB; i++)
+	for (unsigned int i = 0; i < BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB * BigMesh.Shape.Size_AB; i++)
 	{
 		BigMesh.CQMesh[i] = ((double)TempBigMesh[i] / Multiplicator);
 
@@ -1454,11 +1453,11 @@ void Detector::Merge_smallCofQ(ACMesh & BigMesh, ACMesh & SmallMesh, std::vector
 	{
 		double t = 0.0;
 		int SZ = SmallMesh.Shape.Size_AB;
-		for (int ss = 0; ss < SmallMesh.Shape.Size_C; ss++)
+		for (unsigned int ss = 0; ss < SmallMesh.Shape.Size_C; ss++)
 		{
-			for (int ms = 0; ms < SmallMesh.Shape.Size_AB; ms++)
+			for (unsigned int ms = 0; ms < SmallMesh.Shape.Size_AB; ms++)
 			{
-				for (int fs = 0; fs < SmallMesh.Shape.Size_AB; fs++)
+				for (unsigned int fs = 0; fs < SmallMesh.Shape.Size_AB; fs++)
 				{
 					int scan[3];
 					scan[SmallMesh.Shape.k_A] = fs;

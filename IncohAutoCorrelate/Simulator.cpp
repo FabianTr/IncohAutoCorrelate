@@ -1140,7 +1140,7 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 	Output.Intensities.insert(Output.Intensities.end(), OutputPart[1].Intensities.begin(), OutputPart[1].Intensities.end());
 	//Output.Intensities.insert(Output.Intensities.end(), OutputPart[2].Intensities.begin(), OutputPart[2].Intensities.end());
 
-	for (int i = 0; i < SimSettings.NumberOfSimulations; i++)
+	for (unsigned int i = 0; i < SimSettings.NumberOfSimulations; i++)
 	{
 		Output.HitEvents[i].Event = i;
 	}

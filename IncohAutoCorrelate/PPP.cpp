@@ -38,13 +38,13 @@ namespace PPP
 
 
 
-		for (int i_pan = 0; i_pan < DetectorPanels.size(); i_pan++)
+		for (unsigned int i_pan = 0; i_pan < DetectorPanels.size(); i_pan++)
 		{
 			int fs = DetectorPanels[i_pan].Scans[0];
 			int ss = DetectorPanels[i_pan].Scans[1];
 			int DetSize = fs * ss;
 			#pragma omp parallel for
-			for (int ind = DetectorPanels[i_pan].FirstInd; ind < (DetectorPanels[i_pan].FirstInd + DetSize); ind++)
+			for (unsigned int ind = DetectorPanels[i_pan].FirstInd; ind < (DetectorPanels[i_pan].FirstInd + DetSize); ind++)
 			{
 				//ind is the index of Intensity and i the index within the Panel!
 				int i = ind - DetectorPanels[i_pan].FirstInd; 

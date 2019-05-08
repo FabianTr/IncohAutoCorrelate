@@ -93,14 +93,9 @@ public:
 
 
 
-
-
-
-	void SafeHitEventListToFile(char* Filename);
 	void SafeHitEventListToFile(std::string Filename);
 	void SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList);
 	void SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList, bool AdditionalInformations, std::unordered_map<std::string, std::string> AdditioInfoMap = std::unordered_map<std::string, std::string>{});
-	void LoadHitEventListFromFile(char* Filename);
 	void LoadHitEventListFromFile(std::string Filename);
 
 	void InvertRotationMatrices();

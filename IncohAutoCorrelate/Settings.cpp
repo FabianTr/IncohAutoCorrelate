@@ -444,7 +444,8 @@ void Settings::OCL_FreeDevice(int DeviceIndex)
 	}
 }
 
-void Settings::SafeHitEventListToFile(char * Filename)
+
+void Settings::SafeHitEventListToFile(std::string Filename)
 {
 	//HitEventList is stored in xml format
 	using boost::property_tree::ptree;
@@ -473,11 +474,7 @@ void Settings::SafeHitEventListToFile(char * Filename)
 		pt.put(path + ".R7", HitEvents[i].RotMatrix[7]);
 		pt.put(path + ".R8", HitEvents[i].RotMatrix[8]);
 	}
-	boost::property_tree::write_xml(Filename,pt);
-}
-void Settings::SafeHitEventListToFile(std::string Filename)
-{
-	SafeHitEventListToFile(Filename, HitEvents);
+	boost::property_tree::write_xml(Filename, pt);
 }
 
 void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList)
@@ -547,7 +544,6 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 	boost::property_tree::write_xml(Filename, pt);
 }
 
-
 void Settings::InvertRotationMatrices()
 {
 
@@ -571,12 +567,6 @@ void Settings::InvertRotationMatrices()
 
 }
 
-void Settings::LoadHitEventListFromFile(char * Filename)
-{
-	std::string Path;
-	Path = Filename;
-	LoadHitEventListFromFile(Path);
-}
 
 void Settings::LoadHitEventListFromFile(std::string Filename)
 {
@@ -589,12 +579,6 @@ void Settings::LoadHitEventListFromFile(std::string Filename)
 	Size = pt.get<unsigned int>("root.Info.Size", -1);
 	Version = pt.get<unsigned int>("root.Info.Version", 1);
 
-	if (Size == -1)
-	{
-		std::cerr << "ERROR: Empty or not readable xml HitEvents File\n";
-		std::cerr << "    -> in  Settings::LoadHitEventListFromFile()\n";
-		throw;
-	}
 	if (Size == 0)
 		return;
 

@@ -188,7 +188,7 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 	profiler.Tic();
 
-	for (int i = 0; i < Options.HitEvents.size(); i++) // Options.HitEvents.size()
+	for (unsigned int i = 0; i < Options.HitEvents.size(); i++) // Options.HitEvents.size()
 	{
 		if (i % 50 == 0)
 			std::cout << i << "/" << Options.HitEvents.size() << std::endl;
@@ -218,17 +218,17 @@ void AutoCorrelateEvents(Settings &Options, Detector &Det)
 
 	double* ACMesh = new double[BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C]();
 #pragma omp parallel for
-	for (int i = 0; i < BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C; i++)
+	for (unsigned int i = 0; i < BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C; i++)
 	{
 		ACMesh[i] = Options.IntToFloat(BigMesh.Mesh[i]);
 	}
-
 
 
 	ArrayOperators::SafeArrayToFile("/gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503.bin", ACMesh, BigMesh.Shape.Size_AB*BigMesh.Shape.Size_AB*BigMesh.Shape.Size_C, ArrayOperators::FileType::Binary);
 	std::cout << "Saved as: /gpfs/cfel/cxi/scratch/user/trostfab/IACC_TESTSPACE/AC_UW_503.bin \n";
 
 }
+
 
 
 void CombineStuff(std::string Fr_AC_UW, std::string Fr_CQ, std::string Fw_AC, int size)
@@ -444,7 +444,7 @@ void QDSpeckleContr(Settings & Options)
 	for (unsigned int i = 0; i < SCS.SCC_Statistics.size(); i++)
 	{
 		myfile << SCS.SCC_Statistics[i].MeanPhotonDensity << "; ";
-		for (int j = 0; j < SCS.Nmax; j++)
+		for (unsigned int j = 0; j < SCS.Nmax; j++)
 		{
 			if (SCS.SCC_Statistics[i].Probability.size() > j)
 			{
@@ -454,7 +454,7 @@ void QDSpeckleContr(Settings & Options)
 			{
 				myfile << 0;
 			}
-			if (j < SCS.Nmax - 1)
+			if (j < ( SCS.Nmax - 1) )
 			{
 				myfile << ", ";
 			}
@@ -540,7 +540,7 @@ int main(int argc, char** argv)
 	
 	if (Arg1 == "h" || Arg1 == "help" || Arg1 == "-help" || Arg1 == "-h" || Arg1 == "?" || Arg1 == "-?")
 	{
-		if (argc = 2)
+		if (argc == 2)
 		{
 			std::cout << "This is a list of valid arguments. Use \"-h Arg\" to obtain more detailed information about \"Arg\". \n";
 
@@ -1998,7 +1998,7 @@ int main(int argc, char** argv)
 			Options.LoadHitEventListFromFile("/gpfs/cfel/cxi/scratch/user/trostfab/SM_RAWs/HitEventList_SM_Jungfr_PasanaCalib_Block3.xml");
 
 
-			int HistSize = 55;
+			unsigned int HistSize = 55;
 			std::vector<Statistics::Histogram> HistStack = Statistics::MakePixelHistogramStack(Options, RefDet, HistSize, -1.0, 21.0);
 
 			double * NormalizedStack = new double[HistSize * RefDet.DetectorSize[0] * RefDet.DetectorSize[1]]();

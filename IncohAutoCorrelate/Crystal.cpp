@@ -189,17 +189,17 @@ inline double Crystal::Drand()
 }
 
 
-void Crystal::Create_Lattice(double LatticeVector[3][3], int l, int m, int n)
+void Crystal::Create_Lattice(double LatticeVector[3][3], unsigned int l, unsigned int m, unsigned int n)
 {
 	Lattice.clear();
 	Lattice.resize(l*m*n);//adjust array size
 
 #pragma omp parallel for
-	for (int x = 0; x < l; x++)
+	for (unsigned int x = 0; x < l; x++)
 	{
-		for (int y = 0; y < m; y++)
+		for (unsigned int y = 0; y < m; y++)
 		{
-			for (int z = 0; z < n; z++)
+			for (unsigned int z = 0; z < n; z++)
 			{
 				Lattice[z + n * y + n * m*x][0] = (x - l / 2.0 + 0.5) * LatticeVector[0][0] + (y - m / 2.0 + 0.5) * LatticeVector[1][0] + (z - n / 2.0 + 0.5) * LatticeVector[2][0]; //Lattice centered around (0,0,0)'
 				Lattice[z + n * y + n * m*x][1] = (x - l / 2.0 + 0.5) * LatticeVector[0][1] + (y - m / 2.0 + 0.5) * LatticeVector[1][1] + (z - n / 2.0 + 0.5) * LatticeVector[2][1];
@@ -209,16 +209,16 @@ void Crystal::Create_Lattice(double LatticeVector[3][3], int l, int m, int n)
 	}
 }
 
-void Crystal::Create_Crystal(int l, int m, int n, std::vector<std::array<double, 3>> UnitCell)
+void Crystal::Create_Crystal(unsigned int l, unsigned int m, unsigned int n, std::vector<std::array<double, 3>> UnitCell)
 {
 	AtomPositions.clear();
 	AtomPositions.resize(l*m*n*UnitCell.size());
 
 	uint k = UnitCell.size();
 #pragma omp parallel for
-	for (int i = 0; i < l*m*n; i++)
+	for (unsigned int i = 0; i < l*m*n; i++)
 	{
-		for (int j = 0; j < k; j++)
+		for (unsigned int j = 0; j < k; j++)
 		{
 			AtomPositions[i*k + j][0] = Lattice[i][0] + UnitCell[j][0];
 			AtomPositions[i*k + j][1] = Lattice[i][1] + UnitCell[j][1];

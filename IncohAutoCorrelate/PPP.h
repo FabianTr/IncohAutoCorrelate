@@ -50,16 +50,6 @@ namespace PPP
 		std::vector<DarcCalSegment> DarcCals;
 		unsigned int DefaultIndex;
 
-		DarcCalSegment GetSegmentForh5DataContainer(std::string ContainerPath)
-		{
-			DarcCalSegment ret;
-			bool found = false;
-
-
-
-
-			return ret;
-		}
 	};
 
 	struct CreateDarkSettings {

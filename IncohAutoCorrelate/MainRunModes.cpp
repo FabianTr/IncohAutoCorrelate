@@ -15,7 +15,7 @@ std::vector<std::string> MainRunModes::CSV_Splitter(std::string Input, std::stri
 	std::vector<std::string> Output;
 	size_t pos = 0;
 	std::string token;
-	bool ParsingAlive = true;
+	//bool ParsingAlive = true;
 	while ((pos = Input.find(delimiter)) != std::string::npos)
 	{
 		token = Input.substr(0, pos);
@@ -37,7 +37,7 @@ RunIAC::CreateDataEval_Settings MainRunModes::LoadEvaluationSettings(std::string
 	ptree pt;
 	boost::property_tree::read_xml(Filename, pt);
 
-	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
+	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
 
 	//->Input Files
 	EVS.XML_Path = pt.get<std::string>("root.EvalSettings.InputFiles.EventList_Path", "");
@@ -96,7 +96,7 @@ Statistics::StatisticsSettings MainRunModes::LoadStatisticSettings(std::string F
 	ptree pt;
 	boost::property_tree::read_xml(Filename, pt);
 
-	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
+	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
 
 	
 	{
@@ -124,7 +124,7 @@ PPP::Create_LAPSettings MainRunModes::LoadPPPLAPSettings(std::string Filename, S
 	ptree pt;
 	boost::property_tree::read_xml(Filename, pt);
 
-	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
+	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
 
 	//LAP
 	{
@@ -168,7 +168,7 @@ PPP::CreateDarkSettings MainRunModes::LoadPPPDarkSettings(std::string Filename, 
 	ptree pt;
 	boost::property_tree::read_xml(Filename, pt);
 
-	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
+	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
 
 	//LAP
 	{
@@ -197,7 +197,7 @@ MainRunModes::AllSimSettings MainRunModes::LoadSimulationSettings(std::string Fi
 	ptree pt;
 	boost::property_tree::read_xml(Filename, pt);
 
-	unsigned int Version = pt.get<unsigned int>("root.Info.Version", Settings::INTERNAL_VERSION);
+	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Settings::INTERNAL_VERSION);
 
 
 	{

@@ -181,7 +181,7 @@ void AC1D::Calculate_CQ(Detector & Det, Settings & Options, Settings::Interpolat
 	delete[] CQ;
 	CQ = new double[Shape.Size]();
 
-	int j = 0;
+	unsigned int j = 0;
 	for (unsigned int i = 0; i < TempArraySize; i++)
 	{
 		if (j == Shape.Size)
@@ -297,8 +297,8 @@ void Calculate_AC_UW_Mapped(Settings & Options,Detector & RefDet, double * AC_M,
 			//std::cout << "GPU MODE\n";
 			double Multiplicator = 100; //1 is sufficient for photon discretised values (only integer possible, nearest neighbour), 100 should be good for linear interpol.
 
-			int MapAndReduce = 10000;
-			int VecSize = (int)ceilf(MaxQ / dqdx) - 1; //the -1 compensates for zeropadding
+			unsigned int MapAndReduce = 10000;
+			unsigned int VecSize = (int)ceilf(MaxQ / dqdx) - 1; //the -1 compensates for zeropadding
 
 
 			unsigned int TempArraySize = MapAndReduce * VecSize;
@@ -430,7 +430,7 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 	std::cout << Shape.Size << std::endl;
 
 	std::vector<double *> AC_Map;
-	for (int i = 0; i < Threads; i++)
+	for (unsigned int i = 0; i < Threads; i++)
 	{
 		AC_Map.push_back(new double[Shape.Size]());
 	}
@@ -438,12 +438,12 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 
 	//Run AutoCorrelations (Map)
 	std::vector<std::thread> AC_Threads;
-	for (int i = 0; i < Threads; i++)
+	for (unsigned int i = 0; i < Threads; i++)
 	{
 		AC_Threads.push_back(std::thread(Calculate_AC_UW_Mapped,std::ref(Options), std::ref(RefDet), std::ref(AC_Map[i]), WorkerBounds[i][0], WorkerBounds[i][1], IterpolMode, Photonisation, Shape.Max_Q, Shape.dq_per_Step));
 	}
 
-	for (int i = 0; i < Threads; i++)
+	for (unsigned int i = 0; i < Threads; i++)
 	{
 		AC_Threads[i].join();
 	}
@@ -456,13 +456,13 @@ void AC1D::Calculate_AC_UW_MR(Settings & Options, Detector & RefDet, Settings::I
 	AC_UW = new double[Shape.Size]();
 
 	//Reduce
-	for (int i = 0; i < Threads; i++)
+	for (unsigned int i = 0; i < Threads; i++)
 	{
 		ArrayOperators::ParAdd(AC_UW, AC_Map[i], Shape.Size);
 	}
 
 	//Free Memory
-	for (int i = 0; i < AC_Map.size(); i++)
+	for (std::size_t i = 0; i < AC_Map.size(); i++)
 	{
 		delete[] AC_Map[i];
 	}
@@ -473,7 +473,7 @@ void AC1D::CreateQVector()
 {
 	delete[] Q;
 	Q = new double[Shape.Size];
-	for (int i = 0; i < Shape.Size; i++)
+	for (unsigned int i = 0; i < Shape.Size; i++)
 	{
 		Q[i] = i * Shape.dq_per_Step;
 	}
@@ -484,7 +484,7 @@ void AC1D::CalcAC()
 	delete[] AC;
 	AC = new double[Shape.Size]();
 
-	for (int i = 0; i < Shape.Size; i++)
+	for (unsigned int i = 0; i < Shape.Size; i++)
 	{
 		AC[i] = AC_UW[i] / CQ[i];
 		if (std::isnan(AC[i]))

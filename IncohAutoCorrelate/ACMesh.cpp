@@ -170,10 +170,10 @@ void ACMesh::CreateSmallMesh_CofQ_ForDetector(Detector & Det, int PerpSize, floa
 	
 	if (q_Zoom == 1)
 	{
-		float t_1 = Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A];
-		float t_2 = t_1 * PerpSize + 2.5;
-		float t_3 = floor(t_2);
-		int t_4 = (int)t_3;
+		//float t_1 = Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A];
+		//float t_2 = t_1 * PerpSize + 2.5;
+		//float t_3 = floor(t_2);
+		//int t_4 = (int)t_3;
 
 		Shape.Size_C = (int)floor( (Det.Max_q[Shape.k_C] / Det.Max_q[Shape.k_A]) *PerpSize + 2.5); //+ 2 padding
 	}

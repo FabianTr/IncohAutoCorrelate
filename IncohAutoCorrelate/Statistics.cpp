@@ -48,7 +48,7 @@ namespace Statistics
 			if (Det.Checklist.PixelMask)
 				Det.ApplyPixelMask();
 
-			for (int j = 0; j < Det.DetectorSize[0]* Det.DetectorSize[1]; j++)
+			for (unsigned int j = 0; j < Det.DetectorSize[0]* Det.DetectorSize[1]; j++)
 			{
 				Hist.AddValue(Det.Intensity[j]);
 			}
@@ -92,7 +92,7 @@ namespace Statistics
 				Det.ApplyPixelMask();
 
 			//Do NOT parallelize this!!!
-			for (int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
+			for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
 			{
 				HistStack[j].AddValue(Det.Intensity[j]);
 			}
@@ -119,10 +119,9 @@ namespace Statistics
 
 	void CreateAndSaveAllPixelHistograms(Create_PixelHistogramSettings HistSettings, Detector & RefDet, Settings & Options)
 	{
-		//Main Work happens here:
-		std::vector<Statistics::Histogram> HistStack = Statistics::MakePixelHistogramStack(Options, RefDet, HistSettings.Bins, HistSettings.SmalestValue, HistSettings.LargestValue);
-		// \
-
+		
+		std::vector<Statistics::Histogram> HistStack = Statistics::MakePixelHistogramStack(Options, RefDet, HistSettings.Bins, HistSettings.SmalestValue, HistSettings.LargestValue); //Main Work happens here:
+		
 		double * FinalHistStack = new double[HistSettings.Bins * RefDet.DetectorSize[0] * RefDet.DetectorSize[1]]();
 	
 		for (unsigned int i = 0; i < RefDet.DetectorSize[0] * RefDet.DetectorSize[1]; i++)
