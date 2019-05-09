@@ -143,6 +143,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 		std::cerr << "     -> in Detector::GetSliceOutOfHDFCuboid()\n";
 		throw;
 	}
+	//auto TEST = dataset.getTypeClass();
 	//std::cout << "DataSize: " << dataset.getFloatType().getSize() << "\n";
 
 	H5::DataSpace DS = dataset.getSpace();
@@ -203,11 +204,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	dataset.close();
 	mspace.close();
 
-
-
 	//dataset.vlenReclaim(type.getId(), DS.getId(), mspace.getId(), data);
-
-
 
 	file.close();
 
@@ -578,6 +575,24 @@ void Detector::LoadPixelMask(std::string Path, std::string DataSet )
 		}
 	}
 
+	//Check Pixelmask
+	bool BadPixelMask = false;
+	#pragma omp parallel for 
+	for (unsigned int i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
+	{
+		if(PixelMask[i] != 0 && PixelMask[i] != 1 )
+		{
+			BadPixelMask = true;//race conditions are irrelevant here
+		}
+	}
+
+	if (BadPixelMask)
+	{
+		std::cerr << "\nWARNING:" << std::endl;
+		std::cerr << "PixelMask contains values different than 0 and 1." << std::endl;
+		std::cerr << "This could cause manifold malfunctions!\n" << std::endl;
+	}
+
 	Checklist.PixelMask = true;
 }
 
@@ -671,7 +686,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 			}
 			else// Photon discretising
 			{
-#pragma omp parallel for
+				#pragma omp parallel for
 				for (unsigned int j = 0; j < DetectorSize[1] * DetectorSize[0]; j++)
 				{
 					if (tmpIntensity[j] >= Threshold)

@@ -714,7 +714,7 @@ boost::property_tree::ptree MainRunModes::Example_PatternPreProcessing_Dark(boos
 //Run Evaluations
 
 //Get averaged Intensity
-int MainRunModes::AverageIntensity(std::string EvaluationConfigFile, Settings &Options, bool UpdateEventXML)
+int MainRunModes::AverageIntensity(std::string EvaluationConfigFile, Settings &Options, bool UpdateEventXML)// default:  bool UpdateEventXML
 {
 	//load Settings & check stuff
 	RunIAC::CreateDataEval_Settings EvalSettings = LoadEvaluationSettings(EvaluationConfigFile, Options);
@@ -748,7 +748,7 @@ int MainRunModes::AverageIntensity(std::string EvaluationConfigFile, Settings &O
 		//Obtain DetSize via PixelMap
 		Det.LoadPixelMap(EvalSettings.PixelMap_Path, EvalSettings.PixelMap_DataSet);
 	}
-	Det.LoadPixelMask(EvalSettings.PixelMask_Path); //load Pixelmask (generates default (1)-Mask if path == "")
+	Det.LoadPixelMask(EvalSettings.PixelMask_Path, EvalSettings.PixelMask_Dataset); //load Pixelmask (generates default (1)-Mask if path == "")
 	
 	//load Events
 	Options.LoadHitEventListFromFile(EvalSettings.XML_Path);

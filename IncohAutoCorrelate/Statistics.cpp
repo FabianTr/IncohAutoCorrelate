@@ -153,8 +153,6 @@ namespace Statistics
 	}
 
 
-
-
 	SpeckleContrastStatistics GetSpeckleContrastStatistics(Settings & Options, Detector & RefDet, unsigned int LowerBound, unsigned int UpperBound, float Offset, float Step)
 	{
 		SpeckleContrastStatistics SCS;
@@ -220,10 +218,7 @@ namespace Statistics
 		return SCS;
 	}
 
-
-
-
-
+	// ***************************
 	Histogram::Histogram(unsigned int size, double binSize, double firstBin)
 	{
 		Size = size;
