@@ -284,7 +284,7 @@ namespace PPP
 		dimsm[1] = Det.DetectorSize[1];
 
 		//Load Data (offset)
-		H5::DataSpace mspace_O(3, dimsm, NULL);
+		H5::DataSpace mspace_O(2, dimsm, NULL);
 		DS_O.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
 
 		H5::PredType type = H5::PredType::NATIVE_FLOAT;
@@ -322,7 +322,7 @@ namespace PPP
 		}
 
 		//Load Data (gain)
-		H5::DataSpace mspace_G(3, dimsm, NULL);
+		H5::DataSpace mspace_G(2, dimsm, NULL);
 		DS_G.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
 
 		dataset_G.read(GM_Gain, type, mspace_G, DS_G);

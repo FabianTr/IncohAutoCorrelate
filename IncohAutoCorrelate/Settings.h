@@ -32,7 +32,7 @@ private:
 public:
 	const static int XML_HITLIST_VERSION = 6; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
 	const static int INTERNAL_VERSION = 7; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
-	const static int INTERNAL_VERSION_Revision = 5; //rr
+	const static int INTERNAL_VERSION_Revision = 7; //rr
 
 	static std::string GetVersion()
 	{
@@ -94,8 +94,8 @@ public:
 
 
 	void SafeHitEventListToFile(std::string Filename);
-	void SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList);
-	void SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList, bool AdditionalInformations, std::unordered_map<std::string, std::string> AdditioInfoMap = std::unordered_map<std::string, std::string>{});
+
+	void SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList, bool AdditionalInformations = false, std::unordered_map<std::string, std::string> AdditioInfoMap = std::unordered_map<std::string, std::string>{});
 	void LoadHitEventListFromFile(std::string Filename);
 
 	void InvertRotationMatrices();
