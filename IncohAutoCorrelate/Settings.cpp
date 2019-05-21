@@ -331,6 +331,13 @@ void Settings::SetUp_OpenCL()
 	{
 		std::cerr << "ERROR: No NVIDIA GPUs found\n";
 		std::cerr << "    -> in Settings::SetUp_OpenCL()\n";
+
+		std::cout << "\n Found platforms are:\n";
+		for (int i = 0; i < (int)CL_platforms.size(); i++)
+		{
+			std::cout  << CL_platforms[i].getInfo<CL_PLATFORM_NAME>() << "'\n";
+		}
+		std::cout << std::endl;
 		throw;
 	}
 
@@ -448,39 +455,7 @@ void Settings::OCL_FreeDevice(int DeviceIndex)
 void Settings::SafeHitEventListToFile(std::string Filename)
 {
 	SafeHitEventListToFile(Filename, HitEvents);
-	
-	
-	////HitEventList is stored in xml format
-	//using boost::property_tree::ptree;
-	//ptree pt;
-
-	//pt.put("root.Info.Size", HitEvents.size());
-	//for (unsigned int i = 0; i < HitEvents.size(); i++)
-	//{
-	//	std::string path = "root.Content.";
-	//	path = path + std::to_string(i);
-
-	//	pt.put(path + ".Filename", HitEvents[i].Filename);
-	//	pt.put(path + ".Dataset", HitEvents[i].Dataset);
-	//	pt.put(path + ".Event", HitEvents[i].Event);
-	//	pt.put(path + ".SerialNumber", HitEvents[i].SerialNumber);
-	//	pt.put(path + ".MeanIntensity", HitEvents[i].MeanIntensity);
-	//	pt.put(path + ".PhotonCount", HitEvents[i].PhotonCount);
-
-	//	pt.put(path + ".R0", HitEvents[i].RotMatrix[0]);
-	//	pt.put(path + ".R1", HitEvents[i].RotMatrix[1]);
-	//	pt.put(path + ".R2", HitEvents[i].RotMatrix[2]);
-	//	pt.put(path + ".R3", HitEvents[i].RotMatrix[3]);
-	//	pt.put(path + ".R4", HitEvents[i].RotMatrix[4]);
-	//	pt.put(path + ".R5", HitEvents[i].RotMatrix[5]);
-	//	pt.put(path + ".R6", HitEvents[i].RotMatrix[6]);
-	//	pt.put(path + ".R7", HitEvents[i].RotMatrix[7]);
-	//	pt.put(path + ".R8", HitEvents[i].RotMatrix[8]);
-	//}
-	//boost::property_tree::write_xml(Filename, pt);
 }
-
-
 
 void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings::HitEvent> &HitEventList, bool AdditionalInformations, std::unordered_map<std::string, std::string> AdditioInfoMap)
 {

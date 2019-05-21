@@ -213,13 +213,10 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Value, Settings::Interpolation FirstInterpolationMode, Settings::Interpolation SecondInterpolationMode, bool DoubleBinning)
 {
 
-
-
 	if (sqrtf(q_local[0] * q_local[0] + q_local[1] * q_local[1] + q_local[2] * q_local[2]) > Shape.Max_Q)
 	{
 		return;
 	}
-
 
 	ArrayOperators::MultiplyScalar(q_local, (double)Shape.Voxel_per_dq, 3);
 
@@ -233,11 +230,12 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 			ms_l = (int)round(q_local[1]) + Shape.Center[1];
 			ss_l = (int)round(q_local[2]) + Shape.Center[2];
 
-			q_local[0] = (float)(fs_l - Shape.Center[0]);
-			q_local[1] = (float)(ms_l - Shape.Center[1]);
-			q_local[2] = (float)(ss_l - Shape.Center[2]);
+			q_local[0] = (float)(fs_l - (int)Shape.Center[0]);
+			q_local[1] = (float)(ms_l - (int)Shape.Center[1]);
+			q_local[2] = (float)(ss_l - (int)Shape.Center[2]);
 
 			ArrayOperators::Rotate(q_local, RotationM);
+
 			Atomic_Add_rotated_q_Entry(q_local, Value, SecondInterpolationMode);
 		}
 		if (FirstInterpolationMode == Settings::Interpolation::Linear)
@@ -252,58 +250,58 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 			ss_l = (int)floorf(q_local[2] ) + Shape.Center[2];
 
 			//fff
-			q_local[0] = (float)((fs_l + 0) - Shape.Center[0]);
-			q_local[1] = (float)((ms_l + 0) - Shape.Center[1]);
-			q_local[2] = (float)((ss_l + 0) - Shape.Center[2]);
+			q_local[0] = (float)((fs_l + 0) - (int)Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 0) - (int)Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 0) - (int)Shape.Center[2]);
 			ArrayOperators::Rotate(q_local, RotationM);
 			Atomic_Add_rotated_q_Entry(q_local, Value * (Sep_fs)*(Sep_ms)*(Sep_ss), SecondInterpolationMode);
 
 			//tff
-			q_local[0] = (float)((fs_l + 1) - Shape.Center[0]);
-			q_local[1] = (float)((ms_l + 0) - Shape.Center[1]);
-			q_local[2] = (float)((ss_l + 0) - Shape.Center[2]);
+			q_local[0] = (float)((fs_l + 1) - (int)Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 0) - (int)Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 0) - (int)Shape.Center[2]);
 			ArrayOperators::Rotate(q_local, RotationM);
 			Atomic_Add_rotated_q_Entry(q_local, Value * (1 - Sep_fs)*(Sep_ms)*(Sep_ss), SecondInterpolationMode);
 
 			//fft
-			q_local[0] = (float)((fs_l + 0) - Shape.Center[0]);
-			q_local[1] = (float)((ms_l + 0) - Shape.Center[1]);
-			q_local[2] = (float)((ss_l + 1) - Shape.Center[2]);
+			q_local[0] = (float)((fs_l + 0) - (int)Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 0) - (int)Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 1) - (int)Shape.Center[2]);
 			ArrayOperators::Rotate(q_local, RotationM);
 			Atomic_Add_rotated_q_Entry(q_local, Value * (Sep_fs)*(Sep_ms)*(1 - Sep_ss), SecondInterpolationMode);
 
 			//tft
-			q_local[0] = (float)((fs_l + 1) - Shape.Center[0]);
-			q_local[1] = (float)((ms_l + 0) - Shape.Center[1]);
-			q_local[2] = (float)((ss_l + 1) - Shape.Center[2]);
+			q_local[0] = (float)((fs_l + 1) - (int)Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 0) - (int)Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 1) - (int)Shape.Center[2]);
 			ArrayOperators::Rotate(q_local, RotationM);
 			Atomic_Add_rotated_q_Entry(q_local, Value * (1 - Sep_fs)*(Sep_ms)*(1 - Sep_ss), SecondInterpolationMode);
 
 			//ftf
-			q_local[0] = (float)((fs_l + 0) - Shape.Center[0]);
-			q_local[1] = (float)((ms_l + 1) - Shape.Center[1]);
-			q_local[2] = (float)((ss_l + 0) - Shape.Center[2]);
+			q_local[0] = (float)((fs_l + 0) - (int)Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 1) - (int)Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 0) - (int)Shape.Center[2]);
 			ArrayOperators::Rotate(q_local, RotationM);
 			Atomic_Add_rotated_q_Entry(q_local, Value * (Sep_fs)*(1 - Sep_ms)*(Sep_ss), SecondInterpolationMode);
 
 			//ttf
-			q_local[0] = (float)((fs_l + 1) - Shape.Center[0]);
-			q_local[1] = (float)((ms_l + 1) - Shape.Center[1]);
-			q_local[2] = (float)((ss_l + 0) - Shape.Center[2]);
+			q_local[0] = (float)((fs_l + 1) - (int)Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 1) - (int)Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 0) - (int)Shape.Center[2]);
 			ArrayOperators::Rotate(q_local, RotationM);
 			Atomic_Add_rotated_q_Entry(q_local, Value * (1 - Sep_fs)*(1 - Sep_ms)*(Sep_ss), SecondInterpolationMode);
 
 			//ftt
-			q_local[0] = (float)((fs_l + 0) - Shape.Center[0]);
-			q_local[1] = (float)((ms_l + 1) - Shape.Center[1]);
-			q_local[2] = (float)((ss_l + 1) - Shape.Center[2]);
+			q_local[0] = (float)((fs_l + 0) - (int)Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 1) - (int)Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 1) - (int)Shape.Center[2]);
 			ArrayOperators::Rotate(q_local, RotationM);
 			Atomic_Add_rotated_q_Entry(q_local, Value * (Sep_fs)*(1 - Sep_ms)*(1 - Sep_ss), SecondInterpolationMode);
 
 			//ttt
-			q_local[0] = (float)((fs_l + 1) - Shape.Center[0]);
-			q_local[1] = (float)((ms_l + 1) - Shape.Center[1]);
-			q_local[2] = (float)((ss_l + 1) - Shape.Center[2]);
+			q_local[0] = (float)((fs_l + 1) - (int)Shape.Center[0]);
+			q_local[1] = (float)((ms_l + 1) - (int)Shape.Center[1]);
+			q_local[2] = (float)((ss_l + 1) - (int)Shape.Center[2]);
 			ArrayOperators::Rotate(q_local, RotationM);
 			Atomic_Add_rotated_q_Entry(q_local, Value * (1 - Sep_fs)*(1 - Sep_ms)*(1 - Sep_ss), SecondInterpolationMode);
 		}
@@ -320,6 +318,7 @@ void ACMesh::Atomic_Add_q_Entry(float q_local[3], float RotationM[9], float Valu
 
 void ACMesh::Atomic_Add_rotated_q_Entry(float q_local[3], float Value, Settings::Interpolation SecondInterpolationMode)
 {
+
 	if (SecondInterpolationMode == 0) //neares neighbour
 	{
 		int fs, ms, ss;
