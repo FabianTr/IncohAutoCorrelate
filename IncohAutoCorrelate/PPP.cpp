@@ -381,8 +381,8 @@ namespace PPP
 
 		//load Dark Field
 		float * Dark = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
-		ArrayOperators::MultiplyScalar(Dark, -1.0f, Det.DetectorSize[0] * Det.DetectorSize[1]); //invert Darkfield
-
+		
+		//std::cout << Det.DetectorSize[0] << " x " << Det.DetectorSize[0] << std::endl;
 		//H5 Darkfiled loading stuff
 		{
 			H5::H5File file(DarkSettings.Dark_Path, H5F_ACC_RDONLY);
@@ -433,7 +433,7 @@ namespace PPP
 			dimsm[1] = Det.DetectorSize[1];
 
 			//Load Data Darkfield
-			H5::DataSpace mspace(3, dimsm, NULL);
+			H5::DataSpace mspace(2, dimsm, NULL);
 			DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
 
 			H5::PredType type = H5::PredType::NATIVE_FLOAT;
@@ -444,6 +444,8 @@ namespace PPP
 			mspace.close();
 		}
 
+
+		ArrayOperators::MultiplyScalar(Dark, -1.0f, Det.DetectorSize[0] * Det.DetectorSize[1]); //invert Darkfield
 
 	//Correct DarkField ...
 		Options.Echo("Apply dark field correction ...");
@@ -475,7 +477,18 @@ namespace PPP
 		dims[2] = Det.DetectorSize[1];
 		H5::DataSpace dataspace(3, dims);
 
-		H5::DataSet dataset = file.createDataSet(DarkSettings.Output_Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
+		H5::DataSet dataset;
+		try
+		{
+			H5::Exception::dontPrint();
+			dataset = file.createDataSet(DarkSettings.Output_Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
+		}
+		catch (H5::FileIException e)
+		{
+			std::cerr << "HDF5 is retarded and does not allow '/' in dataset names sometimes. changed dataset to 'data' and continue ..." << std::endl;
+			DarkSettings.Output_Dataset = "data";
+			dataset = file.createDataSet(DarkSettings.Output_Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
+		}
 
 		hsize_t start[3] = { 0, 0, 0 };  // Start of hyperslab, offset
 		hsize_t stride[3] = { 1, 1, 1 }; // Stride of hyperslab
