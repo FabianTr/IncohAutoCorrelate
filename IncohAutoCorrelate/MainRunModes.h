@@ -91,6 +91,7 @@ namespace MainRunModes
 	//->Statistics
 	int CreateAllPixelHistograms(std::string ConfigFile, Settings &Options);
 	int GenerateSpeckleContrastStatistics(std::string ConfigFile, Settings &Options);
+	int IsolatedPhotonChargeSharingFit(std::string ConfigFile, Settings &Options); //fits the charge sharing radius for isolated photon hits
 
 
 	//EVALUATE - AUTOCORRELATION mode

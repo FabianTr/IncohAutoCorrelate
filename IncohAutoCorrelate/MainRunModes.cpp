@@ -110,7 +110,16 @@ Statistics::StatisticsSettings MainRunModes::LoadStatisticSettings(std::string F
 		StatSet.PixelHistogramSettings.Normalized = pt.get<bool>("root.StatisticsSettings.PixelHistograms.Normalize", true);
 
 		//Speckle Contrast
-		StatSet.SpeckleContrastSettings.CSVOutputPath = pt.get<std::string>("root.StatisticsSettings.SpeckleContrastStatistics.CSVOutputPath", "");
+		StatSet.SpeckleContrastSettings.CSVOutputPath = pt.get<std::string>("root.StatisticsSettings.SpeckleContrastStatistics.CSVOutputPath", "SpeckleContrast.csv");
+	
+		//IsolatedPhotonChargeSharing
+		StatSet.ChargeSharingSettings.Seed = pt.get<double>("root.StatisticsSettings.IsoPhotonChargeSharingFit.ADUSeed", 0.5);//ADU seed for one photon hit
+		StatSet.ChargeSharingSettings.MaxADU = pt.get<double>("root.StatisticsSettings.IsoPhotonChargeSharingFit.MaxADUSum", 1.5);//maximum ADU sum to prevent two photon hits
+
+		StatSet.ChargeSharingSettings.IsolationRadius = pt.get<unsigned int>("root.StatisticsSettings.IsoPhotonChargeSharingFit.IsolationRadius", 2);//min distance to next hit
+		StatSet.ChargeSharingSettings.PixelMaskRadius = pt.get<unsigned int>("root.StatisticsSettings.IsoPhotonChargeSharingFit.MaskRadius", 1);//min distance to masked pixel and panel edge
+
+		StatSet.ChargeSharingSettings.OutputBinaryPath = pt.get<std::string>("root.StatisticsSettings.IsoPhotonChargeSharingFit.BinOutputPath", "ChareSharingFit.bin");
 	}
 
 	return StatSet;
@@ -272,6 +281,14 @@ MainRunModes::AllSettings MainRunModes::LoadSettings(std::string Filename, Setti
 	SettingsStack.PPPLAPSettings = MainRunModes::LoadPPPLAPSettings(Filename, Options); //PPP.LAP
 	SettingsStack.AllSimulationSettings = MainRunModes::LoadSimulationSettings(Filename, Options); //Simulation stuff
 	SettingsStack.PPPDarkSettings = MainRunModes::LoadPPPDarkSettings(Filename, Options); //PPP.Dark
+
+	//combine redundant settings
+	{
+		SettingsStack.StatisticsSettings.ChargeSharingSettings.DetectorPanels = SettingsStack.PPPLAPSettings.DetectorPanels;
+		SettingsStack.StatisticsSettings.ChargeSharingSettings.RestrictToBoundaries = SettingsStack.EvaluationSettings.RestrictStackToBoundaries;
+		SettingsStack.StatisticsSettings.ChargeSharingSettings.LowerLimit = SettingsStack.EvaluationSettings.LowerBoundary;
+		SettingsStack.StatisticsSettings.ChargeSharingSettings.UpperLimit = SettingsStack.EvaluationSettings.UpperBoundary;
+	}
 
 	return SettingsStack;
 }
@@ -441,6 +458,7 @@ boost::property_tree::ptree MainRunModes::Example_Statistics_Config_PT(boost::pr
 	//Example Statistic Settings
 	Statistics::Create_PixelHistogramSettings EPHS;
 	Statistics::Create_SpeckleContrastSettings SCSS;
+	Statistics::Create_ChargeSharingSettings CSS;
 
 	{
 		//Pixel Histogram
@@ -452,6 +470,13 @@ boost::property_tree::ptree MainRunModes::Example_Statistics_Config_PT(boost::pr
 		EPHS.Normalized = true;
 		//Speckle Contrast
 		SCSS.CSVOutputPath = "SpecleContrastStatistics.csv";
+
+		//charge sharing (isolated photon hit)
+		CSS.Seed = 0.5;
+		CSS.MaxADU = 1.5;
+		CSS.IsolationRadius = 2;
+		CSS.PixelMaskRadius = 1;
+		CSS.OutputBinaryPath = "ChareSharingFit.bin";
 	}
 	//Store Statistic Settings in PT
 	{
@@ -461,8 +486,21 @@ boost::property_tree::ptree MainRunModes::Example_Statistics_Config_PT(boost::pr
 		pt.put("root.StatisticsSettings.PixelHistograms.SmallestValue", EPHS.SmalestValue);
 		pt.put("root.StatisticsSettings.PixelHistograms.LargestValue", EPHS.LargestValue);
 		pt.put("root.StatisticsSettings.PixelHistograms.Normalize", EPHS.Normalized);
+
 		//Speckle Contrast
 		pt.put("root.StatisticsSettings.SpeckleContrastStatistics.CSVOutputPath", SCSS.CSVOutputPath);
+
+		//Charge sharing (isolated photon hit)
+		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.InfoText", "For isolated photon charge sharing radius fit. Also requires Panel settings from Evaluation (XML, PixelMap, PixelMask, Boundaries) and PatternPreProcessing.LargestAdjugatPixel.");
+
+		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.ADUSeed", CSS.Seed);
+		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.MaxADUSum", CSS.MaxADU);
+
+		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.IsolationRadius", CSS.IsolationRadius);
+		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.MaskRadius", CSS.PixelMaskRadius);
+
+		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.BinOutputPath", CSS.OutputBinaryPath);
+
 	}
 	return pt;
 }
@@ -765,7 +803,7 @@ int MainRunModes::AverageIntensity(std::string EvaluationConfigFile, Settings &O
 	RunIAC::Load_and_average_Intensities(Options, Det, EvalSettings.PhotonOffset, EvalSettings.PhotonStep, EvalSettings.XML_Path, EvalSettings.Out_AvIntensity_Path, UpdateEventXML);
 	return 0;
 }
-
+//Calibrations
 int MainRunModes::GainCorrectionAndLAP(std::string Arg1, Settings & Options)
 {
 	AllSettings AS = LoadSettings(Arg1, Options);
@@ -816,6 +854,7 @@ int MainRunModes::DarkCalibration(std::string Arg1, Settings & Options)
 }
 
 
+//Statistics (obtain information in order to correct data and more ...)
 int MainRunModes::CreateAllPixelHistograms(std::string ConfigFile, Settings & Options)
 {
 	RunIAC::CreateDataEval_Settings EVS = LoadEvaluationSettings(ConfigFile, Options);
@@ -896,6 +935,22 @@ int MainRunModes::GenerateSpeckleContrastStatistics(std::string ConfigFile, Sett
 	File.close();
 	if (Options.echo)
 		std::cout << "Speckle statistics saved as \"" << AllSet.StatisticsSettings.SpeckleContrastSettings.CSVOutputPath << "\"" << std::endl;
+
+	return 0;
+}
+
+int MainRunModes::IsolatedPhotonChargeSharingFit(std::string ConfigFile, Settings & Options)
+{
+	//Requires Settings:
+	//	EvalSettings/InputFiles
+	//	EvalSettings/Misc (Boundaries)
+	//	PatternPreProcessing/LargestAdjacentPixel/DetPanels
+
+	//load settings
+	MainRunModes::AllSettings AllSet = LoadSettings(ConfigFile, Options);
+
+
+
 
 	return 0;
 }

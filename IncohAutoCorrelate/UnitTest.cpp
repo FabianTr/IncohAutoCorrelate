@@ -2,12 +2,17 @@
 #include <iostream>
 #include <unordered_set>
 #include <set>
+#include <vector>
+#include <math.h>
+#include <Eigen/Core>
 
 #include "ArrayOperators.h"
 #include "MainRunModes.h"
 #include "Detector.h"
 #include "RunIAC.h"
+#include "Statistics.h"
 
+#define PI 3.14159265
 
 UnitTest::UnitTest() :mt(std::random_device{}())
 {
@@ -338,3 +343,218 @@ bool UnitTest::TestACandCQmapping(Settings & Options, std::string SettingsPath, 
 	std::cout << "\n\ndone." << std::endl;
 	return false;
 }
+
+bool UnitTest::TestFitting(Settings & Options)
+{
+	std::cout << "Test Fit functions" << std::endl;
+
+	class Gauss3x3FitTarget
+	{
+	public:
+		bool UseConstraints = false;
+		double MaxAbsXY = 0.5;
+		double MaxSigma = 0.25;
+
+		double operator()(const std::pair<int, int> XY, const std::vector<double> Parameter, std::vector<double> &ParGrad) const
+		{
+			//Parameter(3): [x0, y0, sigma]
+			const double x0 = Parameter[0];
+			const double y0 = Parameter[1];
+			const double s = Parameter[2];
+
+			//check sigma = 0:
+			if (s == 0)
+			{
+				ParGrad[0] = 0.0;
+				ParGrad[1] = 0.0;
+				ParGrad[2] = 0.0;
+				return 0.0;
+			}
+
+			// XY Integration limits
+			const double Xbot = (double)XY.first - 1.5;
+			const double Xtop = (double)XY.first - 0.5;
+			const double Ybot = (double)XY.second - 1.5;
+			const double Ytop = (double)XY.second - 0.5;
+
+			//construction kit
+			const double ErfX = std::erf((Xbot - x0) / (std::sqrt(2)*s)) - std::erf((Xtop - x0) / (std::sqrt(2)*s));
+			const double ErfY = std::erf((Ybot - y0) / (std::sqrt(2)*s)) - std::erf((Ytop - y0) / (std::sqrt(2)*s));
+
+			const double LogExpXb = -std::pow((x0 - Xbot), 2) / (2.0 * s*s);
+			const double ExpXb = LogExpXb<-700?0:std::exp(LogExpXb);
+
+			const double LogExpXt = -std::pow((x0 - Xtop), 2) / (2.0 * s*s);
+			const double ExpXt = LogExpXt < -700 ? 0 : std::exp(LogExpXt);
+
+			const double LogExpYb = -std::pow((y0 - Ybot), 2) / (2.0 * s*s);
+			double ExpYb = LogExpYb < -700 ? 0 : std::exp(LogExpYb);
+
+			const double LogExpYt = -std::pow((y0 - Ytop), 2) / (2.0 * s*s);
+			double ExpYt = LogExpYt < -700 ? 0 : std::exp(LogExpYt);
+
+
+			//function value
+			const double ret = (1.0 / 4.0) * (ErfX * ErfY);
+
+
+			// d/dx0
+			ParGrad[0] = (1.0 / (2.0 * s * std::sqrt(2.0 * M_PI))) * (ExpXt - ExpXb)*ErfY;
+			// d/dy0
+			ParGrad[1] = (1.0 / (2.0 * s * std::sqrt(2.0 * M_PI))) * (ExpYt - ExpYb)*ErfX;
+			// d/ds
+			ParGrad[2] = (1.0 / (2.0 * s * s * std::sqrt(2.0 * M_PI))) *   (
+				(ExpYb * (y0 - Ybot) + ExpYt * (Ytop - y0)) * ErfX +
+				(ExpXb * (x0 - Xbot) + ExpXt * (Xtop - x0)) * ErfY);
+
+			//if (isnan(ret) || isnan(ParGrad[0]) || isnan(ParGrad[1]) || isnan(ParGrad[2]))
+			//{
+			//	std::cout << "x0 = " << x0 << ";\t y0 = " << y0 << "\t s = " << s << std::endl;
+
+			//	int wait;
+			//	std::cin >> wait;
+			//}
+			return ret;
+		}
+	};
+
+	class Gauss3x3FitTarget f;
+
+	std::vector<double> ChiSquareX0;
+	std::vector<double> ChiSquareY0;
+	std::vector<double> ChiSquareS;
+	std::vector<double> RetSigma;
+
+
+	double Noise = 0.1;
+	for (size_t idx = 0; idx < 1000; idx++)
+	{
+		double x0 = Drand() - 0.5;
+		double y0 = Drand() - 0.5;
+		double sigma0 = Drand()*0.25 + 0.000001;
+
+		//x0 = - 0.426578;
+		//y0 = - 0.40581;
+		sigma0 = 0.25;
+
+		std::vector<std::pair<std::pair<int, int>, double>> data(9);
+		std::vector<double> ParGrad(3);
+		int j = 0;
+		for (int X = 0; X < 3; X++)
+		{
+			for (int Y = 0; Y < 3; Y++)
+			{
+				data[j] = { {X,Y}, f({X,Y},{x0,y0, sigma0}, ParGrad) * (1 + Noise * (Drand()-0.5) )};
+				j++;
+			}
+		}
+
+		std::vector<double> StartParams(3);
+		StartParams[0] = 0;
+		StartParams[1] = 0;
+		StartParams[2] = 0.2;
+
+
+		std::vector<double> FittedParams(3);	
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Cov;
+		FittedParams = Statistics::detail::GaussNewton(f, data, StartParams,Cov);
+
+		//std::cout << "Cov:\n" << Cov << std::endl;
+
+		ChiSquareX0.push_back(std::pow(FittedParams[0] - x0, 2));
+		ChiSquareY0.push_back(std::pow(FittedParams[1] - y0, 2));
+		ChiSquareS.push_back(std::pow(FittedParams[2] - sigma0, 2));
+
+		RetSigma.push_back(FittedParams[2]);
+
+		//std::cout << "===============\n";
+		//std::cout << "x0   : " << x0 << " -> " << FittedParams[0] << std::endl;
+		//std::cout << "y0   : " << y0 << " -> " << FittedParams[1] << std::endl;
+		//std::cout << "sigma: " << sigma0 << " -> " << FittedParams[2] << std::endl;
+		//std::cout << "===============\n";
+	}
+
+	double StAbw_X0 = 0;
+	double StAbw_Y0 = 0;
+	double StAbw_S = 0;
+
+	double meanRetSigma = 0;
+
+	for (size_t i = 0; i < ChiSquareX0.size(); i++)
+	{
+		StAbw_X0 += ChiSquareX0[i] / ChiSquareX0.size();
+		StAbw_Y0 += ChiSquareY0[i] / ChiSquareY0.size();
+		StAbw_S += ChiSquareS[i] / ChiSquareS.size();
+		meanRetSigma += RetSigma[i] / ChiSquareS.size();
+	}
+
+	double StAbwSigma = 0.0;
+	for (size_t i = 0; i < ChiSquareX0.size(); i++)
+	{
+		StAbwSigma += std::pow(RetSigma[i]- meanRetSigma,2) / ChiSquareS.size();
+	}
+	StAbwSigma = std::sqrt(StAbwSigma);
+
+	std::cout << "**********************\n";
+	std::cout << std::sqrt(StAbw_X0) << "  \t" << std::sqrt(StAbw_Y0) << "  \t" << std::sqrt(StAbw_S) << std::endl;
+	std::wcout << "\nMeanSigma = " << meanRetSigma << " +/- " << StAbwSigma << std::endl;
+
+
+
+
+	//
+	return true;
+
+
+	//class GaussFitTestTarget
+	//{
+	//public:
+	//	double operator()(const double x, const std::vector<double> &Parameter, std::vector<double> &ParGrad) const
+	//	{
+	//		//par: x0, sigma
+	//		double ret = 0;
+
+	//		ret = (1.0 / std::sqrt(2 * PI*std::pow(Parameter[1], 2)))*std::exp(-((std::pow((x-Parameter[0]),2))/(2* std::pow(Parameter[1], 2))));
+
+	//		ParGrad[0] = ((x-Parameter[0]) / (std::sqrt(2 * PI)*std::pow(Parameter[1], 3))) *std::exp(-((std::pow((x - Parameter[0]), 2)) / (2 * std::pow(Parameter[1], 2))));
+	//		ParGrad[1] = ((std::pow((x - Parameter[0]),2) - std::pow(Parameter[1],2)) / (std::sqrt(2 * PI) * std::pow(Parameter[1], 4)) ) 
+	//			* std::exp(-((std::pow((x - Parameter[0]), 2)) / (2 * std::pow(Parameter[1], 2))));
+
+	//		return ret;
+	//	}
+	//};
+	//GaussFitTestTarget f;
+
+	//
+	//std::vector<std::pair<double, double>> data(100);
+	//std::vector<double> ParGrad(2);
+	//for (int i = 0; i < 100; i++)
+	//{
+	//	double x = -2 + i * 0.05;
+
+
+
+	//	data[i] = { x, f(x,{0.75,0.5}, ParGrad)+1*Drand() };
+	//	
+	//	std::cout << "Data: " << data[i].second << " ";
+	//}
+	//std::cout << std::endl;
+
+	//
+
+	////TODO TEST FIT (Gauss Newton)
+	//std::vector<double> StartParams(2);
+	//StartParams[0] = 0;
+	//StartParams[1] = 1;
+	//std::vector<double> FittedParams(2);
+	//FittedParams = Statistics::detail::GaussNewton<GaussFitTestTarget, double, double>(f, data, StartParams);
+
+	//std::cout << "\nFitted Params: " << FittedParams[0] << "; " << FittedParams[1] << std::endl;
+
+
+
+	//return false;
+
+}
+
+

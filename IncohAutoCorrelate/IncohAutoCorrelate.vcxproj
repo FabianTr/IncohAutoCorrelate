@@ -63,6 +63,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\Linux Include\eigen3;C:\Linux Include;$(IncludePath)</IncludePath>
     <AdditionalSourcesToCopyMapping>kernel.cl;$(AdditionalSourcesToCopyMapping)</AdditionalSourcesToCopyMapping>
+    <RemoteCppCompileToolExe>source /opt/rh/devtoolset-8/enable; g++</RemoteCppCompileToolExe>
+    <RemoteLdToolExe>source /opt/rh/devtoolset-8/enable; g++</RemoteLdToolExe>
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="AC1D.cpp" />
@@ -115,6 +117,9 @@
       <CAdditionalWarning />
       <CppAdditionalWarning />
       <Optimization>Custom</Optimization>
+      <CLanguageStandard>Default</CLanguageStandard>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+      <WarningLevel />
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/opt/opencl/intel/lib64;/usr/lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -127,6 +132,17 @@
     <RemotePostBuildEvent>
       <Command>cp $(RemoteProjectDir)/IncohAutoCorrelate/kernel.cl $(RemoteOutDir)/kernel.cl</Command>
     </RemotePostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <RemotePreBuildEvent>
+      <Command>g++ --version &gt; version</Command>
+    </RemotePreBuildEvent>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

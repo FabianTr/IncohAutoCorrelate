@@ -335,12 +335,33 @@ namespace ArrayOperators
 	//Functions for File and storage Stuff
 	enum FileType{Binary=1, HDF5=2};
 
-	void SafeArrayToFile(std::string Filename, double* Array, unsigned int Size, FileType Type);
-	void SafeArrayToFile(std::string Filename, float* Array, unsigned int Size, FileType Type);
-	void SafeArrayToFile(std::string Filename, unsigned int* Array, unsigned int Size, FileType Type);
-	void SafeArrayToFile(std::string Filename, unsigned long * Array, unsigned int Size, FileType Type);
-
-
+	template<typename T>
+	void SafeArrayToFile(std::string Filename, T * Array, size_t Size, FileType Type = std::ofstream::binary)
+	{
+		switch (Type)
+		{
+		case Binary:
+		{
+			std::ofstream FILE(Filename, std::ios::out | std::ofstream::binary);
+			FILE.write(reinterpret_cast<char*>(Array), Size * sizeof(T));
+			FILE.flush();
+			FILE.close();
+			if (!FILE) {
+				std::cerr << "ERROR: can't write to file: \"" << Filename << "\"\n";
+				std::cerr << "    -> in ArrayOperators::SafeArrayToFile()\n";
+				throw;
+			}
+		}
+		break;
+		case HDF5:
+		{
+			std::cerr << "ERROR: HDF5 storage is not implemented\n";
+			std::cerr << "    -> in ArrayOperators::SafeArrayToFile()\n";
+			throw;
+		}
+		break;
+		}
+	}
 
 
 	template<typename T>

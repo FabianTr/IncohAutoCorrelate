@@ -467,50 +467,8 @@ void QDSpeckleContr(Settings & Options)
 
 void QDTests(Settings & Options)
 {
-
-	std::cout << "Running Cluster Stuff\n\n";
-
-	Options.SetUp_OpenCL();
-
-	MainRunModes::AllSettings InputSettings = MainRunModes::LoadSettings("/home/trostfab/scratch/LU56/ClusterTest/Settings_Clusters.xml",Options);
-
-	std::string OutPath = "/home/trostfab/scratch/LU56/ClusterTest/Clusters.csv";
-
-	std::vector<std::vector<unsigned int>> Clusters;
-	std::vector<std::string> ClHeader;
-
-	//Ghost Cluster
-	std::vector<unsigned int> GhostCluster;
-	GhostCluster.push_back(276 + 211 * 553 + 275 * 553 * 553);
-	GhostCluster.push_back(276 + 210 * 553 + 275 * 553 * 553);
-	GhostCluster.push_back(276 + 209 * 553 + 275 * 553 * 553);
-	GhostCluster.push_back(276 + 208 * 553 + 275 * 553 * 553);
-	GhostCluster.push_back(277 + 208 * 553 + 275 * 553 * 553);
-	GhostCluster.push_back(277 + 209 * 553 + 275 * 553 * 553);
-
-	Clusters.push_back(GhostCluster);
-	ClHeader.push_back("Ghost");
-
-
-	//Cental Peak (CP)
-	Clusters.push_back({ 276 + 276 * 553 + 276 * 553 * 553 });
-	ClHeader.push_back("CP (276,276,276)");
-	//Clusters around CP
-	for (unsigned int ms = 273; ms <= 276; ms++)
-	{
-		for (unsigned int ss = 273; ss <= 279; ss++)
-		{
-			if (ms == ss && ss == 276) //exclude CP here
-				continue;
-
-			Clusters.push_back({ 276 + ms * 553 + ss * 553 * 553 });
-			ClHeader.push_back("(276," + std::to_string(ms) + "," + std::to_string(ss)+ ")");
-		}
-	}
-
-	ExoticAnalysis::CompareClustersInAC_PatternByPattern(Options, InputSettings.EvaluationSettings, Clusters, OutPath, ClHeader, true);
-
-	
+	UnitTest UT;
+	UT.TestFitting(Options);	
 }
 
 void runUnitTest(Settings & Options)

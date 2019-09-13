@@ -5,6 +5,7 @@
 #include "Crystal.h"
 #include "Settings.h"
 
+
 class UnitTest
 {
 private:
@@ -24,5 +25,8 @@ public:
 
 
 	bool TestACandCQmapping(Settings & Options, std::string SettingsPath, int EventNum, bool Rotation = true);
+
+
+	bool TestFitting(Settings & Options);
 };
 

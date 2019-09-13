@@ -927,7 +927,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 		//PostProcess 
 
 		//Rescale for expected number of photons
-		double ExpNumOfPhotones = ((double)SimSettings.AveragePhotonesPerEmitterOnDetector * (double)SimSettings.CrystSettings.FlYield * (double)EmitterCrystal.AtomPositions.size());
+		double ExpNumOfPhotones = ((double)SimSettings.AveragePhotonesPerEmitterOnDetector * (double)SimSettings.CrystSettings.FlYield * (double)EmitterCrystal.AtomPositions.size()); //why not NumEM? because this can change for multiple modes!
 		double IntegratedIntensity = 0.0;
 		for (unsigned int l = 0; l < Det.DetectorSize[0] * Det.DetectorSize[1]; l++)
 		{ //Reminder: don't even think about to parallelize this!

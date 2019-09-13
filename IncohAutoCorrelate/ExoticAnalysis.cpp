@@ -245,3 +245,5 @@ void ExoticAnalysis::CompareClustersInAC_PatternByPattern(Settings & PrgSettings
 	std::cout << "Saved results in \"" << OutputFilePath << "\"\n";
 	std::cout << "Done in " << ACProfiler1.Toc(false) / 3600.0 << "h." << std::endl;
 }
+
+

@@ -21,6 +21,7 @@ public:
 	Simulator();
 	~Simulator();
 
+	
 
 	struct SimulationSettings
 	{

@@ -180,7 +180,7 @@ namespace PPP
 			Det.ApplyPixelMask();//Apply Pxelmask
 			if (LAPSettings.GainMapPath != "") //Check if gain correction is intendet
 			{
-				GainCorrection(Det, LAPSettings.GainMapPath, LAPSettings.DatasetOffset, LAPSettings.DatasetGain, OptionsIn); //Perform Gain Correction
+				GainCorrection(Det, LAPSettings.GainMapPath, LAPSettings.DatasetOffset, LAPSettings.DatasetGain, OptionsIn, GainOnly); //Perform Gain Correction
 			}
 			//Run LAP
 			if (!GainOnly)
@@ -229,7 +229,7 @@ namespace PPP
 		std::cout << "New XML-EventList saved as \"" << XML_Out << "\"" << std::endl;
 	}
 
-	void GainCorrection(Detector & Det, std::string GainCorr_Path, std::string Dataset_Offset, std::string Dataset_Gain, Settings & Options)
+	void GainCorrection(Detector & Det, std::string GainCorr_Path, std::string Dataset_Offset, std::string Dataset_Gain, Settings & Options, bool AllowNegativeValues)
 	{
 		float * GM_Offset = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
 		float * GM_Gain = new float[Det.DetectorSize[0] * Det.DetectorSize[1]]();
@@ -347,11 +347,11 @@ namespace PPP
 		#pragma omp parallel for
 		for (unsigned int i = 0; i < Det.DetectorSize[0] * Det.DetectorSize[1]; i++)
 		{
-			if (Det.Intensity[i] >= 0 && GM_Gain[i] > 0 && Det.PixelMask[i] == 1)
+			if (((Det.Intensity[i] >= 0)||(AllowNegativeValues)) && GM_Gain[i] > 0 && Det.PixelMask[i] == 1)
 			{
 				Det.Intensity[i] = Det.Intensity[i] / GM_Gain[i];
 				if (Det.Intensity[i] > 100)
-					std::cout <<"Warning: over 100 Photones at "<< i<<" : " << Det.Intensity[i] << " (Gain: " << GM_Gain[i] << " ) " << "\n";
+					std::cout <<"Warning: over 100 Photones at " << i << " : " << Det.Intensity[i] << " (Gain: " << GM_Gain[i] << " ) " << "\n";
 			}
 			else
 			{
