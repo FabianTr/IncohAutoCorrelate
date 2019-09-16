@@ -795,6 +795,20 @@ int main(int argc, char** argv)
 		return MainRunModes::GenerateSpeckleContrastStatistics(Arg2, Options);
 	}
 	}
+	else if (Arg1 == "chargesharingfit" || Arg1 == "-chargesharingfit" || Arg1 == "csf" || Arg1 == "-csf")
+	{
+	std::cout << "Run ICA to fit charge sharing radius of isolated photons" << std::endl;
+	if (argc < 3)
+	{
+		std::cerr << "-ChargeSharingFit requires one additional argument (\"Settings.xml\")\n";
+		return -1;
+	}
+	else
+	{
+		std::string Arg2 = argv[2];
+		return MainRunModes::IsolatedPhotonChargeSharingFit(Arg2, Options);
+	}
+	}
 	else if (Arg1 == "qdtest" || Arg1 == "-qdtest" )
 	{
 		QDTests(Options);

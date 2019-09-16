@@ -31,6 +31,7 @@ namespace Statistics
 
 
 	}
+	//
 	Histogram Make_AllPixel_Histogram(Settings & Options, Detector & RefDet, unsigned int Bins, double SmallestVal, double HighestVal)
 	{
 		Histogram Hist(Bins, (HighestVal - SmallestVal) / Bins, SmallestVal);
@@ -86,18 +87,15 @@ namespace Statistics
 
 		for (unsigned int i = 0; i < Options.HitEvents.size(); i++)
 		{
-
 			Det.LoadIntensityData(&Options.HitEvents[i]);
 			if (Det.Checklist.PixelMask)
 				Det.ApplyPixelMask();
 
-			//Do NOT parallelize this!!!
+			//Do NOT parallelize this!!! 
 			for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
 			{
 				HistStack[j].AddValue(Det.Intensity[j]);
 			}
-
-
 
 			if (Options.echo)
 			{
@@ -112,14 +110,11 @@ namespace Statistics
 		}
 		profiler.Toc(Options.echo);
 
-
-
 		return HistStack;
 	}
 
 	void CreateAndSaveAllPixelHistograms(Create_PixelHistogramSettings HistSettings, Detector & RefDet, Settings & Options)
 	{
-		
 		std::vector<Statistics::Histogram> HistStack = Statistics::MakePixelHistogramStack(Options, RefDet, HistSettings.Bins, HistSettings.SmalestValue, HistSettings.LargestValue); //Main Work happens here:
 		
 		double * FinalHistStack = new double[HistSettings.Bins * RefDet.DetectorSize[0] * RefDet.DetectorSize[1]]();
@@ -146,12 +141,11 @@ namespace Statistics
 				}
 			}
 		}
-
 		ArrayOperators::SafeArrayToFile(HistSettings.OutputPath, FinalHistStack, HistSettings.Bins * RefDet.DetectorSize[0] * RefDet.DetectorSize[1], ArrayOperators::Binary);
 
 		delete[] FinalHistStack;
 	}
-	
+	//
 	SpeckleContrastStatistics GetSpeckleContrastStatistics(Settings & Options, Detector & RefDet, unsigned int LowerBound, unsigned int UpperBound, float Offset, float Step)
 	{
 		SpeckleContrastStatistics SCS;
@@ -216,7 +210,7 @@ namespace Statistics
 
 		return SCS;
 	}
-
+	//
 
 	void GetChargeSharingByIsolatedPhotonHits(Settings & Options, Detector & RefDet, Create_ChargeSharingSettings CS_Settings)
 	{
@@ -406,8 +400,13 @@ namespace Statistics
 					}
 					if (IntADU <= 0)
 						break;
+					//sort out two photon hits
+					if (IntADU >= CS_Settings.MaxADU)
+						break;
+					//normalize to one
 					for (int i = 0; i < 9; i++)
 						IsoHit[i].second = IsoHit[i].second / IntADU;
+
 
 					// Fit symmetric 2D gaussian
 					std::vector<double> StartParams(3);
@@ -426,8 +425,7 @@ namespace Statistics
 					for (int i = 0; i < 3; i++)
 						for (int j = 0; j < 3; j++)
 							FPhoton.CovMat[i][j] = Cov(i, j);
-					FittedPhotons_Map.push_back(FPhoton);
-
+					FittedPhotons_Map.push_back(FPhoton); //add fitted photon (mapped, therefore no need for critical)
 				}
 			}
 

@@ -444,7 +444,7 @@ namespace PPP
 			mspace.close();
 		}
 
-
+		//invert Dark
 		ArrayOperators::MultiplyScalar(Dark, -1.0f, Det.DetectorSize[0] * Det.DetectorSize[1]); //invert Darkfield
 
 	//Correct DarkField ...

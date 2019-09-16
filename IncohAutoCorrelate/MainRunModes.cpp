@@ -949,8 +949,16 @@ int MainRunModes::IsolatedPhotonChargeSharingFit(std::string ConfigFile, Setting
 	//load settings
 	MainRunModes::AllSettings AllSet = LoadSettings(ConfigFile, Options);
 
+	// create Detector
+	Detector Det;
+	Det.LoadPixelMap(AllSet.EvaluationSettings.PixelMap_Path, AllSet.EvaluationSettings.PixelMap_DataSet);
+	Det.LoadPixelMask(AllSet.EvaluationSettings.PixelMask_Path, AllSet.EvaluationSettings.PixelMask_Dataset);
 
+	//load HitList
+	Options.LoadHitEventListFromFile(AllSet.EvaluationSettings.XML_Path);
 
+	//run photon fitting
+	Statistics::GetChargeSharingByIsolatedPhotonHits(Options, Det, AllSet.StatisticsSettings.ChargeSharingSettings);
 
 	return 0;
 }
