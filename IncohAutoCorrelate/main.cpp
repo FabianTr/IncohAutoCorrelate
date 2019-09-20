@@ -637,7 +637,7 @@ int main(int argc, char** argv)
 		if (argc < 3)
 		{
 			std::cerr << "-GainPCorrection requires one additional argument (\"Settings.xml\")\n";
-			std::cerr << "Additional Info: -pixelwisehistograms uses the \"root.StatisticsSettings.PixelHistograms. (...)\" part.\n ";
+			//std::cerr << "Additional Info: -pixelwisehistograms uses the \"root.StatisticsSettings.PixelHistograms. (...)\" part.\n ";
 			return -1;
 		}
 		else
