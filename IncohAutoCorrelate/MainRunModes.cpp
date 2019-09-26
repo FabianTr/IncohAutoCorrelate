@@ -853,6 +853,42 @@ int MainRunModes::DarkCalibration(std::string Arg1, Settings & Options)
 	return 0;
 }
 
+int MainRunModes::FastDarkCalibration(std::string Arg1, std::string Arg2, std::string Arg3, std::string Arg4, std::string Arg5, std::string Arg6, Settings & Options)
+{
+	//Arg1: XML List - in
+	//Arg2: Path Dark.h5
+	//Arg3: Dataset 'data'
+	//Arg4: H5 Out
+	//Arg5: H5 Dataset Out
+	//Arg6: XML List - out
+
+	
+	//get Detector size from dark:
+	ArrayOperators::H5Infos H5Info = ArrayOperators::GetH5FileInformation(Arg2, Arg3);
+	Detector Det;
+	Det.CreateEmptyPixelMap(H5Info.Dimensions[0], H5Info.Dimensions[1]);
+	Det.LoadPixelMask();
+
+	PPP::CreateDarkSettings DarkSettings;
+
+	DarkSettings.Dark_Path = Arg2;
+	DarkSettings.Dark_Dataset = Arg3;
+	DarkSettings.Output_Path = Arg4;
+	DarkSettings.Output_Dataset = Arg5;
+	DarkSettings.Output_NewXML = Arg6;
+	DarkSettings.RestrictToDataSource = false;
+
+	std::cout << "est. DetSize from Dark file = " << H5Info.Dimensions[0] << " x " << H5Info.Dimensions[1] << std::endl;
+
+	ProfileTime Profiler;
+	Profiler.Tic();
+
+	PPP::ProcessData_DarkFieldCorrection(Det, DarkSettings, Arg1, Options);
+	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
+
+	return 0;
+}
+
 
 //Statistics (obtain information in order to correct data and more ...)
 int MainRunModes::CreateAllPixelHistograms(std::string ConfigFile, Settings & Options)

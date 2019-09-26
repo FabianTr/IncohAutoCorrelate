@@ -342,6 +342,19 @@ void Detector::Calc_kMap()
 	Checklist.KMap = true;
 }
 
+void Detector::CreateEmptyPixelMap(int FsSize, int SsSize)
+{
+	//creates empty PixelMap for run modes where an actual PixelMap is not required. 
+
+	delete[] PixelMap;
+	PixelMap = new float[FsSize * SsSize * 3]();
+
+	DetectorSize[0] = SsSize;
+	DetectorSize[1] = FsSize;
+
+	Checklist.PixelMap = true;
+}
+
 void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 {
 	bool swaped = true; //swap fs and ss
@@ -355,8 +368,8 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 			std::cerr << "ERROR: PixelMap is not stored as floating point numbers.\n";
 			throw;
 		}
-		std::cout << "DataSize: " << dataset.getFloatType().getSize() << "\n";
-		std::cout << "float: " << sizeof(float) << "\n";
+		std::cout << "Data Size : " << dataset.getFloatType().getSize() << "\n";
+		std::cout << "float Size: " << sizeof(float) << "\n";
 
 		//if (dataset.getFloatType().getSize() != sizeof(float))
 		//{

@@ -371,4 +371,14 @@ namespace ArrayOperators
 		FILE.read(reinterpret_cast<char*>(Array), Size * sizeof(T));
 		FILE.close();
 	}
+
+
+	struct H5Infos
+	{
+		std::vector<int> Dimensions;
+		//H5T_class_t DataType;
+
+	};
+	H5Infos GetH5FileInformation(std::string Filename, std::string Dataset);
+
 }

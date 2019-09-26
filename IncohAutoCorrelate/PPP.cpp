@@ -366,6 +366,7 @@ namespace PPP
 
 	void ProcessData_DarkFieldCorrection(Detector & Det, CreateDarkSettings DarkSettings, std::string XML_In, Settings & Options)
 	{
+
 		Settings Set_In;
 		Settings Set_Out;
 		Options.Echo("Load event-list");

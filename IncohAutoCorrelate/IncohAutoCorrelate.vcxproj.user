@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-gc Settings_Gain.xml</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-fdc 'R42RAW.xml' '/gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/DarkCal/Darks/dark_42.h5' 'dark' '/gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/DarkCal/Darks/run_42dc.h5' 'data' '/gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/DarkCal/Darks/run_42dc.xml'</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

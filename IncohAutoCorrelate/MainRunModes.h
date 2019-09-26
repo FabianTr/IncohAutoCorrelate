@@ -88,6 +88,7 @@ namespace MainRunModes
 	int GainCorrection(std::string Arg1, Settings &Options);
 
 	int DarkCalibration(std::string Arg1, Settings &Options);
+	int FastDarkCalibration(std::string Arg1, std::string Arg2, std::string Arg3, std::string Arg4, std::string Arg5, std::string Arg6, Settings &Options);
 	//->Statistics
 	int CreateAllPixelHistograms(std::string ConfigFile, Settings &Options);
 	int GenerateSpeckleContrastStatistics(std::string ConfigFile, Settings &Options);

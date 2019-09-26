@@ -661,6 +661,40 @@ int main(int argc, char** argv)
 			return MainRunModes::DarkCalibration(Arg2, Options);
 		}
 	}
+	else if (Arg1 == "fastdarkcalibration" || Arg1 == "-fastdarkcalibration" || Arg1 == "fdc" || Arg1 == "-fdc")
+	{
+		std::cout << "run (fast) dark calibration\n";
+		if (argc < 7)
+		{
+			//required Arguments (5 -> 7 insg.):
+			// XML List - in
+			// Path Dark.h5
+			// Dataset 'data'
+			// H5 Out
+			// XML List - out
+			
+
+			std::cerr << "-FastDarkCalibration requires the following arguments:\n";
+			std::cerr << "* XML EventList input\n";
+			std::cerr << "* Dark file path (.h5)\n";
+			std::cerr << "* Dark file Dataset\n";
+			std::cerr << "* New H5File path\n";
+			std::cerr << "* New H5File Dataset\n";
+			std::cerr << "* New XML EventList path" << std::endl;
+			return -1;
+		}
+		else
+		{
+			std::string Arg2 = argv[2];
+			std::string Arg3 = argv[3];
+			std::string Arg4 = argv[4];
+			std::string Arg5 = argv[5];
+			std::string Arg6 = argv[6];
+			std::string Arg7 = argv[7];
+
+			return MainRunModes::FastDarkCalibration(Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Options);
+		}
+	}
 	else if (Arg1 == "sortbyintensity" || Arg1 == "-sortbyintensity" || Arg1 == "si" || Arg1 == "-si")
 	{
 		if (argc < 4)
