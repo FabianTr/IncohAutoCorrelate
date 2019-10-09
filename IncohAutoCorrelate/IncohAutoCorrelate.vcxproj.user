@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-fdc 'R42RAW.xml' '/gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/DarkCal/Darks/dark_42.h5' 'dark' '/gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/DarkCal/Darks/run_42dc.h5' 'data' '/gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/DarkCal/Darks/run_42dc.xml'</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-fgc /gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/DarkCal/XMLsOut/run_043_DC.xml /gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/GainCal/GenHistos/GainMap_JungFr_10_09_19.h5 offset gain /gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/GainCal/data_out/run_043_GC.h5 data /gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/GainCal/XML_out/run_043_GC.xml</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

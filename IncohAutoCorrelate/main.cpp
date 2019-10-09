@@ -653,7 +653,7 @@ int main(int argc, char** argv)
 	if (argc < 8)
 		{
 		//Arg1: XML List - in
-		//Arg2: Path Dark.h5
+		//Arg2: Path GainMap.h5
 		//Arg3: Dataset 'offset'
 		//Arg4: Dataset 'gain'
 		//Arg5: H5 Out

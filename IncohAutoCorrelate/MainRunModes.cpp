@@ -833,6 +833,13 @@ int MainRunModes::GainCorrection(std::string Arg1, Settings & Options)
 	ProfileTime Profiler;
 	Profiler.Tic();
 
+ //   //as no treatment per panel is needed for gc only, set Det as one panel (therefore the entry in the Settings.xml is not required)
+	//AS.PPPLAPSettings.DetectorPanels.clear();
+	//PPP::DetectorPanel pan;
+	//pan.FirstInd = 0;
+	//pan.Scans[0] = Det.DetectorSize[0];
+	//pan.Scans[1] = Det.DetectorSize[1];
+
 	PPP::ProcessData_PF_LAP(Det, AS.PPPLAPSettings, AS.EvaluationSettings.XML_Path,true);
 	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
 	return 0;
@@ -850,6 +857,9 @@ int MainRunModes::FastGainCorrection(std::string Arg1, std::string Arg2, std::st
 
 	//get Detector size from dark:
 	ArrayOperators::H5Infos H5Info = ArrayOperators::GetH5FileInformation(Arg2, Arg3);
+
+	std::cout << H5Info.Dimensions[0] << " x " << H5Info.Dimensions[0] << std::endl;
+
 	Detector Det;
 	Det.CreateEmptyPixelMap(H5Info.Dimensions[0], H5Info.Dimensions[1]);
 	Det.LoadPixelMask();
@@ -865,6 +875,13 @@ int MainRunModes::FastGainCorrection(std::string Arg1, std::string Arg2, std::st
 
 	ProfileTime Profiler;
 	Profiler.Tic();
+
+	//// as no panel info is given, set up 1 panel Det
+	//GCSettings.DetectorPanels.clear();
+	//PPP::DetectorPanel pan;
+	//pan.FirstInd = 0;
+	//pan.Scans[0] = Det.DetectorSize[0];
+	//pan.Scans[1] = Det.DetectorSize[1];
 
 	PPP::ProcessData_PF_LAP(Det, GCSettings,Arg1, true);
 	std::cout << "DONE in " << Profiler.Toc(false) << "\n";

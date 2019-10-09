@@ -140,9 +140,16 @@ namespace PPP
 		}
 
 		unsigned FullDetSize = 0; 
-		for (unsigned int j = 0; j < LAPSettings.DetPanels_Num; j++)
+		if (GainOnly)
 		{
-			FullDetSize += DetectorPanels[j].Scans[0] * DetectorPanels[j].Scans[1];
+			FullDetSize = Det.DetectorSize[0] * Det.DetectorSize[1];
+		}
+		else
+		{
+			for (unsigned int j = 0; j < LAPSettings.DetPanels_Num; j++)
+			{
+				FullDetSize += DetectorPanels[j].Scans[0] * DetectorPanels[j].Scans[1];
+			}
 		}
 
 		Settings OptionsIn;
@@ -344,14 +351,17 @@ namespace PPP
 		ArrayOperators::ParAdd(Det.Intensity, GM_Offset, Det.DetectorSize[0] * Det.DetectorSize[1]); //subtract offset from Intensity
 		
 		//Devide by Gain
+
 		#pragma omp parallel for
 		for (unsigned int i = 0; i < Det.DetectorSize[0] * Det.DetectorSize[1]; i++)
 		{
 			if (((Det.Intensity[i] >= 0)||(AllowNegativeValues)) && GM_Gain[i] > 0 && Det.PixelMask[i] == 1)
 			{
 				Det.Intensity[i] = Det.Intensity[i] / GM_Gain[i];
-				if (Det.Intensity[i] > 100)
-					std::cout <<"Warning: over 100 Photones at " << i << " : " << Det.Intensity[i] << " (Gain: " << GM_Gain[i] << " ) " << "\n";
+				//if (Det.Intensity[i] > 100 )
+				//	std::cout << "Warning: over 100 Photones at " << i << " : " << Det.Intensity[i] << " (Gain: " << GM_Gain[i] << " ) " << "\n";
+				
+			
 			}
 			else
 			{
