@@ -22,7 +22,8 @@ std::vector<std::string> MainRunModes::CSV_Splitter(std::string Input, std::stri
 		Output.push_back(token);
 		Input.erase(0, pos + delimiter.length());
 	}
-	Output.push_back(Input);
+	if (Input.size() != 0)
+		Output.push_back(Input);
 	return Output;
 }
 
@@ -836,6 +837,41 @@ int MainRunModes::GainCorrection(std::string Arg1, Settings & Options)
 	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
 	return 0;
 }
+//Implement fast gain correction
+int MainRunModes::FastGainCorrection(std::string Arg1, std::string Arg2, std::string Arg3, std::string Arg4, std::string Arg5, std::string Arg6, std::string Arg7, Settings & Options)
+{
+	//Arg1: XML List - in
+	//Arg2: Path Dark.h5
+	//Arg3: Dataset 'offset'
+	//Arg4: Dataset 'gain'
+	//Arg5: H5 Out
+	//Arg6: H5 Dataset Out
+	//Arg7: XML List - out
+
+	//get Detector size from dark:
+	ArrayOperators::H5Infos H5Info = ArrayOperators::GetH5FileInformation(Arg2, Arg3);
+	Detector Det;
+	Det.CreateEmptyPixelMap(H5Info.Dimensions[0], H5Info.Dimensions[1]);
+	Det.LoadPixelMask();
+
+	PPP::Create_LAPSettings GCSettings;
+
+	GCSettings.GainMapPath = Arg2;
+	GCSettings.DatasetOffset = Arg3;
+	GCSettings.DatasetGain = Arg4;
+	GCSettings.Output_Path = Arg5;
+	GCSettings.Output_Dataset = Arg6;
+	GCSettings.Output_NewXML = Arg7;
+
+	ProfileTime Profiler;
+	Profiler.Tic();
+
+	PPP::ProcessData_PF_LAP(Det, GCSettings,Arg1, true);
+	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
+
+	return 0;
+}
+
 
 int MainRunModes::DarkCalibration(std::string Arg1, Settings & Options)
 {

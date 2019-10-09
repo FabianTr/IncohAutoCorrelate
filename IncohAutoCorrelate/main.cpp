@@ -646,6 +646,43 @@ int main(int argc, char** argv)
 			return MainRunModes::GainCorrection(Arg2, Options);
 		}
 	}
+	else if (Arg1 == "fastgaincorrection" || Arg1 == "-fastgaincorrection" || Arg1 == "fgc" || Arg1 == "-fgc")
+	{
+	std::cout << "run fast gain correction\n";
+
+	if (argc < 8)
+		{
+		//Arg1: XML List - in
+		//Arg2: Path Dark.h5
+		//Arg3: Dataset 'offset'
+		//Arg4: Dataset 'gain'
+		//Arg5: H5 Out
+		//Arg6: H5 Dataset Out
+		//Arg7: XML List - out
+
+
+			std::cerr << "-FastGainCorrection requires the following arguments:\n";
+			std::cerr << "* XML EventList input\n";
+			std::cerr << "* GainMap path (.h5)\n";
+			std::cerr << "* GainMap offset Dataset\n";
+			std::cerr << "* GainMap gain Dataset\n";
+			std::cerr << "* New H5File path\n";
+			std::cerr << "* New H5File Dataset\n";
+			std::cerr << "* New XML EventList path" << std::endl;
+			return -1;
+		}
+	else
+	{
+		std::string Arg2 = argv[2];
+		std::string Arg3 = argv[3];
+		std::string Arg4 = argv[4];
+		std::string Arg5 = argv[5];
+		std::string Arg6 = argv[6];
+		std::string Arg7 = argv[7];
+		std::string Arg8 = argv[8];
+		return MainRunModes::FastGainCorrection(Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Options);
+	}
+	}
 	else if (Arg1 == "darkcalibration" || Arg1 == "-darkcalibration" || Arg1 == "dc" || Arg1 == "-dc")
 	{
 		std::cout << "run dark calibration\n";
