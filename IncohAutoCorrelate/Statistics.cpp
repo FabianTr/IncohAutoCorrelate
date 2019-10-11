@@ -214,6 +214,8 @@ namespace Statistics
 
 	void GetChargeSharingByIsolatedPhotonHits(Settings & Options, Detector & RefDet, Create_ChargeSharingSettings CS_Settings)
 	{
+		std::cout << "Start charge sharing fits on data ..." << std::endl;
+
 		//function to fit
 		class Gauss3x3FitTarget
 		{
@@ -306,9 +308,29 @@ namespace Statistics
 			CS_Settings.UpperLimit = Options.HitEvents.size();
 		}
 
-		// #pragma omp parallel for
+		ProfileTime Profiler;
+		long StackSize = CS_Settings.UpperLimit - CS_Settings.LowerLimit;
+		long Progress = 0;
+		int t_prog = -1;
+		Profiler.Tic();
+
+		#pragma omp parallel for  //serial for now, parallelize later
+
 		for (size_t idx = CS_Settings.LowerLimit; idx < CS_Settings.UpperLimit; idx++)//loop over all Events
 		{
+			unsigned long N_isoPh_T = 0; //(map here and reduce to N_isoPh later)
+
+			#pragma omp critical
+			{
+				if (((Progress * 100) / (StackSize - 1)) > t_prog)
+				{
+					std::cout << "Running CSF: " << ((Progress) * 100) / (StackSize - 1) << "% \t";
+					Profiler.Toc(true, true);
+					t_prog++;
+				}
+				Progress++;
+			}
+
 			Detector Det = Detector(RefDet, true);
 			Det.LoadIntensityData(&Options.HitEvents[idx]);
 
@@ -379,7 +401,8 @@ namespace Statistics
 						continue;
 					
 					// Here we have an isolated hit.
-					N_isoPh++;
+
+					N_isoPh_T++;
 
 					//Load hit with adjugate pixels in 3x3 matrix
 					std::vector<std::pair<std::pair<int, int>, double>> IsoHit(9);
@@ -433,8 +456,10 @@ namespace Statistics
 			#pragma omp critical
 			{
 				FittedPhotons.insert(FittedPhotons.end(),FittedPhotons_Map.begin(), FittedPhotons_Map.end());
+				N_isoPh += N_isoPh_T;
 			}
 		}
+
 
 		//save results to file
 		float* DataOut = new float[FittedPhotons.size()*12];
@@ -456,6 +481,13 @@ namespace Statistics
 			DataOut[10 * i + 11] = FittedPhotons[i].CovMat[2][2];
 		}
 		ArrayOperators::SafeArrayToFile(CS_Settings.OutputBinaryPath,DataOut, FittedPhotons.size() * 12, ArrayOperators::Binary);
+
+		std::cout << N_isoPh << "Isolated photons found.\n" << std::endl;
+		std::cout << "Results saved as " << N_isoPh << " * 12 float32-array.\n";
+		std::cout << "X0, Y0, Sigma, CovarianceMatrix as: C00, C01, C02, C10, C11, C12, C20, C21, C22\n" << std::endl;
+		std::cout << "Results saved as: \"" << CS_Settings.OutputBinaryPath << "\"" << std::endl;
+
+
 		delete [] DataOut;
 	}
 

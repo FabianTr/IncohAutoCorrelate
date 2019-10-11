@@ -722,7 +722,7 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 	}
 	if (PhotonSamplingStep > 0)
 	{
-#pragma omp parallel for
+		#pragma omp parallel for
 		for (unsigned int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
 		{
 			Intensity[i] = (float)IntensityPhotonDiscr[i];
@@ -757,6 +757,7 @@ void Detector::LoadIntensityData()
 
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
 
+#pragma omp critical
 	GetSliceOutOfHDFCuboid(Intensity, Path, DataSet, DetectorEvent->Event);
 
 

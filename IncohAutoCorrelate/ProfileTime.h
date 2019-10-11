@@ -10,5 +10,5 @@ public:
 	~ProfileTime();
 
 	void Tic();
-	double Toc(bool print = false);
+	double Toc(bool print = false, bool hms_format = true);
 };
