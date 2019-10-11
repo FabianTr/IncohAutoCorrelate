@@ -297,9 +297,6 @@ namespace Statistics
 
 		Gauss3x3FitTarget Gauss; 
 
-
-		unsigned long N_isoPh = 0;//Total number of isulated photons
-
 		std::vector<FittedPhoton> FittedPhotons;
 
 		if (!CS_Settings.RestrictToBoundaries)
@@ -314,12 +311,9 @@ namespace Statistics
 		int t_prog = -1;
 		Profiler.Tic();
 
-		#pragma omp parallel for  //serial for now, parallelize later
-
+		#pragma omp parallel for 
 		for (size_t idx = CS_Settings.LowerLimit; idx < CS_Settings.UpperLimit; idx++)//loop over all Events
 		{
-			unsigned long N_isoPh_T = 0; //(map here and reduce to N_isoPh later)
-
 			#pragma omp critical
 			{
 				if (((Progress * 100) / (StackSize - 1)) > t_prog)
@@ -345,64 +339,83 @@ namespace Statistics
 
 				for (int ind = CS_Settings.DetectorPanels[i_pan].FirstInd + FrameInd; ind < (CS_Settings.DetectorPanels[i_pan].FirstInd + PanSize - FrameInd); ind++) //loop over all Pixel in Panel without upper left frame of PMR and bottom frame of PMR
 				{
+					bool IsolatedHit = true;
 					if (Det.Intensity[ind] < CS_Settings.Seed) //if value is smaller than seed threshold skip next steps 
+					{
+						IsolatedHit = false;
 						continue;
+					}
+
+					//std::cout << ind << ":"<< Det.Intensity[ind] << " > " << CS_Settings.Seed << std::endl;
 
 					//ind is the index of Intensity and i the index within the Panel!
 					int i = ind - CS_Settings.DetectorPanels[i_pan].FirstInd;
 
-					int fs = i / FS;
-					int ss = i % FS;
+					int fs = i % FS;
+					int ss = i / FS;
 
 					if (fs >= FS - CS_Settings.PixelMaskRadius) //check for right boarder
 						continue;
 
 					//Check PMR- criterium
-					bool IsolatedHit = true;
-					for (int sss = -CS_Settings.PixelMaskRadius; sss <= CS_Settings.PixelMaskRadius; sss++)
+					
+					for (int sss = -(int)CS_Settings.PixelMaskRadius; sss <= (int)CS_Settings.PixelMaskRadius; sss++)
 					{
-						if (!IsolatedHit)
-							continue;
-						for (int fff = -CS_Settings.PixelMaskRadius; fff <= CS_Settings.PixelMaskRadius; fff++)
+						for (int fff = -(int)CS_Settings.PixelMaskRadius; fff <= (int)CS_Settings.PixelMaskRadius; fff++)
 						{
 							int t_fs = fs + fff;
 							int t_ss = ss + sss;
 							if (t_fs < 0 || t_fs > FS || t_ss < 0 || t_ss > SS) //check if inside boundaries
-								continue;
+							{
+								IsolatedHit = false;
+								break;
+							}
 
 							int t_ind = t_fs + t_ss * FS + CS_Settings.DetectorPanels[i_pan].FirstInd;
 
 							if (Det.PixelMask[t_ind] == 0)
+							{
 								IsolatedHit = false;
+								break;
+							}
 						}
 					}
 					if (!IsolatedHit)
 						continue;
 
 					//Check SingleHit- criterium
-					for (int sss = -CS_Settings.IsolationRadius; sss <= CS_Settings.IsolationRadius; sss++)
+					for (int sss = -(int)CS_Settings.IsolationRadius; sss <= (int)CS_Settings.IsolationRadius; sss++)
 					{
 						if (!IsolatedHit)
 							continue;
-						for (int fff = -CS_Settings.IsolationRadius; fff <= CS_Settings.IsolationRadius; fff++)
+						for (int fff = -(int)CS_Settings.IsolationRadius; fff <= (int)CS_Settings.IsolationRadius; fff++)
 						{
+							//ignore current pixel
+							if (sss == 0 && fff == 0)
+								continue;
+
 							int t_fs = fs + fff;
 							int t_ss = ss + sss;
 							if (t_fs < 0 || t_fs > FS || t_ss < 0 || t_ss > SS) //check if inside boundaries
-								continue;
+							{
+								IsolatedHit = false;
+								break;
+							}
 
 							int t_ind = t_fs + t_ss * FS + CS_Settings.DetectorPanels[i_pan].FirstInd;
 
-							if (Det.Intensity[t_ind] >= CS_Settings.Seed)
+							if (Det.Intensity[t_ind] >= Det.Intensity[ind]) //check if hit is brightest hit in 'IsolationRadius'
+							{
 								IsolatedHit = false;
+								break;
+							}
+								
 						}
 					}
 					if (!IsolatedHit)
 						continue;
 					
 					// Here we have an isolated hit.
-
-					N_isoPh_T++;
 
 					//Load hit with adjugate pixels in 3x3 matrix
 					std::vector<std::pair<std::pair<int, int>, double>> IsoHit(9);
@@ -416,16 +429,25 @@ namespace Statistics
 							int t_ss = ss + Y - 1;
 							int t_ind = t_fs + t_ss * FS + CS_Settings.DetectorPanels[i_pan].FirstInd;
 
+
+							//std::cout << t_fs << ";" << t_ss << ":" << t_ind << "\t";
+							////std::cout << t_ind <<":"<< Det.Intensity[t_ind] << "\t";
+
 							IsoHit[j] = { {X,Y}, Det.Intensity[t_ind] };
 							IntADU += Det.Intensity[t_ind];
 							j++;
 						}
+						//std::cout << std::endl;
 					}
-					if (IntADU <= 0)
-						break;
+
+					//std::cout << std::endl;
+
+
+					if (IntADU <= CS_Settings.Seed)
+						continue;
 					//sort out two photon hits
 					if (IntADU >= CS_Settings.MaxADU)
-						break;
+						continue;
 					//normalize to one
 					for (int i = 0; i < 9; i++)
 						IsoHit[i].second = IsoHit[i].second / IntADU;
@@ -444,11 +466,20 @@ namespace Statistics
 					FittedPhoton FPhoton;
 					FPhoton.X0 = (float)FittedParams[0];
 					FPhoton.Y0 = (float)FittedParams[1];
-					FPhoton.Sigma = (float)FittedParams[2];
+					FPhoton.Sigma = std::abs( (float)FittedParams[2]);
 					for (int i = 0; i < 3; i++)
 						for (int j = 0; j < 3; j++)
 							FPhoton.CovMat[i][j] = Cov(i, j);
 					FittedPhotons_Map.push_back(FPhoton); //add fitted photon (mapped, therefore no need for critical)
+
+					////DEBUG
+					//std::cout << IsoHit[0].second << " \t" << IsoHit[1].second << " \t" << IsoHit[2].second << "\n";
+					//std::cout << IsoHit[3].second << " \t" << IsoHit[4].second << " \t" << IsoHit[5].second << "\n";
+					//std::cout << IsoHit[6].second << " \t" << IsoHit[7].second << " \t" << IsoHit[8].second << "\n";
+					//std::cout << "X0 = " << FPhoton.X0 << "; \tY0 = " << FPhoton.Y0 << "; \tS = " << FPhoton.Sigma << std::endl;
+					//std::cout << ind << std::endl;
+
+					////\DEBUG
 				}
 			}
 
@@ -456,7 +487,6 @@ namespace Statistics
 			#pragma omp critical
 			{
 				FittedPhotons.insert(FittedPhotons.end(),FittedPhotons_Map.begin(), FittedPhotons_Map.end());
-				N_isoPh += N_isoPh_T;
 			}
 		}
 
@@ -466,24 +496,24 @@ namespace Statistics
 
 		for (size_t i = 0; i < FittedPhotons.size(); i++)
 		{
-			DataOut[10 * i + 0] = FittedPhotons[i].X0;
-			DataOut[10 * i + 1] = FittedPhotons[i].Y0;
-			DataOut[10 * i + 2] = FittedPhotons[i].Sigma;
+			DataOut[12 * i + 0] = FittedPhotons[i].X0;
+			DataOut[12 * i + 1] = FittedPhotons[i].Y0;
+			DataOut[12 * i + 2] = FittedPhotons[i].Sigma;
 
-			DataOut[10 * i +  3] = FittedPhotons[i].CovMat[0][0];
-			DataOut[10 * i +  4] = FittedPhotons[i].CovMat[0][1];
-			DataOut[10 * i +  5] = FittedPhotons[i].CovMat[0][2];
-			DataOut[10 * i +  6] = FittedPhotons[i].CovMat[1][0];
-			DataOut[10 * i +  7] = FittedPhotons[i].CovMat[1][1];
-			DataOut[10 * i +  8] = FittedPhotons[i].CovMat[1][2];
-			DataOut[10 * i +  9] = FittedPhotons[i].CovMat[2][0];
-			DataOut[10 * i + 10] = FittedPhotons[i].CovMat[2][1];
-			DataOut[10 * i + 11] = FittedPhotons[i].CovMat[2][2];
+			DataOut[12 * i +  3] = FittedPhotons[i].CovMat[0][0];
+			DataOut[12 * i +  4] = FittedPhotons[i].CovMat[0][1];
+			DataOut[12 * i +  5] = FittedPhotons[i].CovMat[0][2];
+			DataOut[12 * i +  6] = FittedPhotons[i].CovMat[1][0];
+			DataOut[12 * i +  7] = FittedPhotons[i].CovMat[1][1];
+			DataOut[12 * i +  8] = FittedPhotons[i].CovMat[1][2];
+			DataOut[12 * i +  9] = FittedPhotons[i].CovMat[2][0];
+			DataOut[12 * i + 10] = FittedPhotons[i].CovMat[2][1];
+			DataOut[12 * i + 11] = FittedPhotons[i].CovMat[2][2];
 		}
 		ArrayOperators::SafeArrayToFile(CS_Settings.OutputBinaryPath,DataOut, FittedPhotons.size() * 12, ArrayOperators::Binary);
 
-		std::cout << N_isoPh << "Isolated photons found.\n" << std::endl;
-		std::cout << "Results saved as " << N_isoPh << " * 12 float32-array.\n";
+		std::cout << "\n" << FittedPhotons.size() << " isolated photons found.\n" << std::endl;
+		std::cout << "Results saved as " << FittedPhotons.size() << " * 12 float32-array.\n";
 		std::cout << "X0, Y0, Sigma, CovarianceMatrix as: C00, C01, C02, C10, C11, C12, C20, C21, C22\n" << std::endl;
 		std::cout << "Results saved as: \"" << CS_Settings.OutputBinaryPath << "\"" << std::endl;
 

@@ -427,7 +427,7 @@ bool UnitTest::TestFitting(Settings & Options)
 
 
 	double Noise = 0.1;
-	for (size_t idx = 0; idx < 1000; idx++)
+	for (size_t idx = 0; idx < 100; idx++)
 	{
 		double x0 = Drand() - 0.5;
 		double y0 = Drand() - 0.5;
@@ -445,9 +445,12 @@ bool UnitTest::TestFitting(Settings & Options)
 			for (int Y = 0; Y < 3; Y++)
 			{
 				data[j] = { {X,Y}, f({X,Y},{x0,y0, sigma0}, ParGrad) * (1 + Noise * (Drand()-0.5) )};
+				std::cout << data[j].second << " \t";
 				j++;
 			}
+			std::cout << std::endl;
 		}
+		//std::cout << std::endl;
 
 		std::vector<double> StartParams(3);
 		StartParams[0] = 0;
@@ -467,11 +470,11 @@ bool UnitTest::TestFitting(Settings & Options)
 
 		RetSigma.push_back(FittedParams[2]);
 
-		//std::cout << "===============\n";
-		//std::cout << "x0   : " << x0 << " -> " << FittedParams[0] << std::endl;
-		//std::cout << "y0   : " << y0 << " -> " << FittedParams[1] << std::endl;
-		//std::cout << "sigma: " << sigma0 << " -> " << FittedParams[2] << std::endl;
-		//std::cout << "===============\n";
+		std::cout << "===============\n";
+		std::cout << "x0   : " << x0 << " -> " << FittedParams[0] << std::endl;
+		std::cout << "y0   : " << y0 << " -> " << FittedParams[1] << std::endl;
+		std::cout << "sigma: " << sigma0 << " -> " << FittedParams[2] << std::endl;
+		std::cout << "===============\n\n";
 	}
 
 	double StAbw_X0 = 0;
@@ -496,6 +499,7 @@ bool UnitTest::TestFitting(Settings & Options)
 	StAbwSigma = std::sqrt(StAbwSigma);
 
 	std::cout << "**********************\n";
+
 	std::cout << std::sqrt(StAbw_X0) << "  \t" << std::sqrt(StAbw_Y0) << "  \t" << std::sqrt(StAbw_S) << std::endl;
 	std::wcout << "\nMeanSigma = " << meanRetSigma << " +/- " << StAbwSigma << std::endl;
 
@@ -504,56 +508,6 @@ bool UnitTest::TestFitting(Settings & Options)
 
 	//
 	return true;
-
-
-	//class GaussFitTestTarget
-	//{
-	//public:
-	//	double operator()(const double x, const std::vector<double> &Parameter, std::vector<double> &ParGrad) const
-	//	{
-	//		//par: x0, sigma
-	//		double ret = 0;
-
-	//		ret = (1.0 / std::sqrt(2 * PI*std::pow(Parameter[1], 2)))*std::exp(-((std::pow((x-Parameter[0]),2))/(2* std::pow(Parameter[1], 2))));
-
-	//		ParGrad[0] = ((x-Parameter[0]) / (std::sqrt(2 * PI)*std::pow(Parameter[1], 3))) *std::exp(-((std::pow((x - Parameter[0]), 2)) / (2 * std::pow(Parameter[1], 2))));
-	//		ParGrad[1] = ((std::pow((x - Parameter[0]),2) - std::pow(Parameter[1],2)) / (std::sqrt(2 * PI) * std::pow(Parameter[1], 4)) ) 
-	//			* std::exp(-((std::pow((x - Parameter[0]), 2)) / (2 * std::pow(Parameter[1], 2))));
-
-	//		return ret;
-	//	}
-	//};
-	//GaussFitTestTarget f;
-
-	//
-	//std::vector<std::pair<double, double>> data(100);
-	//std::vector<double> ParGrad(2);
-	//for (int i = 0; i < 100; i++)
-	//{
-	//	double x = -2 + i * 0.05;
-
-
-
-	//	data[i] = { x, f(x,{0.75,0.5}, ParGrad)+1*Drand() };
-	//	
-	//	std::cout << "Data: " << data[i].second << " ";
-	//}
-	//std::cout << std::endl;
-
-	//
-
-	////TODO TEST FIT (Gauss Newton)
-	//std::vector<double> StartParams(2);
-	//StartParams[0] = 0;
-	//StartParams[1] = 1;
-	//std::vector<double> FittedParams(2);
-	//FittedParams = Statistics::detail::GaussNewton<GaussFitTestTarget, double, double>(f, data, StartParams);
-
-	//std::cout << "\nFitted Params: " << FittedParams[0] << "; " << FittedParams[1] << std::endl;
-
-
-
-	//return false;
 
 }
 
