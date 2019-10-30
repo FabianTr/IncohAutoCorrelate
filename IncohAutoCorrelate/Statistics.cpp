@@ -214,7 +214,7 @@ namespace Statistics
 
 	void GetChargeSharingByIsolatedPhotonHits(Settings & Options, Detector & RefDet, Create_ChargeSharingSettings CS_Settings)
 	{
-		std::cout << "Start charge sharing fits on data ..." << std::endl;
+		std::cout << "Start charge sharing fits on isolated photons ..." << std::endl;
 
 		//function to fit
 		class Gauss3x3FitTarget
@@ -292,7 +292,11 @@ namespace Statistics
 			float X0 = 0.0;
 			float Y0 = 0.0;
 
+			float integratedADUs = 0;
+
 			std::array<std::array<float, 3>, 3> CovMat;
+
+			std::array<float, 9> Image;
 		};
 
 		Gauss3x3FitTarget Gauss; 
@@ -383,6 +387,8 @@ namespace Statistics
 					if (!IsolatedHit)
 						continue;
 
+					
+
 					//Check SingleHit- criterium
 					for (int sss = -(int)CS_Settings.IsolationRadius; sss <= (int)CS_Settings.IsolationRadius; sss++)
 					{
@@ -404,7 +410,7 @@ namespace Statistics
 
 							int t_ind = t_fs + t_ss * FS + CS_Settings.DetectorPanels[i_pan].FirstInd;
 
-							if (Det.Intensity[t_ind] >= Det.Intensity[ind]) //check if hit is brightest hit in 'IsolationRadius'
+							if (Det.Intensity[t_ind] >= CS_Settings.Seed) //check if hit is the only one within 'IsolationRadius'
 							{
 								IsolatedHit = false;
 								break;
@@ -416,6 +422,7 @@ namespace Statistics
 						continue;
 					
 					// Here we have an isolated hit.
+					FittedPhoton FPhoton;
 
 					//Load hit with adjugate pixels in 3x3 matrix
 					std::vector<std::pair<std::pair<int, int>, double>> IsoHit(9);
@@ -434,7 +441,9 @@ namespace Statistics
 							////std::cout << t_ind <<":"<< Det.Intensity[t_ind] << "\t";
 
 							IsoHit[j] = { {X,Y}, Det.Intensity[t_ind] };
+							FPhoton.Image[j] = Det.Intensity[t_ind];
 							IntADU += Det.Intensity[t_ind];
+							FPhoton.integratedADUs = IntADU;
 							j++;
 						}
 						//std::cout << std::endl;
@@ -463,7 +472,7 @@ namespace Statistics
 					Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Cov;
 					FittedParams = detail::GaussNewton(Gauss, IsoHit, StartParams, Cov);
 					
-					FittedPhoton FPhoton;
+					
 					FPhoton.X0 = (float)FittedParams[0];
 					FPhoton.Y0 = (float)FittedParams[1];
 					FPhoton.Sigma = std::abs( (float)FittedParams[2]);
@@ -492,29 +501,35 @@ namespace Statistics
 
 
 		//save results to file
-		float* DataOut = new float[FittedPhotons.size()*12];
+
+		// Structure: 4 + 9 + 9 = 22 (* float)
+		float* DataOut = new float[FittedPhotons.size()*22];
 
 		for (size_t i = 0; i < FittedPhotons.size(); i++)
 		{
-			DataOut[12 * i + 0] = FittedPhotons[i].X0;
-			DataOut[12 * i + 1] = FittedPhotons[i].Y0;
-			DataOut[12 * i + 2] = FittedPhotons[i].Sigma;
+			DataOut[22 * i + 0] = FittedPhotons[i].X0;
+			DataOut[22 * i + 1] = FittedPhotons[i].Y0;
+			DataOut[22 * i + 2] = FittedPhotons[i].Sigma;
+			DataOut[22 * i + 3] = FittedPhotons[i].integratedADUs;
 
-			DataOut[12 * i +  3] = FittedPhotons[i].CovMat[0][0];
-			DataOut[12 * i +  4] = FittedPhotons[i].CovMat[0][1];
-			DataOut[12 * i +  5] = FittedPhotons[i].CovMat[0][2];
-			DataOut[12 * i +  6] = FittedPhotons[i].CovMat[1][0];
-			DataOut[12 * i +  7] = FittedPhotons[i].CovMat[1][1];
-			DataOut[12 * i +  8] = FittedPhotons[i].CovMat[1][2];
-			DataOut[12 * i +  9] = FittedPhotons[i].CovMat[2][0];
-			DataOut[12 * i + 10] = FittedPhotons[i].CovMat[2][1];
-			DataOut[12 * i + 11] = FittedPhotons[i].CovMat[2][2];
+			DataOut[22 * i +  4] = FittedPhotons[i].CovMat[0][0];
+			DataOut[22 * i +  5] = FittedPhotons[i].CovMat[0][1];
+			DataOut[22 * i +  6] = FittedPhotons[i].CovMat[0][2];
+			DataOut[22 * i +  7] = FittedPhotons[i].CovMat[1][0];
+			DataOut[22 * i +  8] = FittedPhotons[i].CovMat[1][1];
+			DataOut[22 * i +  9] = FittedPhotons[i].CovMat[1][2];
+			DataOut[22 * i + 10] = FittedPhotons[i].CovMat[2][0];
+			DataOut[22 * i + 11] = FittedPhotons[i].CovMat[2][1];
+			DataOut[22 * i + 12] = FittedPhotons[i].CovMat[2][2];
+
+			for (int jj = 0; jj < 9; jj++)
+				DataOut[22 * i + 13 + jj] = FittedPhotons[i].Image[jj];
 		}
-		ArrayOperators::SafeArrayToFile(CS_Settings.OutputBinaryPath,DataOut, FittedPhotons.size() * 12, ArrayOperators::Binary);
+		ArrayOperators::SafeArrayToFile(CS_Settings.OutputBinaryPath,DataOut, FittedPhotons.size() * 22, ArrayOperators::Binary);
 
 		std::cout << "\n" << FittedPhotons.size() << " isolated photons found.\n" << std::endl;
 		std::cout << "Results saved as " << FittedPhotons.size() << " * 12 float32-array.\n";
-		std::cout << "X0, Y0, Sigma, CovarianceMatrix as: C00, C01, C02, C10, C11, C12, C20, C21, C22\n" << std::endl;
+		std::cout << "X0; Y0; Sigma; integrated ADUs; CovarianceMatrix as: C00, C01, C02, C10, C11, C12, C20, C21, C22; image of photon hit (3x3) \n" << std::endl;
 		std::cout << "Results saved as: \"" << CS_Settings.OutputBinaryPath << "\"" << std::endl;
 
 
