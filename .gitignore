@@ -3,7 +3,7 @@ IncohAutoCorrelate/obj/
 IncohAutoCorrelate/readme/
 IncohAutoCorrelate/Overview.cd
 IncohAutoCorrelate/IncohAutoCorrelate.vcxproj.filters
-IncohAutoCorrelate/DetPhStatSim/bin/
-IncohAutoCorrelate/DetPhStatSim/obj/
-IncohAutoCorrelate/DetPhStatSim/readme/
+/DetPhStatSim/bin/
+/DetPhStatSim/obj/
+/DetPhStatSim/readme/
 /.vs
