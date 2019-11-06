@@ -7,12 +7,15 @@
 #include <random> 
 #include <array>
 #include <iostream>
-
+#include "ProfileTime.h"
 
 namespace
 {
 	std::mt19937_64 mt(std::random_device{}());
+
 	std::uniform_real_distribution<double> rnd;
+
+	std::default_random_engine lce(rnd(mt));
 }
 
 namespace ArrayMaths
@@ -58,13 +61,16 @@ namespace ArrayMaths
 	template<typename T>
 	void GetNegativeBinomialArray(T * Array, size_t ArraySize, float Mean, float Modes)
 	{
+		ProfileTime profiler;
 		//std::negative_binomial_distribution<int> NB(Modes, Modes / (Modes + Mean));
-		std::gamma_distribution<double> Gamma(Modes, (Mean / Modes));
-
+		std::gamma_distribution<float> Gamma(Modes, (Mean / Modes));
+		
+		//profiler.Tic();
 		//#pragma omp parallel for
 		for (size_t i = 0; i < ArraySize; i++)
 		{
 			Array[i] = (T)ScalarPoissonSampling(Gamma(mt));
+			//Array[i] = (T)ScalarPoissonSampling(Drand());
 			//Array[i] = (T)Gamma(mt);
 		}
 	}

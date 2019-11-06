@@ -683,69 +683,7 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 
 	Output.DetectorSize[0] = Det.DetectorSize[0];
 	Output.DetectorSize[1] = Det.DetectorSize[1];
-	{
-		//
-		//if (SimSettings.AutoPixelOrientation) //Guess PixelOrientation under assumption that all pixel are of same size and orientations are always parallel
-		//{
-		//	SimSettings.PixelOrientationVectors[0] = Det.PixelMap[0 + 3] - Det.PixelMap[0 + 0];
-		//	SimSettings.PixelOrientationVectors[1] = Det.PixelMap[1 + 3] - Det.PixelMap[1 + 0];
-		//	SimSettings.PixelOrientationVectors[2] = Det.PixelMap[2 + 3] - Det.PixelMap[2 + 0];
 
-		//	SimSettings.PixelOrientationVectors[3] = Det.PixelMap[0 + 3 * Det.DetectorSize[1]] - Det.PixelMap[0 + 0];
-		//	SimSettings.PixelOrientationVectors[4] = Det.PixelMap[1 + 3 * Det.DetectorSize[1]] - Det.PixelMap[1 + 0];
-		//	SimSettings.PixelOrientationVectors[5] = Det.PixelMap[2 + 3 * Det.DetectorSize[1]] - Det.PixelMap[2 + 0];
-
-		//	double Norm[2];
-
-		//	Norm[0] = sqrt(SimSettings.PixelOrientationVectors[0] * SimSettings.PixelOrientationVectors[0] + SimSettings.PixelOrientationVectors[1] * SimSettings.PixelOrientationVectors[1] + SimSettings.PixelOrientationVectors[2] * SimSettings.PixelOrientationVectors[2]);
-		//	Norm[1] = sqrt(SimSettings.PixelOrientationVectors[3] * SimSettings.PixelOrientationVectors[3] + SimSettings.PixelOrientationVectors[4] * SimSettings.PixelOrientationVectors[4] + SimSettings.PixelOrientationVectors[5] * SimSettings.PixelOrientationVectors[5]);
-
-		//	if (SimSettings.AutoPixelSize)
-		//	{
-		//		SimSettings.PixelSize[0] = Norm[0];
-		//		SimSettings.PixelSize[1] = Norm[1];
-		//	}
-
-		//	SimSettings.PixelOrientationVectors[0] = SimSettings.PixelOrientationVectors[0] / Norm[0];
-		//	SimSettings.PixelOrientationVectors[1] = SimSettings.PixelOrientationVectors[1] / Norm[0];
-		//	SimSettings.PixelOrientationVectors[2] = SimSettings.PixelOrientationVectors[2] / Norm[0];
-
-		//	SimSettings.PixelOrientationVectors[3] = SimSettings.PixelOrientationVectors[3] / Norm[1];
-		//	SimSettings.PixelOrientationVectors[4] = SimSettings.PixelOrientationVectors[4] / Norm[1];
-		//	SimSettings.PixelOrientationVectors[5] = SimSettings.PixelOrientationVectors[5] / Norm[1];
-		//}
-		//else
-		//{
-		//	if (SimSettings.AutoPixelSize)
-		//	{
-		//		double tmpPixelOrient[6];
-
-		//		tmpPixelOrient[0] = Det.PixelMap[0 + 3] - Det.PixelMap[0 + 0];
-		//		tmpPixelOrient[1] = Det.PixelMap[1 + 3] - Det.PixelMap[1 + 0];
-		//		tmpPixelOrient[2] = Det.PixelMap[2 + 3] - Det.PixelMap[2 + 0];
-
-		//		tmpPixelOrient[3] = Det.PixelMap[0 + 3 * Det.DetectorSize[1]] - Det.PixelMap[0 + 0];
-		//		tmpPixelOrient[4] = Det.PixelMap[1 + 3 * Det.DetectorSize[1]] - Det.PixelMap[1 + 0];
-		//		tmpPixelOrient[5] = Det.PixelMap[2 + 3 * Det.DetectorSize[1]] - Det.PixelMap[2 + 0];
-
-		//		double Norm[2];
-
-		//		Norm[0] = sqrt(tmpPixelOrient[0] * tmpPixelOrient[0] + tmpPixelOrient[1] * tmpPixelOrient[1] + tmpPixelOrient[2] * tmpPixelOrient[2]);
-		//		Norm[1] = sqrt(tmpPixelOrient[3] * tmpPixelOrient[3] + tmpPixelOrient[4] * tmpPixelOrient[4] + tmpPixelOrient[5] * tmpPixelOrient[5]);
-
-		//		SimSettings.PixelSize[0] = Norm[0];
-		//		SimSettings.PixelSize[1] = Norm[1];
-		//	}
-		//}
-
-
-		////Debug Bullshit
-		//std::cout << "Pixel Orientation a: " << SimSettings.PixelOrientationVectors[0] << ", " << SimSettings.PixelOrientationVectors[1] << ", " << SimSettings.PixelOrientationVectors[2] << "\n";
-		//std::cout << "Pixel Orientation b: " << SimSettings.PixelOrientationVectors[3] << ", " << SimSettings.PixelOrientationVectors[4] << ", " << SimSettings.PixelOrientationVectors[5] << "\n";
-
-		//std::cout << "Pixel Size (a x b): " << SimSettings.PixelSize[0] << " x " << SimSettings.PixelSize[1] << "\n";
-
-	}
 
 	Profiler.Tic();
 	//Start Loop
@@ -986,7 +924,8 @@ void Simulator::SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, Simulat
 			if ((i + 1) % (N / 100) == 0)
 			{
 				g_echo_mutex_Sim.lock();
-				std::cout << "Thread " << ThreadNum << ": Pattern " << (i + 1) << "/" << N << " ^= " << ((i + 1) * 100 / N) << "\% \t in: " << Profiler.Toc(false) << "s" << std::endl;
+				std::cout << "Thread " << ThreadNum << ": Pattern " << (i + 1) << "/" << N << " ^= " << ((i + 1) * 100 / N) << "\% \t in: ";
+				Profiler.Toc(true);
 				//std::cout << "Current Intensity: " << ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1])
 				//	<< " =^ " << (int)(ArrayOperators::Sum(curr_Intensity.data(), Det.DetectorSize[0] * Det.DetectorSize[1]) / SimSettings.Value_per_Photon)
 				//	<< " Photons\n";
@@ -1129,7 +1068,8 @@ void Simulator::ParSimulate(Crystal EmitterCrystal, Detector & Det, SimulationSe
 	Thread2.join();
 	//Thread3.join();
 
-	std::cout << "**************\n" << SimSettings.NumberOfSimulations << " patterns done in " << Profiler.Toc() << "s" << std::endl;
+	std::cout << "**************\n" << SimSettings.NumberOfSimulations << " patterns done in ";
+	Profiler.Toc(true);
 	
 
 	Output.HitEvents = OutputPart[0].HitEvents;
