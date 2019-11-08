@@ -13,5 +13,7 @@ Settings::~Settings()
 
 void Settings::LoadDetectorSettings(std::string File)
 {
+	//todo implement
+
 }
 
