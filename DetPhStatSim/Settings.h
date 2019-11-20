@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 
 
@@ -12,22 +13,22 @@ public:
 	//Det Parameter
 	int DetSize = 1024;
 	int SuSa = 12;
-	float ChargeSharingSigma = 0.22;
-	float DarkNoise = 0.0;
+	float ChargeSharingSigma = 0.22f;
+	float DarkNoise = 0.0f;
 
 	//file stuff
-	std::string OutputPath = "SimulationOutpuit.h5";
+	std::string OutputPath = "SimulationOutput.h5";
 	std::string OutputDataset = "data";
 
 	//statistics
-	float MeanIntensity = 1.0;
-	float Modes = 1.0;
+	float MeanIntensity = 1.0f;
+	float Modes = 1.0f;
 
-	long Pattern = 1;
+	unsigned int Pattern = 1;
 
 	void LoadDetectorSettings(std::string File);
 
-
+	void SafeExampleSettings(std::string File);
 
 
 

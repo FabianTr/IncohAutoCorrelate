@@ -82,12 +82,15 @@
     <ClCompile Include="ArrayMaths.cpp" />
     <ClCompile Include="hdf5Handle.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PhStatSimulator.cpp" />
     <ClCompile Include="ProfileTime.cpp" />
     <ClCompile Include="Settings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArrayMaths.h" />
     <ClInclude Include="hdf5Handle.h" />
+    <ClInclude Include="IniParser.h" />
+    <ClInclude Include="PhStatSimulator.h" />
     <ClInclude Include="ProfileTime.h" />
     <ClInclude Include="Settings.h" />
   </ItemGroup>

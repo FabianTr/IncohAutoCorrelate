@@ -7,6 +7,9 @@
 
 #include "hdf5Handle.h"
 #include "ProfileTime.h"
+#include "IniParser.h"
+#include "Settings.h"
+#include "PhStatSimulator.h"
 
 
 void Test()
@@ -18,7 +21,7 @@ void Test()
 	float * M = new float[1024*1024*16*16]();
 	profiler.Toc(true);
 	
-	ArrayMaths::GetNegativeBinomialArray(M, 1024 * 1024 * 16 * 16, (0.01 / (16.0*16.0)), (1.0 / (16.0*16.0)));
+	ArrayMaths::GetNegativeBinomialArray(M, 1024 * 1024 * 16 * 16, (0.01f / (16.0f*16.0f)), (1.0f / (16.0f*16.0f)));
 
 	profiler.Toc(true);
 
@@ -26,7 +29,7 @@ void Test()
 
 	ArrayMaths::CreateGaussKernel(Kernel, 31 , 0.22 * 16, true);
 
-	ArrayMaths::Convolve2D(M, { 1024 * 1024 * 16 * 16 }, Kernel, { 31,31 });
+	ArrayMaths::Convolve2D(M, { 1024 * 16 , 1024 * 16 }, Kernel, { 31,31 });
 
 	profiler.Toc(true);
 
@@ -80,15 +83,44 @@ void Test()
 	}
 }
 
+void TestINIParse()
+{
+	IniParser ini_pars;
 
+	ini_pars.SetValue("Key1", "Val1");
+	ini_pars.SetValue("Key2", "10");
+	ini_pars.SetValue("Key3", "0.5");
+
+	ini_pars.SafeFile("/home/trostfab/projects/IncohAutoCorrelate/bin/x64/Debug/Test.ini");
+
+	ini_pars.Clear();
+
+	std::cout << ini_pars.GetValue<std::string>("Key1", "empty")<< std::endl;
+
+	ini_pars.LoadFile("/home/trostfab/projects/IncohAutoCorrelate/bin/x64/Debug/Test.ini");
+	std::cout << ini_pars.GetValue<std::string>("Key1", "empty") << std::endl;
+	std::cout << ini_pars.GetValue<int>("Key2", 0) << std::endl;
+	std::cout << ini_pars.GetValue<float>("Key3", 0.0) << std::endl;
+
+}
 
 int main(int argc, char** argv)
 {
 	std::cout << "Detector Photon Statistics Simulation\n";
 	std::cout << "*************************************\n" << std::endl;
 
+	Settings Options;
 
-	Test();
+	//Options.SafeExampleSettings("/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/Settings_T01.ini");
+	//Options.LoadDetectorSettings("/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/Settings_T01.ini");
+	//Test();
+	//TestINIParse();
+
+	PhStatSimulator Simulator("/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/Settings_T01.ini");
+	Simulator.Simulate();
+
+
+
 
 
 	std::cout << "the end." << std::endl;

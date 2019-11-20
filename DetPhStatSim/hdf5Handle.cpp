@@ -18,7 +18,7 @@ namespace hdf5Handle
 		hsize_t *dims = new hsize_t[DS.getSimpleExtentNdims()];
 		DS.getSimpleExtentDims(dims);
 
-		for (size_t i = 0; i < DS.getSimpleExtentNdims(); i++)
+		for (int i = 0; i < DS.getSimpleExtentNdims(); i++)
 		{
 			ret.push_back((int)dims[i]);
 		}

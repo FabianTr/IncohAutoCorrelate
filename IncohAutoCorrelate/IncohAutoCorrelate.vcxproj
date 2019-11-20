@@ -103,7 +103,6 @@
   <ItemGroup>
     <None Include="..\.gitignore" />
     <None Include="kernel.cl" />
-    <None Include="Overview.cd" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\Readme.txt" />

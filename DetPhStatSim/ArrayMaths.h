@@ -21,12 +21,12 @@ namespace
 namespace ArrayMaths
 {
 
-	inline double Drand()
+	inline double Drand(std::mt19937_64 MT = mt)
 	{
-		return rnd(mt);
+		return rnd(MT);
 	}
 
-	inline unsigned int ScalarPoissonSampling(double mean)
+	inline unsigned int ScalarPoissonSampling(double mean, std::mt19937_64 MT = mt)
 	{
 		double ret = 0;
 		//Poisson random number for small means 
@@ -37,7 +37,7 @@ namespace ArrayMaths
 			double p, q, r;
 			r = exp(-mean);
 			p = r;
-			q = Drand();
+			q = Drand(MT);
 			while (p < q) {
 				i++;
 				r *= mean / i;
@@ -48,8 +48,8 @@ namespace ArrayMaths
 		else
 			// Gaussian number by Box-Muller method for large means
 		{
-			double u = 1 - Drand();
-			double v = 1 - Drand();
+			double u = 1 - Drand(MT);
+			double v = 1 - Drand(MT);
 			ret = (mean + sqrt(mean)*sqrt(-2. * log(u)) * cos(2. * M_PI * v));
 			if (ret < 0)
 				ret = 0;
@@ -59,7 +59,7 @@ namespace ArrayMaths
 	}
 
 	template<typename T>
-	void GetNegativeBinomialArray(T * Array, size_t ArraySize, float Mean, float Modes)
+	void GetNegativeBinomialArray(T * Array, size_t ArraySize, float Mean, float Modes, std::mt19937_64 MT = mt)
 	{
 		ProfileTime profiler;
 		//std::negative_binomial_distribution<int> NB(Modes, Modes / (Modes + Mean));
@@ -69,12 +69,21 @@ namespace ArrayMaths
 		//#pragma omp parallel for
 		for (size_t i = 0; i < ArraySize; i++)
 		{
-			Array[i] = (T)ScalarPoissonSampling(Gamma(mt));
+			Array[i] = (T)ScalarPoissonSampling(Gamma(MT),MT);
 			//Array[i] = (T)ScalarPoissonSampling(Drand());
 			//Array[i] = (T)Gamma(mt);
 		}
 	}
 
+	template<typename T>
+	void AddGaussianNoise(T* Array, size_t ArraySize, double Sigma, std::mt19937_64 MT = mt)
+	{
+		std::normal_distribution<T> Gauss(0.0, Sigma);
+		for (size_t i = 0; i < ArraySize; i++)
+		{
+			Array[i] += Gauss(MT);
+		}
+	}
 
 	template<typename T>
 	void Convolve2D(T * Array, std::array<size_t, 2> ArraySize, const T * Kernel, std::array<size_t, 2> KernelSize) //Sizees in ss,fs

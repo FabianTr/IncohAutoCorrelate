@@ -653,67 +653,6 @@ void Settings::LoadHitEventListFromFile(std::string Filename)
 		HitEvents.push_back(tmp);
 	}
 	
-	//Old Versions
-	{
-		////Version 0.01
-		//void Settings::LoadHitEventListFromFile(std::string Filename)
-		//{
-		//	using boost::property_tree::ptree;
-		//	ptree pt;
-		//	boost::property_tree::read_xml(Filename, pt);
-
-		//	unsigned int Size = 0;
-		//	Size = pt.get<unsigned int>("root.Info.Size", -1);
-
-		//	if (Size == -1)
-		//	{
-		//		std::cerr << "ERROR: Empty or not readable xml HitEvents File\n";
-		//		std::cerr << "    -> in  Settings::LoadHitEventListFromFile()\n";
-		//		throw;
-		//	}
-		//	if (Size == 0)
-		//		return;
-
-		//	HitEvents.clear();
-
-		//	std::string pathbase;
-		//	if (pt.get<std::string>("root.content.N0.Filename", "_FAIL:OLD-VER") == "_FAIL:OLD-VER")
-		//	{
-		//		pathbase = "root.content.";
-		//	}
-		//	else
-		//	{
-		//		pathbase = "root.content.N";
-		//	}
-
-		//	for (unsigned int i = 0; i < Size; i++)
-		//	{
-		//		std::string path = pathbase + std::to_string(i);
-
-		//		HitEvent tmp;
-		//		tmp.Filename = pt.get<std::string>(path + ".Filename");
-		//		tmp.Dataset = pt.get<std::string>(path + ".Dataset");
-		//		tmp.Event = pt.get<int>(path + ".Event");
-		//		tmp.SerialNumber = pt.get<int>(path + ".SerialNumber");
-		//		tmp.MeanIntensity = pt.get<float>(path + ".MeanIntensity");
-		//		tmp.PhotonCount = pt.get<int>(path + ".PhotonCount");
-
-		//		tmp.RotMatrix[0] = pt.get<float>(path + ".R0");
-		//		tmp.RotMatrix[1] = pt.get<float>(path + ".R1");
-		//		tmp.RotMatrix[2] = pt.get<float>(path + ".R2");
-		//		tmp.RotMatrix[3] = pt.get<float>(path + ".R3");
-		//		tmp.RotMatrix[4] = pt.get<float>(path + ".R4");
-		//		tmp.RotMatrix[5] = pt.get<float>(path + ".R5");
-		//		tmp.RotMatrix[6] = pt.get<float>(path + ".R6");
-		//		tmp.RotMatrix[7] = pt.get<float>(path + ".R7");
-		//		tmp.RotMatrix[8] = pt.get<float>(path + ".R8");
-
-		//		HitEvents.push_back(tmp);
-		//	}
-
-
-		//}
-	}
 }
 
 
