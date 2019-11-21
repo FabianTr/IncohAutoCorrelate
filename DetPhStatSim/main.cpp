@@ -8,7 +8,7 @@
 #include "hdf5Handle.h"
 #include "ProfileTime.h"
 #include "IniParser.h"
-#include "Settings.h"
+#include "DePhStSi_Settings.h"
 #include "PhStatSimulator.h"
 
 
@@ -104,25 +104,51 @@ void TestINIParse()
 
 }
 
+
+void TestArrayMath_Convolve()
+{
+	float* Kernel = new float[21 * 21];
+	ArrayMaths::CreateGaussKernel(Kernel, 21, 5, true);
+	hdf5Handle::H5Quicksave(Kernel, { 21,21 }, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/kernel.h5", "data");
+
+	float* M = new float[250 * 250]();
+	M[250 * 125 + 25] = 1;
+	M[250 * 125 + 100] = 1;
+	M[250 * 25 + 125] = 1;
+	M[250 * 100 + 125] = 1;
+
+	hdf5Handle::H5Quicksave(M, { 250,250 }, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/M.h5", "data");
+
+	ArrayMaths::Convolve2D(M, { 250,250 }, Kernel, { 21,21 });
+
+	hdf5Handle::H5Quicksave(M, { 250,250 }, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/Conv.h5", "data");
+
+	delete[] Kernel;
+	delete[] M;
+}
+
 int main(int argc, char** argv)
 {
 	std::cout << "Detector Photon Statistics Simulation\n";
 	std::cout << "*************************************\n" << std::endl;
 
-	Settings Options;
+	DePhStSi_Settings Options;
 
-	//Options.SafeExampleSettings("/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/Settings_T01.ini");
-	//Options.LoadDetectorSettings("/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/Settings_T01.ini");
-	//Test();
-	//TestINIParse();
+	
+	if (argc < 2)
+	{
+		std::cout << "Need 1 argument \"config.ini\"\n";
+		std::cout << "To generate an example config file please enter filename: (empty for exit only)" << std::endl;
+		std::string PathOut;
+		std::cin >> PathOut;
+		Options.SafeExampleDePhStSi_Settings(PathOut);
+		std::cout << "Example DePhStSi_Settings as \"" << PathOut << "\"" << std::endl;
+		return 0;
+	}
 
-	PhStatSimulator Simulator("/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/Settings_T01.ini");
+	PhStatSimulator Simulator(argv[1]);
 	Simulator.Simulate();
 
-
-
-
-
-	std::cout << "the end." << std::endl;
+	std::cout << "\nthe end." << std::endl;
     return 0;
 }

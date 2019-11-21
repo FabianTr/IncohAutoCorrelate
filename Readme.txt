@@ -7,7 +7,7 @@ Out dated, this file should be updated
 Class structure:
 
 Settings:
-	Here all settings/options are stored which might be used by other classes.
+	Here all Settings/options are stored which might be used by other classes.
 	It also contains methods to load and parse config files
 
 Detector:

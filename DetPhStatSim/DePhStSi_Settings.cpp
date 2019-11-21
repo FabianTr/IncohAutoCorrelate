@@ -1,17 +1,17 @@
-#include "Settings.h"
+#include "DePhStSi_Settings.h"
 #include "IniParser.h"
 
 
-Settings::Settings()
+DePhStSi_Settings::DePhStSi_Settings()
 {
 }
 
 
-Settings::~Settings()
+DePhStSi_Settings::~DePhStSi_Settings()
 {
 }
 
-void Settings::LoadDetectorSettings(std::string File)
+void DePhStSi_Settings::LoadDetectorDePhStSi_Settings(std::string File)
 {
 	IniParser parser;
 	parser.LoadFile(File);
@@ -30,9 +30,12 @@ void Settings::LoadDetectorSettings(std::string File)
 	MeanIntensity = parser.GetValue<float>("MeanIntensity",1.0f);
 	Modes = parser.GetValue<float>("Modes",1.0f);
 	Pattern = parser.GetValue<unsigned int>("Pattern",1);
+
+	//run Parameter
+	Dark = parser.GetValue<bool>("Dark", false);
 }
 
-void Settings::SafeExampleSettings(std::string File)
+void DePhStSi_Settings::SafeExampleDePhStSi_Settings(std::string File)
 {
 	IniParser parser;
 
@@ -51,6 +54,8 @@ void Settings::SafeExampleSettings(std::string File)
 	parser.SetValue<float>("Modes", 1.0f);
 	parser.SetValue<unsigned int>("Pattern", 1);
 
+	//run Parameter
+	parser.SetValue<bool>("Dark", false);
 
 	parser.SafeFile(File);
 }

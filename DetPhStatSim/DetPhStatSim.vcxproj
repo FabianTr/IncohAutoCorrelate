@@ -84,7 +84,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PhStatSimulator.cpp" />
     <ClCompile Include="ProfileTime.cpp" />
-    <ClCompile Include="Settings.cpp" />
+    <ClCompile Include="DePhStSi_Settings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArrayMaths.h" />
@@ -92,7 +92,7 @@
     <ClInclude Include="IniParser.h" />
     <ClInclude Include="PhStatSimulator.h" />
     <ClInclude Include="ProfileTime.h" />
-    <ClInclude Include="Settings.h" />
+    <ClInclude Include="DePhStSi_Settings.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>

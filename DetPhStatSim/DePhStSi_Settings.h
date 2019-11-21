@@ -3,11 +3,11 @@
 #include <string>
 
 
-class Settings
+class DePhStSi_Settings
 {
 public:
-	Settings();
-	~Settings();
+	DePhStSi_Settings();
+	~DePhStSi_Settings();
 
 
 	//Det Parameter
@@ -24,11 +24,14 @@ public:
 	float MeanIntensity = 1.0f;
 	float Modes = 1.0f;
 
+	//run parameter
+	bool Dark = false;
+
 	unsigned int Pattern = 1;
 
-	void LoadDetectorSettings(std::string File);
+	void LoadDetectorDePhStSi_Settings(std::string File);
 
-	void SafeExampleSettings(std::string File);
+	void SafeExampleDePhStSi_Settings(std::string File);
 
 
 

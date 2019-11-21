@@ -28,10 +28,10 @@ std::vector<std::string> MainRunModes::CSV_Splitter(std::string Input, std::stri
 }
 
 
-//Load settings
+//Load Settings
 RunIAC::CreateDataEval_Settings MainRunModes::LoadEvaluationSettings(std::string Filename, Settings &Options)
 {
-	//Load Evaluation settings from XML-File
+	//Load Evaluation Settings from XML-File
 	RunIAC::CreateDataEval_Settings EVS;
 
 	using boost::property_tree::ptree;
@@ -283,7 +283,7 @@ MainRunModes::AllSettings MainRunModes::LoadSettings(std::string Filename, Setti
 	SettingsStack.AllSimulationSettings = MainRunModes::LoadSimulationSettings(Filename, Options); //Simulation stuff
 	SettingsStack.PPPDarkSettings = MainRunModes::LoadPPPDarkSettings(Filename, Options); //PPP.Dark
 
-	//combine redundant settings
+	//combine redundant Settings
 	{
 		SettingsStack.StatisticsSettings.ChargeSharingSettings.DetectorPanels = SettingsStack.PPPLAPSettings.DetectorPanels;
 		SettingsStack.StatisticsSettings.ChargeSharingSettings.RestrictToBoundaries = SettingsStack.EvaluationSettings.RestrictStackToBoundaries;
@@ -295,10 +295,10 @@ MainRunModes::AllSettings MainRunModes::LoadSettings(std::string Filename, Setti
 }
 
 
-//Create and save example settings
+//Create and save example Settings
 int MainRunModes::Create_Example_Evaluation_Config_File(std::string Filename, Settings &Options)
 {
-	//saves a example evaluations settings file
+	//saves a example evaluations Settings file
 	using boost::property_tree::ptree;
 	ptree pt;
 	pt = Example_Evaluation_Config_PT(pt, Options);
@@ -321,7 +321,7 @@ int MainRunModes::Create_Example_Evaluation_Config_File(std::string Filename, Se
 
 int MainRunModes::Create_Example_Config_File(std::string Filename, Settings & Options)
 {
-	//saves a example evaluations settings file
+	//saves a example evaluations Settings file
 	using boost::property_tree::ptree;
 	ptree pt;
 	pt = Example_Evaluation_Config_PT(pt, Options);
@@ -403,7 +403,7 @@ boost::property_tree::ptree MainRunModes::Example_Evaluation_Config_PT(boost::pr
 
 	//Store Evaluation Settings in PT
 	{
-		pt.put("root.Info.Info_Evaluation", "In this file are all settings for data-evaluation (autocorrelation) stored. This is an example file, just edit it as you need. This file can be created with the argument \"-ec\" (evaluation config).");
+		pt.put("root.Info.Info_Evaluation", "In this file are all Settings for data-evaluation (autocorrelation) stored. This is an example file, just edit it as you need. This file can be created with the argument \"-ec\" (evaluation config).");
 		pt.put("root.Info.Version", Settings::INTERNAL_VERSION);
 		pt.put("root.Info.VersionRevision", Settings::INTERNAL_VERSION_Revision);
 
@@ -492,7 +492,7 @@ boost::property_tree::ptree MainRunModes::Example_Statistics_Config_PT(boost::pr
 		pt.put("root.StatisticsSettings.SpeckleContrastStatistics.CSVOutputPath", SCSS.CSVOutputPath);
 
 		//Charge sharing (isolated photon hit)
-		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.InfoText", "For isolated photon charge sharing radius fit. Also requires Panel settings from Evaluation (XML, PixelMap, PixelMask, Boundaries) and PatternPreProcessing.LargestAdjugatPixel.");
+		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.InfoText", "For isolated photon charge sharing radius fit. Also requires Panel Settings from Evaluation (XML, PixelMap, PixelMask, Boundaries) and PatternPreProcessing.LargestAdjugatPixel.");
 
 		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.ADUSeed", CSS.Seed);
 		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.MaxADUSum", CSS.MaxADU);
@@ -946,6 +946,7 @@ int MainRunModes::FastDarkCalibration(std::string Arg1, std::string Arg2, std::s
 //Statistics (obtain information in order to correct data and more ...)
 int MainRunModes::CreateAllPixelHistograms(std::string ConfigFile, Settings & Options)
 {
+	std::cout << "Run in statistics mode: create pixelwise histograms \n" << std::endl;
 	RunIAC::CreateDataEval_Settings EVS = LoadEvaluationSettings(ConfigFile, Options);
 	Statistics::StatisticsSettings STS = MainRunModes::LoadStatisticSettings(ConfigFile, Options);
 
@@ -1035,7 +1036,7 @@ int MainRunModes::IsolatedPhotonChargeSharingFit(std::string ConfigFile, Setting
 	//	EvalSettings/Misc (Boundaries)
 	//	PatternPreProcessing/LargestAdjacentPixel/DetPanels
 
-	//load settings
+	//load Settings
 	MainRunModes::AllSettings AllSet = LoadSettings(ConfigFile, Options);
 
 	// create Detector
@@ -1101,7 +1102,7 @@ int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 	//load Config File
 	//RunIAC::CreateDataEval_Settings EVS = LoadEvaluationSettings(ConfigFile, Options);
 
-	std::cout << "load settings\n";
+	std::cout << "load Settings\n";
 	MainRunModes::AllSettings EVS = LoadSettings(ConfigFile, Options);
 
 	ProfileTime Profiler;
@@ -1119,7 +1120,7 @@ int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 		
 		file << " *** IAC - Report (autocorrelation mode) *** " << std::endl;
 		file << "Ver: " << Settings::GetVersion() << "\n" << std::endl;
-		file << "From settings file: \"" << EVS.XMLSetting_Path << "\"\n" << std::endl;
+		file << "From Settings file: \"" << EVS.XMLSetting_Path << "\"\n" << std::endl;
 
 		if (EVS.EvaluationSettings.AngularAveraged) //Aav
 		{
@@ -1167,7 +1168,6 @@ int MainRunModes::AutoCorrelateData(std::string ConfigFile, Settings & Options)
 
 	return 0;
 }
-
 
 
 //Sort Events

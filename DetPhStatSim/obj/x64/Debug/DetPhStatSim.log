@@ -4,35 +4,32 @@
   Validating architecture
   Starting remote build
   Compiling sources:
+  ArrayMaths.cpp
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\ArrayMaths.h(18,36): warning : conversion from 'std::uniform_real_distribution<double>::result_type' {aka 'double'} to 'std::linear_congruential_engine<long unsigned int, 16807, 0, 2147483647>::result_type' {aka 'long unsigned int'} may change value [-Wfloat-conversion]
+  hdf5Handle.cpp
+  main.cpp
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\ArrayMaths.h(18,36): warning : conversion from 'std::uniform_real_distribution<double>::result_type' {aka 'double'} to 'std::linear_congruential_engine<long unsigned int, 16807, 0, 2147483647>::result_type' {aka 'long unsigned int'} may change value [-Wfloat-conversion]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\main.cpp(30,50): warning : conversion from 'double' to 'float' changes value from '3.52e+0' to '3.51999998e+0f' [-Wfloat-conversion]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\ArrayMaths.h(141,99): warning : conversion from 'double' to 'float' may change value [-Wfloat-conversion]
   PhStatSimulator.cpp
 C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\ArrayMaths.h(18,36): warning : conversion from 'std::uniform_real_distribution<double>::result_type' {aka 'double'} to 'std::linear_congruential_engine<long unsigned int, 16807, 0, 2147483647>::result_type' {aka 'long unsigned int'} may change value [-Wfloat-conversion]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(35,45): warning : conversion from 'int' to 'float' may change value [-Wconversion]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(35,45): warning :   size_t KernelSize = ((size_t)(Options.SuSa * 4 * Options.ChargeSharingSigma) + 1);
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(35,45): warning :                                 ~~~~~~~~~~~~~^~~
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(37,89): warning : conversion from 'int' to 'float' may change value [-Wconversion]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(55,49): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(55,49): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(55,80): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(55,80): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(59,47): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(59,79): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(63,49): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(63,49): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(63,80): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(63,80): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(67,51): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(67,83): warning : narrowing conversion of '(Options.Settings::DetSize * Options.Settings::SuSa)' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(67,131): warning : narrowing conversion of 'Options.Settings::SuSa' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(67,145): warning : narrowing conversion of 'Options.Settings::SuSa' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(71,57): warning : narrowing conversion of 'Options.Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(71,57): warning : narrowing conversion of 'Options.Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(71,74): warning : narrowing conversion of 'Options.Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(71,74): warning : narrowing conversion of 'Options.Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(196,60): warning : narrowing conversion of '((PhStatSimulator*)this)->PhStatSimulator::Options.Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(196,60): warning : narrowing conversion of '((PhStatSimulator*)this)->PhStatSimulator::Options.Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(196,77): warning : narrowing conversion of '((PhStatSimulator*)this)->PhStatSimulator::Options.Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
-C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(196,77): warning : narrowing conversion of '((PhStatSimulator*)this)->PhStatSimulator::Options.Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(37,17): warning : suggest parentheses around assignment used as truth value [-Wparentheses]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(37,17): warning :   if (KernelSize = 0) // no charge sharing
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(37,17): warning :       ~~~~~~~~~~~^~~
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(46,90): warning : conversion from 'int' to 'float' may change value [-Wconversion]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(65,49): warning : narrowing conversion of '(Options.DePhStSi_Settings::DetSize * Options.DePhStSi_Settings::SuSa)' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(65,81): warning : narrowing conversion of '(Options.DePhStSi_Settings::DetSize * Options.DePhStSi_Settings::SuSa)' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(67,53): warning : narrowing conversion of '(Options.DePhStSi_Settings::DetSize * Options.DePhStSi_Settings::SuSa)' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(67,86): warning : narrowing conversion of '(Options.DePhStSi_Settings::DetSize * Options.DePhStSi_Settings::SuSa)' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(67,134): warning : narrowing conversion of 'Options.DePhStSi_Settings::SuSa' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(67,148): warning : narrowing conversion of 'Options.DePhStSi_Settings::SuSa' from 'int' to 'long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(194,60): warning : narrowing conversion of '((PhStatSimulator*)this)->PhStatSimulator::Options.DePhStSi_Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(194,60): warning : narrowing conversion of '((PhStatSimulator*)this)->PhStatSimulator::Options.DePhStSi_Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(194,77): warning : narrowing conversion of '((PhStatSimulator*)this)->PhStatSimulator::Options.DePhStSi_Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(194,77): warning : narrowing conversion of '((PhStatSimulator*)this)->PhStatSimulator::Options.DePhStSi_Settings::DetSize' from 'int' to 'long long unsigned int' inside { } [-Wnarrowing]
 C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\ArrayMaths.h(141,99): warning : conversion from 'double' to 'float' may change value [-Wfloat-conversion]
 C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\ArrayMaths.h(81,31): warning : conversion from 'double' to 'std::normal_distribution<float>::result_type' {aka 'float'} may change value [-Wfloat-conversion]
+  ProfileTime.cpp
+  DePhStSi_Settings.cpp
   Linking objects
   DetPhStatSim.vcxproj -> C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\bin\x64\Debug\DetPhStatSim.out

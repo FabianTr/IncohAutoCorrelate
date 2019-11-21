@@ -12,7 +12,7 @@
 #include "hdf5Handle.h"
 #include "ProfileTime.h"
 #include "IniParser.h"
-#include "Settings.h"
+#include "DePhStSi_Settings.h"
 
 
 
@@ -21,56 +21,54 @@ PhStatSimulator::PhStatSimulator()
 {
 }
 
-PhStatSimulator::PhStatSimulator(std::string SettingsPath)
+PhStatSimulator::PhStatSimulator(std::string DePhStSi_SettingsPath)
 {
-	Options.LoadDetectorSettings(SettingsPath);
+	Options.LoadDetectorDePhStSi_Settings(DePhStSi_SettingsPath);
 }
 
 
 std::mutex g_echo_mutex_Sim;
-void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage,Settings & Options, unsigned int Loops, int ThreadNum, std::atomic<int>& counter)
+void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage,DePhStSi_Settings & Options, unsigned int Loops, int ThreadNum, std::atomic<int>& counter)
 {
 	std::mt19937_64 mt(std::random_device{}() * ThreadNum); //random device
 
-	size_t KernelSize = ((size_t)(Options.SuSa * 4 * Options.ChargeSharingSigma) + 1);
+	size_t KernelSize = ((size_t)(Options.SuSa * 4.5 * Options.ChargeSharingSigma) );
+	bool ChargeSharing = true;
+	if (KernelSize = 0) // no charge sharing
+	{
+		ChargeSharing = false;
+		KernelSize = 1;
+	}
+	if (KernelSize % 2 == 0)
+		KernelSize++;
 	float* Kernel = new float[KernelSize * KernelSize];
-	ArrayMaths::CreateGaussKernel(Kernel, KernelSize, Options.ChargeSharingSigma * Options.SuSa, true); //create kernel for charge-sharing
-
-
-		////Debug Stuff
-	//g_echo_mutex_Sim.lock();
-	//hdf5Handle::H5Quicksave(Kernel, { KernelSize,KernelSize }, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/kernel.h5", Options.OutputDataset);
-	//g_echo_mutex_Sim.unlock();
-	//// \Debug Stuff
+	if (ChargeSharing)
+		ArrayMaths::CreateGaussKernel(Kernel, KernelSize, Options.ChargeSharingSigma * Options.SuSa, true); //create kernel for charge-sharing
 
 
 	unsigned int FullSize = Options.DetSize * Options.DetSize * Options.SuSa * Options.SuSa;
 	float* M = new float[FullSize]();
 	for (unsigned int i = 0; i < Loops; i++)
 	{
-		ArrayMaths::GetNegativeBinomialArray(M, FullSize,Options.MeanIntensity / ((float)(Options.SuSa * Options.SuSa)), Options.Modes / ((float)(Options.SuSa * Options.SuSa)),mt); //Negative Binomial distribution (oversampled)
-		
-			////Debug Stuff
-			//g_echo_mutex_Sim.lock();
-			//hdf5Handle::H5Quicksave(M, { Options.DetSize * Options.SuSa,Options.DetSize * Options.SuSa }, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/M.h5", Options.OutputDataset);
-			//g_echo_mutex_Sim.unlock();
-			//// \Debug Stuff
-		
-		ArrayMaths::Convolve2D(M, { Options.DetSize * Options.SuSa, Options.DetSize * Options.SuSa }, Kernel, { KernelSize,KernelSize }); //simulate charge sharing
+		if (Options.Dark || Options.MeanIntensity == 0)
+		{//set all pixels to zero
+			for (size_t j = 0; j < Options.DetSize * Options.DetSize; j++)
+			{
+				DetImage[i].data()[j] = 0.0f;
+			}
+		}
+		else
+		{//get distribution and charge sharing
+			ArrayMaths::GetNegativeBinomialArray(M, FullSize, Options.MeanIntensity / ((float)(Options.SuSa * Options.SuSa)), Options.Modes / ((float)(Options.SuSa * Options.SuSa)), mt); //Negative Binomial distribution (oversampled)
+			
+			if (ChargeSharing)
+				ArrayMaths::Convolve2D(M, { Options.DetSize * Options.SuSa, Options.DetSize * Options.SuSa }, Kernel, { KernelSize,KernelSize }); //simulate charge sharing
 
-			////Debug Stuff
-			//g_echo_mutex_Sim.lock();
-			//hdf5Handle::H5Quicksave(M, { Options.DetSize * Options.SuSa,Options.DetSize * Options.SuSa }, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/GFM.h5", Options.OutputDataset);
-			//g_echo_mutex_Sim.unlock();
-			//// \Debug Stuff
+			ArrayMaths::Pixelize2DArray(M, { Options.DetSize * Options.SuSa , Options.DetSize * Options.SuSa }, DetImage[i].data(), { Options.SuSa, Options.SuSa });
+		}
 
-		ArrayMaths::Pixelize2DArray(M, { Options.DetSize*Options.SuSa , Options.DetSize * Options.SuSa }, DetImage[i].data(), { Options.SuSa, Options.SuSa });
 
-			////Debug Stuff
-			//g_echo_mutex_Sim.lock();
-			//hdf5Handle::H5Quicksave(DetImage[i].data(), { Options.DetSize ,Options.DetSize}, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/Pix.h5", Options.OutputDataset);
-			//g_echo_mutex_Sim.unlock();
-			//// \Debug Stuff
+
 
 		if (Options.DarkNoise > 0.0) //add Noise
 		{
@@ -195,7 +193,7 @@ void PhStatSimulator::Simulate()
 	//Save Results
 	hdf5Handle::H5Quicksave(Result, { Options.Pattern,Options.DetSize ,Options.DetSize }, Options.OutputPath, Options.OutputDataset);
 
-	std::cout << "Results saved as \"" << Options.OutputPath << "\" in H5-Dataset \"" << Options.OutputDataset << "\"\ndone within ";
+	std::cout << "\nResults saved as \"" << Options.OutputPath << "\" in H5-Dataset \"" << Options.OutputDataset << "\"\ndone within ";
 	profiler.Toc(true);
 	std::cout << std::endl;
 
