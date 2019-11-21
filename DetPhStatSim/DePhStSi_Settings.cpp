@@ -11,10 +11,21 @@ DePhStSi_Settings::~DePhStSi_Settings()
 {
 }
 
-void DePhStSi_Settings::LoadDetectorDePhStSi_Settings(std::string File)
+void DePhStSi_Settings::LoadDetectorDePhStSi_Settings(std::string File, std::string ArgStream) //argstream in "Key1=Val1;Key2=Val2;..."
 {
+	//parse File
 	IniParser parser;
 	parser.LoadFile(File);
+	//parse ArgStream
+
+	if (ArgStream != "")
+	{
+		std::vector<std::string> AddArgs = IniParser::StringSplitter(ArgStream, ";");
+		for (size_t i = 0; i < AddArgs.size(); i++)
+		{
+			parser.SetValueStr(AddArgs[i]);
+		}
+	}
 
 	//Det Parameter
 	DetSize = parser.GetValue<int>("DetectorSize", 1024);

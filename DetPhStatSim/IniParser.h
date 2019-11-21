@@ -13,23 +13,7 @@ class IniParser
 {
 	std::unordered_map<std::string,std::string> Dictionary;
 
-	std::vector<std::string>StringSplitter(std::string Input, std::string delimiter)
-	{
-		//Splits "delimiter"-seperated Values within string to vector
-		std::vector<std::string> Output;
-		size_t pos = 0;
-		std::string token;
-		//bool ParsingAlive = true;
-		while ((pos = Input.find(delimiter)) != std::string::npos)
-		{
-			token = Input.substr(0, pos);
-			Output.push_back(token);
-			Input.erase(0, pos + delimiter.length());
-		}
-		if (Input.size() != 0)
-			Output.push_back(Input);
-		return Output;
-	}
+	
 
 	// trim from start (in place)
 	inline void ltrim(std::string& s) {
@@ -60,32 +44,64 @@ class IniParser
 		return ret;
 	}
 public:
-	
+
+	static std::vector<std::string>StringSplitter(std::string Input, std::string delimiter)
+	{
+		//Splits "delimiter"-seperated Values within string to vector
+		std::vector<std::string> Output;
+		size_t pos = 0;
+		std::string token;
+		//bool ParsingAlive = true;
+		while ((pos = Input.find(delimiter)) != std::string::npos)
+		{
+			token = Input.substr(0, pos);
+			Output.push_back(token);
+			Input.erase(0, pos + delimiter.length());
+		}
+		if (Input.size() != 0)
+			Output.push_back(Input);
+		return Output;
+	}
+
+	static inline bool FileExists(const std::string& Filename) 
+	{
+		std::ifstream f(Filename.c_str());
+		return f.good();
+	}
+
+
 	void Clear()
 	{
 		Dictionary.clear();
 	}
-	void LoadFile(std::string Filename)
+	bool LoadFile(std::string Filename,  std::string delimiter = "=")
 	{
-		const std::string delimiter = "=";
-
-		std::ifstream file(Filename);
-		std::string line;
-		while (std::getline(file, line))
+		if (FileExists(Filename))
 		{
-			trim(line);
-			if (line.length() == 0) //check for empty line
-				continue;
-			if (line[0] == '#') //check for comment
-				continue;
+			std::ifstream file(Filename);
+			std::string line;
+			while (std::getline(file, line))
+			{
+				trim(line);
+				if (line.length() == 0) //check for empty line
+					continue;
+				if (line[0] == '#') //check for comment
+					continue;
 
-			std::string Key = line.substr(0, line.find(delimiter));
-			line.erase(0,  line.find(delimiter) + delimiter.length());
-			std::string Val = line;
-			trim(Key);
-			trim(Val);
-			Dictionary[Key] = Val;
+				std::string Key = line.substr(0, line.find(delimiter));
+				line.erase(0, line.find(delimiter) + delimiter.length());
+				std::string Val = line;
+				trim(Key);
+				trim(Val);
+				Dictionary[Key] = Val;
+			}
+			return true;
 		}
+		else
+		{
+			return false;
+		}
+
 	}
 
 	void SafeFile(std::string Filename)
@@ -118,6 +134,20 @@ public:
 		ss << Input;
 
 		Dictionary[Key] = ss.str();
+	}
+
+	void SetValueStr(std::string Key_Input, std::string delimiter = "=")
+	{
+		trim(Key_Input);
+		if (Key_Input.length() == 0) //check for empty line
+			return;
+
+		std::string Key = Key_Input.substr(0, Key_Input.find(delimiter));
+		Key_Input.erase(0, Key_Input.find(delimiter) + delimiter.length());
+		std::string Val = Key_Input;
+		trim(Key);
+		trim(Val);
+		Dictionary[Key] = Val;
 	}
 
 };

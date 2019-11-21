@@ -34,7 +34,7 @@ void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage,De
 
 	size_t KernelSize = ((size_t)(Options.SuSa * 4.5 * Options.ChargeSharingSigma) );
 	bool ChargeSharing = true;
-	if (KernelSize = 0) // no charge sharing
+	if (KernelSize = 0.0f) // no charge sharing
 	{
 		ChargeSharing = false;
 		KernelSize = 1;
@@ -108,7 +108,8 @@ void PhStatSimulator::Simulate()
 		<< "DetSiz   : " << Options.DetSize << "\n"
 		<< "SuSa     : " << Options.SuSa << "\n"
 		<< "CS-Sigma : " << Options.ChargeSharingSigma << "\n"
-		<< "DarkNoise: " << Options.DarkNoise << "\n" << std::endl;
+		<< "DarkNoise: " << Options.DarkNoise << "\n" 
+		<< "OutputFile: " << Options.OutputPath << "; Dataset: " << Options.OutputDataset << "\n" << std::endl;
 
 	ProfileTime profiler;
 
@@ -170,12 +171,12 @@ void PhStatSimulator::Simulate()
 
 
 	//Reduce
-	float* Result = new float[Options.DetSize * Options.DetSize * Options.Pattern];
-	size_t ind = 0;
+	float* Result = new float[(size_t)Options.DetSize * (size_t)Options.DetSize * (size_t)Options.Pattern];
+	
 	//std::cout << Options.DetSize << " ; " << Options.Pattern << " ; " << Options.DetSize * Options.DetSize * Options.Pattern << std::endl;
 	//std::cout << DetImages.size() << std::endl;
 
-
+	size_t ind = 0;
 	for (size_t i = 0; i < DetImages.size(); i++)
 	{
 		//std::cout << i <<"\t " << DetImages[i].size() <<" ; " << DetImages[i][0].size() <<   std::endl;
@@ -189,6 +190,7 @@ void PhStatSimulator::Simulate()
 			}
 		}
 	}
+
 
 	//Save Results
 	hdf5Handle::H5Quicksave(Result, { Options.Pattern,Options.DetSize ,Options.DetSize }, Options.OutputPath, Options.OutputDataset);

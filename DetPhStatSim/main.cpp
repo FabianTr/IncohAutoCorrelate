@@ -12,6 +12,7 @@
 #include "PhStatSimulator.h"
 
 
+
 void Test()
 {
 	ProfileTime profiler;
@@ -146,7 +147,26 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	PhStatSimulator Simulator(argv[1]);
+	PhStatSimulator Simulator;
+	if (IniParser::FileExists(argv[1]))
+	{
+		std::string AddArgStream = "";
+		for (int i = 2; i < argc; i++)
+		{
+			AddArgStream = AddArgStream + ";" + argv[i];
+		}
+		Simulator.Options.LoadDetectorDePhStSi_Settings(argv[1], AddArgStream);
+	}
+	else
+	{
+		std::string AddArgStream = "";
+		for (int i = 1; i < argc; i++)
+		{
+			AddArgStream = AddArgStream + ";" + argv[i];
+		}
+		Simulator.Options.LoadDetectorDePhStSi_Settings("", AddArgStream);
+	}
+
 	Simulator.Simulate();
 
 	std::cout << "\nthe end." << std::endl;

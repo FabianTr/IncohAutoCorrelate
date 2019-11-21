@@ -29,7 +29,7 @@ public:
 
 	unsigned int Pattern = 1;
 
-	void LoadDetectorDePhStSi_Settings(std::string File);
+	void LoadDetectorDePhStSi_Settings(std::string File, std::string ArgStream = "");
 
 	void SafeExampleDePhStSi_Settings(std::string File);
 
