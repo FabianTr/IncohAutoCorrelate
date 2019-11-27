@@ -12,6 +12,13 @@
 #include <array>
 #include <unordered_map>
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/info_parser.hpp>
+
 #include <CL/cl.hpp>
 
 #include <omp.h>
@@ -31,8 +38,52 @@ private:
 	
 public:
 	const static int XML_HITLIST_VERSION = 7; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
-	const static int INTERNAL_VERSION = 9; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
-	const static int INTERNAL_VERSION_Revision = 4; //rr
+	const static int INTERNAL_VERSION = 10; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
+	const static int INTERNAL_VERSION_Revision = 0; //rr
+
+	static void SavePropertyTree(boost::property_tree::ptree &pt, std::string Filename)
+	{
+		std::vector<std::string> filename = Settings::SplitString(Filename, ".");
+		std::string filetype = filename[filename.size() - 1];
+		std::transform(filetype.begin(), filetype.end(), filetype.begin(), tolower);
+
+		if (filetype == "json")
+		{
+			boost::property_tree::write_json(Filename, pt);
+		}
+		else if (filetype == "info")
+		{
+			boost::property_tree::write_info(Filename, pt);
+		}
+		else
+		{
+			if (filetype != "xml")
+			{
+				std::cout << "WARNING: \"" << filetype << "\" is not supportet.\n  -> Using \"xml\" instead." << std::endl;
+			}
+			boost::property_tree::write_xml(Filename, pt);
+		}
+	}
+
+	static void LoadPropertyTree(boost::property_tree::ptree& pt, std::string Filename)
+	{
+		std::vector<std::string> filename = Settings::SplitString(Filename, ".");
+		std::string filetype = filename[filename.size() - 1];
+		std::transform(filetype.begin(), filetype.end(), filetype.begin(), tolower);
+
+		if (filetype == "json")
+		{
+			boost::property_tree::read_json(Filename, pt);
+		}
+		else if (filetype == "info")
+		{
+			boost::property_tree::read_info(Filename, pt);
+		}
+		else
+		{
+			boost::property_tree::read_xml(Filename, pt);
+		}
+	}
 
 	static std::string GetVersion()
 	{
@@ -175,6 +226,24 @@ public:
 
 		if (count != ReqSize - 1)
 			throw;
+	}
+
+
+	static std::vector<std::string> SplitString(std::string Input,  std::string delimiter = ";")
+	{
+		std::vector<std::string> Output;
+		size_t pos = 0;
+		std::string token;
+		int count = 0;
+		while ((pos = Input.find(delimiter)) != std::string::npos)
+		{
+			token = Input.substr(0, pos);
+			Output.push_back(token);
+			Input.erase(0, pos + delimiter.length());
+			count++;
+		}
+		Output.push_back(Input);
+		return Output;
 	}
 
 };

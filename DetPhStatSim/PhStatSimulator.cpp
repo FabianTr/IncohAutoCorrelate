@@ -34,7 +34,7 @@ void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage,De
 
 	size_t KernelSize = ((size_t)(Options.SuSa * 4.5 * Options.ChargeSharingSigma) );
 	bool ChargeSharing = true;
-	if (KernelSize = 0.0f) // no charge sharing
+	if (KernelSize < 1) // no charge sharing
 	{
 		ChargeSharing = false;
 		KernelSize = 1;
@@ -101,6 +101,15 @@ void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage,De
 
 void PhStatSimulator::Simulate()
 {
+	if (Options.ChargeSharingSigma > 0)
+	{
+		if (Options.SuSa * Options.ChargeSharingSigma < 4)
+		{
+			std::cout << "\nWARNING: Sub-sampling might be insufficient. \" Sub-sampling * Charge-sharing sigma > 4 \" is recommanded.\n" << std::endl;
+		}
+	}
+
+
 	std::cout << "Start simulation with\n"
 		<< "Pattern  : " << Options.Pattern << "\n"
 		<< "MeanInten: " << Options.MeanIntensity << "\n"

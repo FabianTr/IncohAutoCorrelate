@@ -169,12 +169,16 @@ namespace PPP
 		dims[2] = Det.DetectorSize[1];
 		H5::DataSpace dataspace(3, dims);
 
-		H5::DataSet dataset = file.createDataSet(Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
-
 		hsize_t start[3] = { 0, 0, 0 };  // Start of hyperslab, offset
 		hsize_t stride[3] = { 1, 1, 1 }; // Stride of hyperslab
 		hsize_t count[3] = { 1, 1, 1 };  // Block count
 		hsize_t block[3] = { 1, dims[1], dims[2] }; // Block sizes
+
+		H5::DSetCreatPropList plist = H5::DSetCreatPropList();
+		plist.setChunk(3, block);
+		plist.setDeflate(6); //compression
+
+		H5::DataSet dataset = file.createDataSet(Dataset, H5::PredType::NATIVE_FLOAT, dataspace,plist);
 
 		H5::DataSpace mspace(3, block);
 

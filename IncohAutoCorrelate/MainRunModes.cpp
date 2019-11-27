@@ -36,10 +36,11 @@ RunIAC::CreateDataEval_Settings MainRunModes::LoadEvaluationSettings(std::string
 
 	using boost::property_tree::ptree;
 	ptree pt;
-	boost::property_tree::read_xml(Filename, pt);
 
+	Settings::LoadPropertyTree(pt, Filename);
+	
+	
 	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
-
 	//->Input Files
 	EVS.XML_Path = pt.get<std::string>("root.EvalSettings.InputFiles.EventList_Path", "");
 	EVS.PixelMap_Path = pt.get<std::string>("root.EvalSettings.InputFiles.PixelMap_Path", "");
@@ -95,8 +96,8 @@ Statistics::StatisticsSettings MainRunModes::LoadStatisticSettings(std::string F
 
 	using boost::property_tree::ptree;
 	ptree pt;
-	boost::property_tree::read_xml(Filename, pt);
-
+	
+	Settings::LoadPropertyTree(pt, Filename);
 	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
 
 	
@@ -132,7 +133,8 @@ PPP::Create_LAPSettings MainRunModes::LoadPPPLAPSettings(std::string Filename, S
 
 	using boost::property_tree::ptree;
 	ptree pt;
-	boost::property_tree::read_xml(Filename, pt);
+	
+	Settings::LoadPropertyTree(pt, Filename);
 
 	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
 
@@ -176,7 +178,8 @@ PPP::CreateDarkSettings MainRunModes::LoadPPPDarkSettings(std::string Filename, 
 
 	using boost::property_tree::ptree;
 	ptree pt;
-	boost::property_tree::read_xml(Filename, pt);
+	
+	Settings::LoadPropertyTree(pt, Filename);
 
 	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Options.INTERNAL_VERSION);
 
@@ -205,7 +208,8 @@ MainRunModes::AllSimSettings MainRunModes::LoadSimulationSettings(std::string Fi
 
 	using boost::property_tree::ptree;
 	ptree pt;
-	boost::property_tree::read_xml(Filename, pt);
+	
+	Settings::LoadPropertyTree(pt, Filename);
 
 	//unsigned int Version = pt.get<unsigned int>("root.Info.Version", Settings::INTERNAL_VERSION);
 
@@ -305,7 +309,8 @@ int MainRunModes::Create_Example_Evaluation_Config_File(std::string Filename, Se
 
 
 	//save to File
-	boost::property_tree::write_xml(Filename, pt);
+	Settings::SavePropertyTree(pt, Filename);
+
 
 	//report
 	if (Options.echo)
@@ -330,8 +335,7 @@ int MainRunModes::Create_Example_Config_File(std::string Filename, Settings & Op
 	pt = Example_PatternPreProcessing_Dark(pt, Options);
 	pt = Example_Simulation_Config_PT(pt, Options);
 	//save to File
-	boost::property_tree::write_xml(Filename, pt);
-
+	Settings::SavePropertyTree(pt, Filename);
 	//report
 	if (Options.echo)
 	{
@@ -797,7 +801,7 @@ int MainRunModes::AverageIntensity(std::string EvaluationConfigFile, Settings &O
 		return -1;
 	}
 	if (Options.echo)
-		std::cout << Options.HitEvents.size() << "Events found\n";
+		std::cout << Options.HitEvents.size() << " Events found\n";
 
 	//Load and average Intensities, update XML, if wanted.
 	

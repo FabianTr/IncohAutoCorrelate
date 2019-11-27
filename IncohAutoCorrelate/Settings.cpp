@@ -6,8 +6,6 @@
 #include <Eigen/SVD>
 #include <fstream>
 #include "H5Cpp.h"
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
 #include <set>
 
@@ -513,7 +511,9 @@ void Settings::SafeHitEventListToFile(std::string Filename, std::vector<Settings
 		pt.put(path + ".Rotation", RMOutput);
 
 	}
-	boost::property_tree::write_xml(Filename, pt);
+
+
+	Settings::SavePropertyTree(pt, Filename);
 }
 
 void Settings::InvertRotationMatrices()
@@ -544,7 +544,7 @@ void Settings::LoadHitEventListFromFile(std::string Filename)
 {
 	using boost::property_tree::ptree;
 	ptree pt;
-	boost::property_tree::read_xml(Filename, pt);
+	Settings::LoadPropertyTree(pt, Filename);
 
 	unsigned int Size = 0;
 	unsigned int Version = 1;

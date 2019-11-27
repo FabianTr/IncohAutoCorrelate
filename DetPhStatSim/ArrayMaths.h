@@ -85,6 +85,8 @@ namespace ArrayMaths
 		}
 	}
 
+	//think of a more accurate description for the noise than Gaussian
+
 	template<typename T>
 	void Convolve2D(T * Array, std::array<size_t, 2> ArraySize, const T * Kernel, std::array<size_t, 2> KernelSize) //Sizees in ss,fs
 	{
