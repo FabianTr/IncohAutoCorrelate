@@ -28,7 +28,7 @@ void Test()
 
 	float * Kernel = new float[31 * 31];
 
-	ArrayMaths::CreateGaussKernel(Kernel, 31 , 0.22 * 16, true);
+	ArrayMaths::CreateGaussKernel(Kernel, 31 , 0.22f * 16, true);
 
 	ArrayMaths::Convolve2D(M, { 1024 * 16 , 1024 * 16 }, Kernel, { 31,31 });
 

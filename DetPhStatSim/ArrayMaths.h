@@ -15,7 +15,7 @@ namespace
 
 	std::uniform_real_distribution<double> rnd;
 
-	std::default_random_engine lce(rnd(mt));
+	std::default_random_engine lce(mt());
 }
 
 namespace ArrayMaths
@@ -76,9 +76,9 @@ namespace ArrayMaths
 	}
 
 	template<typename T>
-	void AddGaussianNoise(T* Array, size_t ArraySize, double Sigma, std::mt19937_64 MT = mt)
+	void AddGaussianNoise(T* Array, size_t ArraySize, T Sigma, std::mt19937_64 MT = mt)
 	{
-		std::normal_distribution<T> Gauss(0.0, Sigma);
+		std::normal_distribution<T> Gauss((T)0.0, Sigma);
 		for (size_t i = 0; i < ArraySize; i++)
 		{
 			Array[i] += Gauss(MT);
@@ -140,8 +140,8 @@ namespace ArrayMaths
 				float YL = (float)fs - 0.5f * (float)(KernelSize - 1) - 0.5f;
 				float YH = (float)fs - 0.5f * (float)(KernelSize - 1) + 0.5f;
 
-				T Val = 0.25 * (std::erf(XH / (std::sqrt(2.0)*Sigma)) - std::erf(XL / (std::sqrt(2.0)*Sigma)))*
-					(std::erf(YH / (std::sqrt(2.0)*Sigma)) - std::erf(YL / (std::sqrt(2.0)*Sigma)));
+				T Val = 0.25f * (std::erf(XH / (std::sqrt(2.0f)*Sigma)) - std::erf(XL / (std::sqrt(2.0f)*Sigma)))*
+					(std::erf(YH / (std::sqrt(2.0f)*Sigma)) - std::erf(YL / (std::sqrt(2.0f)*Sigma)));
 
 				Kernel[fs + ss * KernelSize] = Val;
 			}

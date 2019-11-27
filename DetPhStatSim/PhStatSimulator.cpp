@@ -43,7 +43,7 @@ void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage,De
 		KernelSize++;
 	float* Kernel = new float[KernelSize * KernelSize];
 	if (ChargeSharing)
-		ArrayMaths::CreateGaussKernel(Kernel, KernelSize, Options.ChargeSharingSigma * Options.SuSa, true); //create kernel for charge-sharing
+		ArrayMaths::CreateGaussKernel(Kernel, KernelSize, Options.ChargeSharingSigma * (float)Options.SuSa, true); //create kernel for charge-sharing
 
 
 	unsigned int FullSize = Options.DetSize * Options.DetSize * Options.SuSa * Options.SuSa;
@@ -62,9 +62,9 @@ void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage,De
 			ArrayMaths::GetNegativeBinomialArray(M, FullSize, Options.MeanIntensity / ((float)(Options.SuSa * Options.SuSa)), Options.Modes / ((float)(Options.SuSa * Options.SuSa)), mt); //Negative Binomial distribution (oversampled)
 			
 			if (ChargeSharing)
-				ArrayMaths::Convolve2D(M, { Options.DetSize * Options.SuSa, Options.DetSize * Options.SuSa }, Kernel, { KernelSize,KernelSize }); //simulate charge sharing
+				ArrayMaths::Convolve2D(M, { (size_t)(Options.DetSize * Options.SuSa), (size_t)(Options.DetSize * Options.SuSa) }, Kernel, { KernelSize,KernelSize }); //simulate charge sharing
 
-			ArrayMaths::Pixelize2DArray(M, { Options.DetSize * Options.SuSa , Options.DetSize * Options.SuSa }, DetImage[i].data(), { Options.SuSa, Options.SuSa });
+			ArrayMaths::Pixelize2DArray(M, { (size_t)(Options.DetSize * Options.SuSa) , (size_t)(Options.DetSize * Options.SuSa) }, DetImage[i].data(), { (size_t)Options.SuSa,  (size_t)Options.SuSa });
 		}
 
 
@@ -72,7 +72,7 @@ void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage,De
 
 		if (Options.DarkNoise > 0.0) //add Noise
 		{
-			ArrayMaths::AddGaussianNoise(DetImage[i].data(), Options.DetSize * Options.DetSize, (double)Options.DarkNoise, mt);
+			ArrayMaths::AddGaussianNoise<float>(DetImage[i].data(), Options.DetSize * Options.DetSize, Options.DarkNoise, mt);
 		}
 		
 		counter++;
@@ -103,7 +103,7 @@ void PhStatSimulator::Simulate()
 {
 	if (Options.ChargeSharingSigma > 0)
 	{
-		if (Options.SuSa * Options.ChargeSharingSigma < 4)
+		if ((float)Options.SuSa * Options.ChargeSharingSigma < 4.0f)
 		{
 			std::cout << "\nWARNING: Sub-sampling might be insufficient. \" Sub-sampling * Charge-sharing sigma > 4 \" is recommanded.\n" << std::endl;
 		}
@@ -202,7 +202,7 @@ void PhStatSimulator::Simulate()
 
 
 	//Save Results
-	hdf5Handle::H5Quicksave(Result, { Options.Pattern,Options.DetSize ,Options.DetSize }, Options.OutputPath, Options.OutputDataset);
+	hdf5Handle::H5Quicksave(Result, { (hsize_t)Options.Pattern,(hsize_t)Options.DetSize, (hsize_t)Options.DetSize }, Options.OutputPath, Options.OutputDataset);
 
 	std::cout << "\nResults saved as \"" << Options.OutputPath << "\" in H5-Dataset \"" << Options.OutputDataset << "\"\ndone within ";
 	profiler.Toc(true);
