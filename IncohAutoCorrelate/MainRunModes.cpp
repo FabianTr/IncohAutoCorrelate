@@ -995,9 +995,16 @@ int MainRunModes::GenerateSpeckleContrastStatistics(std::string ConfigFile, Sett
 		UpBound = AllSet.EvaluationSettings.UpperBoundary;
 	}
 
+	ProfileTime profiler;
+	profiler.Tic();
+
 	//Get SC-Statistics
+	std::cout << "\nStart \"Speckle Contrst Statistic\" calculation for " << UpBound - LowBound << " Events." << std::endl;
 	Statistics::SpeckleContrastStatistics SCS;
 	SCS = Statistics::GetSpeckleContrastStatistics(Options, RefDet, LowBound, UpBound, AllSet.EvaluationSettings.PhotonOffset, AllSet.EvaluationSettings.PhotonStep);
+
+	std::cout << "done in ";
+	profiler.Toc(true);
 
 	//Write results to File
 	std::ofstream File(AllSet.StatisticsSettings.SpeckleContrastSettings.CSVOutputPath, std::ofstream::out);

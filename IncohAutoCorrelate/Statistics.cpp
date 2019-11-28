@@ -162,16 +162,17 @@ namespace Statistics
 
 		//Loop through patterns --- can be parallized therefore clone det, ...
 		unsigned int counter = 0.0;
-		const unsigned int modulo = (UpperBound - LowerBound + 50 )/100;
+		const unsigned int modulo = (UpperBound - LowerBound )/100;
+		ProfileTime profiler;
+		profiler.Tic();
 		#pragma omp parallel for
 		for (unsigned int i = 0; i < UpperBound - LowerBound; i++)
 		{
 			//Load Intensity
 			Detector Det(RefDet, true);
-			#pragma omp critical
-			{
-				Det.LoadIntensityData(&Options.HitEvents[i + LowerBound]);
-			}
+
+			Det.LoadIntensityData(&Options.HitEvents[i + LowerBound]);
+			
 			Det.ApplyPixelMask();
 			//Loop through Pixel
 			ArrayOperators::DiscretizeToPhotons(Det.Intensity, Offset, Step, Det.DetectorSize[0] * Det.DetectorSize[1]);
@@ -202,8 +203,10 @@ namespace Statistics
 
 			#pragma omp critical
 			{
+				//std::cout << (counter / modulo) << "\%" << std::endl;
 				if ((++counter) % modulo == 0) {
-					std::cout << counter/modulo << "%" << std::endl;
+					std::cout << (counter/modulo) << "\%  in ";
+					profiler.Toc(true);
 				}
 			}
 		}
