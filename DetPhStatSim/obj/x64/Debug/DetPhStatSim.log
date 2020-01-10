@@ -4,6 +4,6 @@
   Validating architecture
   Starting remote build
   Compiling sources:
-  hdf5Handle.cpp
+  PhStatSimulator.cpp
   Linking objects
   DetPhStatSim.vcxproj -> C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\bin\x64\Debug\DetPhStatSim.out

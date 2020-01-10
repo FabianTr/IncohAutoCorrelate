@@ -326,6 +326,7 @@ MainRunModes::AllSettings MainRunModes::LoadSettings(std::string Filename, Setti
 	SettingsStack.PPPLAPSettings = MainRunModes::LoadPPPLAPSettings(Filename, Options); //PPP.LAP
 	SettingsStack.AllSimulationSettings = MainRunModes::LoadSimulationSettings(Filename, Options); //Simulation stuff
 	SettingsStack.PPPDarkSettings = MainRunModes::LoadPPPDarkSettings(Filename, Options); //PPP.Dark
+	SettingsStack.GaussPhotonizeSettings = MainRunModes::LoadGaussPhotonizeSettings(Filename, Options); //PPP.PhotonGaussFit
 
 	//combine redundant Settings
 	{

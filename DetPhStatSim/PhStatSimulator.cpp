@@ -29,7 +29,9 @@ PhStatSimulator::PhStatSimulator(std::string DePhStSi_SettingsPath)
 std::mutex g_echo_mutex_Sim;
 void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage, std::vector<std::vector<float>>& GroundTruth,DePhStSi_Settings & Options, unsigned int Loops, int ThreadNum, std::atomic<int>& counter)
 {
-	std::mt19937_64 mt(std::random_device{}() * ThreadNum); //random device
+	const auto seed = std::random_device{}() * (ThreadNum+1);
+	//std::cout << seed << std::endl;;
+	std::mt19937_64 mt(seed); //random device
 
 	size_t KernelSize = ((size_t)(Options.SuSa * 4.5 * Options.ChargeSharingSigma) );
 	bool ChargeSharing = true;
@@ -187,14 +189,12 @@ void PhStatSimulator::Simulate()
 
 	//Reduce
 	float* Result = new float[(size_t)Options.DetSize * (size_t)Options.DetSize * (size_t)Options.Pattern]();
-
 	float* GroundTruth = new float[(size_t)Options.DetSize * (size_t)Options.DetSize * (size_t)Options.Pattern]();
 	
-	size_t ind = 0;
+	//Fill result and groundtruth in arrays
+	size_t ind = 0; 
 	for (size_t i = 0; i < DetImages.size(); i++)
 	{
-		//std::cout << i <<"\t " << DetImages[i].size() <<" ; " << DetImages[i][0].size() <<   std::endl;
-
 		for (size_t j = 0; j < DetImages[i].size(); j++)
 		{
 			for (size_t k = 0; k < DetImages[i][j].size(); k++)

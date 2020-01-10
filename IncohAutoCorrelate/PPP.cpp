@@ -147,65 +147,132 @@ namespace PPP
 				}
 			}
 		}
-
-		bool test_photon(const float a, const float x, const float y, const float sigma, const size_t nfs,	const size_t nss, const float* data, const float* tmp	)
+		
+		//Fitness function
+		float photon_target(const float a,const float x,const float y,const float sigma,const size_t nfs,const size_t nss,	const float* data,	const float* tmp,	const float noise_sigma = 0.044322f	)
 		{
-			double p = 0;
-			double m = 0;
-			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss); ss != clip(int(ceil(y + 1 + 3 * sigma)), 0, nss);	++ss) 
+			float p = 0;
+			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss);ss != clip(int(ceil(y + 1 + 3 * sigma)), 0, nss);	++ss) 
 			{
-				for (size_t fs = clip(int(floor(x - 1- 3 * sigma)), 0, nfs); fs != clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs);	++fs) 
+				for (size_t fs = clip(int(floor(x - 1 - 3 * sigma)), 0, nfs);fs != clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs);++fs) 
 				{
 					const size_t i = nfs * ss + fs;
-					m += pow(tmp[i] - data[i], 2u);
-					p += pow(tmp[i] + a * pixel_gauss(fs - x, ss - y, sigma) - data[i], 2u);
+					p += pow(tmp[i] + a * pixel_gauss(fs - x, ss - y, sigma) - data[i], 2u)	- pow(tmp[i] - data[i], 2);
 				}
 			}
-
-			//ToDo: compare with v2.0
-			return p < m;
+			return p / pow(noise_sigma, 2);
 		}
 
-		double photon_target(const float a, const float x, const float y, const float sigma, const size_t nfs, const size_t nss, const float* data, const float* tmp)
+		float optimize_photon(const float a,float& x,float& y,const float charge_sigma,const size_t nfs,const size_t nss,	const float* data,	const float* tmp,const float noise_sigma = 1.0)
 		{
-			double p = 0;
-			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss); ss != clip(int(ceil(y + 1 + 3 * sigma)), 0, nss); ++ss) 
+			float eps = charge_sigma; //movement of photon center (guess for "wrongness" of origin)
+
+			float t0 = photon_target(a, x, y, charge_sigma, nfs, nss, data, tmp, noise_sigma);
+			for (size_t i = 0; i != 16; ++i) 
 			{
-				for (size_t fs = clip(int(floor(x - 1 - 3 * sigma)), 0, nfs); fs != clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs);	++fs) 
-				{
-					const size_t i = nfs * ss + fs;
-					p += pow(tmp[i] + a * pixel_gauss(fs - x, ss - y, sigma) - data[i], 2u);
+				//calculate derivation
+				float dx = 0;
+				float dy = 0;
+				for (size_t ss = clip(int(floor(y - 1 - 3 * charge_sigma)), 0, nss);ss != clip(int(ceil(y + 1 + 3 * charge_sigma)), 0, nss); ++ss)
+				{	
+					for (size_t fs = clip(int(floor(x - 1 - 3 * charge_sigma)), 0, nfs);fs != clip(int(ceil(x + 1 + 3 * charge_sigma)), 0, nfs);++fs) 
+					{
+						const size_t i = nfs * ss + fs;
+						const float p = a * pixel_gauss(fs - x, ss - y, charge_sigma);
+						dx += 2 * (data[i] - p - tmp[i]) * pixel_gauss_dfs(fs - x, ss - y, charge_sigma); //2*(daten-gauss)*grad*gaus
+						dy += 2 * (data[i] - p - tmp[i]) * pixel_gauss_dss(fs - x, ss - y, charge_sigma);
+					}			
 				}
+				dx *= a / pow(noise_sigma, 2);
+				dy *= a / pow(noise_sigma, 2);
+				// \ deriv.
+
+				float norm = sqrt(pow(dx, 2u) + pow(dy, 2u)); //normalize deriv.
+				if (norm < 1e-30) break;
+				dx /= norm;
+				dy /= norm;
+				bool dir = true; //direction false if step is getting increased true for decrease
+				float t;
+				while (eps < sqrt(pow(nfs, 2u) + pow(nss, 2u))) 
+				{
+					t = photon_target(a, x - eps * dx, y - eps * dy, charge_sigma, nfs, nss, data, tmp, noise_sigma);
+					if (t < t0) 
+					{
+						eps *= 2;
+						dir = false;
+					}
+					else 
+					{
+						eps /= 2;
+						break;
+					}
+				}
+				if (dir) 
+				{
+					while (eps > 1e-10) 
+					{
+						t = photon_target(a, x - eps * dx, y - eps * dy, charge_sigma, nfs, nss, data, tmp, noise_sigma);
+						if (t < t0)
+							break;
+						eps *= 0.5;
+					}
+				}
+				//cerr << "# " << x << " " << y << " " << eps << endl;
+				x -= eps * dx;
+				y -= eps * dy;
+				if (eps * 1e-3 < charge_sigma) break;
+				//cerr << "# " << x << " " << y << " " << eps << endl;
 			}
-			return p;
+			return t0;
 		}
 
-
-		void photonize(const float sigma, const size_t nfs, const size_t nss, const float* data, float* ret)
+		void seed_photons(std::vector<std::array<float, 2>>& photons,const float a,const float sigma,const size_t nfs,const size_t nss,	const float* data,float* tmp,const float noise_sigma = 0,const float min_reduction = 16.0f	)//min_reduction = 16.0f:: ^= 4sigma 
 		{
+			for (size_t ss = 0; ss != nss; ++ss) {
+				for (size_t fs = 0; fs != nfs; ++fs) 
+				{
+					if (tmp[fs + ss * nfs] > data[fs + ss * nfs])
+						continue;
+					float min_x;
+					float min_y;
+					float min_t = -min_reduction;
+					for (size_t j = 0; j != 2; ++j) 
+					{
+						for (size_t i = 0; i != 2; ++i) 
+						{
+							float x = fs + i / 2.0;
+							float y = ss + j / 2.0;
+							const float t =	optimize_photon(a, x, y, sigma, nfs, nss, data, tmp, noise_sigma);
+							if (t < min_t) 
+							{
+								min_t = t;
+								min_x = x;
+								min_y = y;
+							}
+						}
+					}
+					if (min_t < -min_reduction) 
+					{
+						render_photon(a, min_x, min_y, sigma, nfs, nss, tmp);
+						photons.push_back({ min_x,min_y });
+						continue;
+					}
+				}
+			}
+		}
+
+		void photonize(const float sigma, const size_t nfs, const size_t nss, const float* data, float* ret,float noise_sigma = 0.04432)
+		{
+			const float a = 1.0f;
 			std::vector<std::array<float, 2UL>> photons;
 			float* tmp = new float[nfs * nss]();
 
 			// seed
-			for (size_t ss = 0; ss != nss; ++ss) 
-			{
-				for (size_t fs = 0; fs != nfs; ++fs) 
-				{
-					while (test_photon(1.0, fs + 0.5f, ss + 0.5f, sigma, nfs, nss, data, tmp)) 
-					{
-						photons.push_back({ fs + 0.5f,ss + 0.5f });
-						render_photon(1.0, fs + 0.5f, ss + 0.5f, sigma, nfs, nss, tmp);
-					}
-				}
-			}
-
-			const size_t N = photons.size();
-			double eps = 1;
-			double t0 = 0;
-			for (size_t i = 0; i != nfs * nss; ++i) t0 += pow(tmp[i] - data[i], 2);
+			const float min_reduction = 4.0f; //sqrt(min_reduction) = sigma photon needs to get better
+			seed_photons(photons, 1.0f, sigma, nfs, nss, data, tmp, noise_sigma, min_reduction);
 
 			//optimisaion steps (´max  hier 64)
-			for (size_t i = 0; i != 64; ++i)
+			for (size_t i = 0; i != 8; ++i)
 			{
 				double max_step = 0;
 				for (size_t i = 0; i != nfs * nss; ++i) tmp[i] = 0;
@@ -217,85 +284,26 @@ namespace PPP
 				//Loop über photonen
 				for (size_t j = 0; j != photons.size(); ++j)
 				{
-					//ableitung
-					auto& [x, y] = photons[j];
-					double dx = 0;
-					double dy = 0;
-					for (size_t ss = clip(int(floor(y - 2 - 3 * sigma)), 0, nss); //Nachbarschaft
-						ss != clip(int(ceil(y + 2 + 3 * sigma)), 0, nss);
-						++ss)
-					{
-						for (size_t fs = clip(int(floor(x - 2 - 3 * sigma)), 0, nfs);
-							fs != clip(int(ceil(x + 2 + 3 * sigma)), 0, nfs);
-							++fs)
-						{
-							const size_t i = nfs * ss + fs;
-							const double p = pixel_gauss(fs - x, ss - y, sigma);
-							dx += 2 * (data[i] - tmp[i]) * pixel_gauss_dfs(fs - x, ss - y, sigma);
-							dy += 2 * (data[i] - tmp[i]) * pixel_gauss_dss(fs - x, ss - y, sigma);
-						}
-					}
-					// \ abl
-					double norm = sqrt(pow(dx, 2u) + pow(dy, 2u));
-					dx /= norm;
-					dy /= norm;
-					double eps = sigma;
-					render_photon(-1.0, x, y, sigma, nfs, nss, tmp);
-					const double before = photon_target(1.0f, x, y, sigma, nfs, nss, data, tmp);
-					while (eps < sqrt(pow(nfs, 2u) + pow(nss, 2u))) {
-						if (photon_target(1.0f, x - eps * dx, y - eps * dy, sigma, nfs, nss, data, tmp) < before) 
-						{
-							eps *= 2;
-						}
-						else 
-						{
-							eps /= 2;
-							break;
-						}
-					}
-					if (eps < sigma) {
-						while (eps > 1e-10) 
-						{
-							if (photon_target(1.0f, x - eps * dx, y - eps * dy, sigma, nfs, nss, data, tmp) < before)
-								break;
-							eps *= 0.5;
-						}
-					}
-					x -= eps * dx;
-					y -= eps * dy;
-					if (max_step < eps) max_step = eps;
-					render_photon(1.0, x, y, sigma, nfs, nss, tmp);
+					auto& [x, y] = photons[j]; // x = photons[j][0];  x = photons[j][1]; 
+					render_photon(-a, x, y, sigma, nfs, nss, tmp); //adds the photon (at x,y) to tmp (if a = -1 subtracts)
+					optimize_photon(a, x, y, sigma, nfs, nss, data, tmp, noise_sigma); //optimize x,y - position of one photon (changes x and y)
+					render_photon(a, x, y, sigma, nfs, nss, tmp);
 				}
 
-
-				if (max_step < 1e-8) break;
 				std::vector<std::array<float, 2UL>> _photons;
-				for (const auto& [x, y] : photons) 
+				for (size_t j = 0; j != photons.size(); ++j) //checks if all photons are necessary
 				{
-					if ((x > -sigma) && (x < nfs + sigma)) 
+					auto& [x, y] = photons[j];
+					render_photon(-a, x, y, sigma, nfs, nss, tmp);
+					if (photon_target(a, x, y, sigma, nfs, nss, data, tmp, noise_sigma)	< -min_reduction) 
 					{
-						if ((y > -sigma) && (y < nss + sigma)) 
-						{
-							if (!test_photon(-1.0f, x, y, sigma, nfs, nss, data, tmp)) 
-							{
-								_photons.push_back({ x,y });
-								continue;
-							}
-						}
-					}
-					render_photon(-1.0, x, y, sigma, nfs, nss, tmp);
-				}
-				for (size_t ss = 0; ss != nss; ++ss) 
-				{
-					for (size_t fs = 0; fs != nfs; ++fs) 
-					{
-						while (test_photon(1.0f, fs + 0.5f, ss + 0.5f, sigma, nfs, nss, data, tmp)) 
-						{
-							_photons.push_back({ fs + 0.5f,ss + 0.5f });
-							render_photon(1.0f, fs + 0.5f, ss + 0.5f, sigma, nfs, nss, tmp);
-						}
+						_photons.push_back({ x,y });
+						render_photon(a, x, y, sigma, nfs, nss, tmp);
+						continue;
 					}
 				}
+
+				seed_photons(_photons, a, sigma, nfs, nss, data, tmp, noise_sigma, min_reduction); //fills potential new photons to tmp
 				photons = _photons;
 			}
 
@@ -303,9 +311,8 @@ namespace PPP
 			ArrayOperators::MultiplyScalar(ret, 0.0f, nfs* nss);
 			for (size_t j = 0; j < photons.size(); j++)
 			{
-				ret[(size_t)floor(photons[j][0]), (size_t)floor(photons[j][0])] += 1;
+				ret[(size_t)floor(photons[j][1]) * nfs + (size_t)floor(photons[j][0])] += 1.0;
 			}
-
 
 			delete[] tmp;
 		}
@@ -317,6 +324,8 @@ namespace PPP
 	void PhotonFinder_GaussFit(float* Intensity, const unsigned int FullDetSize, const Create_GaussPhotonizeSettings GaussPhotonizeSettings)
 	{
 
+		//std::cout <<"Panels: "<< GaussPhotonizeSettings.DetectorPanels[0].FirstInd << " :: " << GaussPhotonizeSettings.DetectorPanels[0].Scans[0] << " :: " << GaussPhotonizeSettings.DetectorPanels[0].Scans[1] << std::endl;
+
 		//iterate over panels
 		for (unsigned int i_pan = 0; i_pan < GaussPhotonizeSettings.DetectorPanels.size(); i_pan++)
 		{
@@ -324,6 +333,7 @@ namespace PPP
 			int ss = GaussPhotonizeSettings.DetectorPanels[i_pan].Scans[1];
 			int DetSize = fs * ss;
 
+			
 			size_t t_ind = 0;
 			float* temp = new float[DetSize];
 			for (unsigned int ind = GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd; ind < (GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd + DetSize); ind++)
@@ -332,9 +342,10 @@ namespace PPP
 				t_ind++;
 			}
 
-			float* ret = new float[DetSize];
+			float* ret = new float[DetSize]();
 			photonize(GaussPhotonizeSettings.ChargeSharingSigma, fs, ss, temp, ret);//retrive photons by GaussFitting
 
+			
 			//copy retrived photons back to intensity
 			t_ind = 0;
 			for (unsigned int ind = GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd; ind < (GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd + DetSize); ind++)
@@ -568,22 +579,24 @@ namespace PPP
 
 		ProfileTime Profiler;
 		
+		std::cout << "Pattern to be analyzed: " << NumOfEvents << std::endl;
+		std::cout << "Start photonization ..." << std::endl;
 		Profiler.Tic();
 		#pragma omp parallel for
 		for (size_t i = FirstEvent; i < LastEvent; i++)
 		{
-			Detector Det = Detector(RefDet,true);
+			Detector Det = Detector(RefDet, true);
 
-			#pragma omp critical
-			{
-				RefDet.LoadIntensityData(&OptionsIn.HitEvents[i]);//Load Intensity
-			}
-			RefDet.ApplyPixelMask();//Apply Pxelmask
 
-			//Run LAP
+			Det.LoadIntensityData(&OptionsIn.HitEvents[i]);//Load Intensity
+			Det.ApplyPixelMask();//Apply Pxelmask
 
-			// ToDo: Photonize
-			//PhotonFinder_LargestAdjacentPixel(Det.Intensity, DetectorPanels, FullDetSize, ADU_perPhoton, SeedThershold, CombinedThershold);
+			//Run Gauss fit
+
+			// Photonize
+			PhotonFinder_GaussFit(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1], GaussPhotonizeSettings);
+
+			// \ 
 			
 			//Create new Event 
 			Settings::HitEvent t_Event;

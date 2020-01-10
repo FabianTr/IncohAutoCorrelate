@@ -21,12 +21,12 @@ namespace
 namespace ArrayMaths
 {
 
-	inline double Drand(std::mt19937_64 MT = mt)
+	inline double Drand(std::mt19937_64 & MT)
 	{
 		return rnd(MT);
 	}
 
-	inline unsigned int ScalarPoissonSampling(double mean, std::mt19937_64 MT = mt)
+	inline unsigned int ScalarPoissonSampling(double mean, std::mt19937_64 & MT )
 	{
 		double ret = 0;
 		//Poisson random number for small means 
@@ -59,7 +59,7 @@ namespace ArrayMaths
 	}
 
 	template<typename T>
-	void GetNegativeBinomialArray(T * Array, size_t ArraySize, float Mean, float Modes, std::mt19937_64 MT = mt)
+	void GetNegativeBinomialArray(T * Array, size_t ArraySize, float Mean, float Modes, std::mt19937_64 & MT)
 	{
 		ProfileTime profiler;
 		//std::negative_binomial_distribution<int> NB(Modes, Modes / (Modes + Mean));
@@ -76,7 +76,7 @@ namespace ArrayMaths
 	}
 
 	template<typename T>
-	void AddGaussianNoise(T* Array, size_t ArraySize, T Sigma, std::mt19937_64 MT = mt)
+	void AddGaussianNoise(T* Array, size_t ArraySize, T Sigma, std::mt19937_64 & MT)
 	{
 		std::normal_distribution<T> Gauss((T)0.0, Sigma);
 		for (size_t i = 0; i < ArraySize; i++)

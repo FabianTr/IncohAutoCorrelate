@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-scs /gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/SpeckleContrast/Settings_SPC_Block1.info</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-pgf Settings_GaussFitTest.info</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

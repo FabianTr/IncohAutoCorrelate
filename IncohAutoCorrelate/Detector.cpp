@@ -8,6 +8,7 @@
 #include <array>
 #include <string>
 #include <algorithm>
+#include <chrono>
 
 #include "H5Cpp.h"
 
@@ -741,6 +742,8 @@ void Detector::LoadIntensityData(Settings::HitEvent * Event)//Load Intensity for
 }
 void Detector::LoadIntensityData()
 {
+
+
 	if (!Checklist.Event)
 	{
 		std::cerr << "ERROR: no Event set.\n ";
@@ -750,16 +753,13 @@ void Detector::LoadIntensityData()
 	H5std_string Path = DetectorEvent->Filename;
 	H5std_string DataSet = DetectorEvent->Dataset;
 
-
-	//	std::cerr << Intensity  << " " << *(reinterpret_cast<size_t*>(Intensity-2)) << "  "<< 4 * DetectorSize[1] * DetectorSize[0]<< std::endl;
-		//if (Intensity != NULL)
 	delete[] Intensity;
-
 	Intensity = new float[DetectorSize[1] * DetectorSize[0]]();
 
-#pragma omp critical
-	GetSliceOutOfHDFCuboid(Intensity, Path, DataSet, DetectorEvent->Event);
-
+	#pragma omp critical
+	{
+		GetSliceOutOfHDFCuboid(Intensity, Path, DataSet, DetectorEvent->Event);
+	}
 
 	////Debug stuff
 	//for (int i = 0; i < DetectorSize[1] * DetectorSize[0]; i++)
