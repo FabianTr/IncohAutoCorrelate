@@ -6,6 +6,7 @@
 
 
 #include "ArrayOperators.h"
+#include "ProfileTime.h"
 
 namespace PPP
 {
@@ -94,6 +95,261 @@ namespace PPP
 		delete[] FragmentedPhotons;
 	}
 
+
+	namespace
+	{
+		const float pi = 3.141592653589793;
+
+		template<typename T0, typename T1, typename T2>
+		constexpr T0 clip(const T0& n, const T1& l, const T2& h) 
+		{
+			return n<l ? l : n>h ? h : n;
+		}
+
+		//gradient of gaussion in fs direction
+		const double inline pixel_gauss_dfs(const float& fs, const float& ss,	const float& s	)
+		{
+			const float a = erf((fs + 1) / sqrt(2 * s * s));
+			const float b = erf((fs) / sqrt(2 * s * s));
+			const float c = erf((ss + 1) / sqrt(2 * s * s));
+			const float d = erf((ss) / sqrt(2 * s * s));
+			return 0.5 * (c - d) * (exp(-0.5 * (fs + 1) * (fs + 1) / (s * s)) - exp(-0.5 * (fs) * (fs) / (s * s))) / sqrt(2 * pi * s * s);
+		}
+
+		//gradient of gaussion in ss direction
+		const double inline pixel_gauss_dss(const float& fs, const float& ss,	const float& s)
+		{
+			const float a = erf((fs + 1) / sqrt(2 * s * s));
+			const float b = erf((fs) / sqrt(2 * s * s));
+			const float c = erf((ss + 1) / sqrt(2 * s * s));
+			const float d = erf((ss) / sqrt(2 * s * s));
+			return 0.5 * (a - b) * (exp(-0.5 * (ss + 1) * (ss + 1) / (s * s)) - exp(-0.5 * (ss) * (ss) / (s * s))) / sqrt(2 * pi * s * s);
+		}
+
+		//renders gaussian with x0 = y0 = 0 with sigma s
+		const double inline pixel_gauss(const float& fs, const float& ss, const float& s	)
+		{
+			const float a = erf((fs + 1) / sqrt(2 * s * s));
+			const float b = erf((fs) / sqrt(2 * s * s));
+			const float c = erf((ss + 1) / sqrt(2 * s * s));
+			const float d = erf((ss) / sqrt(2 * s * s));
+			return 0.25 * (a - b) * (c - d);
+		}
+
+		// a = [-1, 1] 
+		void inline render_photon(const float a, const float x, const float y, const float sigma, const size_t nfs, const size_t nss, float* data)
+		{
+			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss); ss != clip(int(ceil(y + 1 + 3 * sigma)), 0, nss); ++ss) 
+			{
+				for (size_t fs = clip(int(floor(x - 1 - 3 * sigma)), 0, nfs); fs != clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs);	++fs) 
+				{
+					data[nfs * ss + fs] += a * pixel_gauss(fs - x, ss - y, sigma);
+				}
+			}
+		}
+
+		bool test_photon(const float a, const float x, const float y, const float sigma, const size_t nfs,	const size_t nss, const float* data, const float* tmp	)
+		{
+			double p = 0;
+			double m = 0;
+			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss); ss != clip(int(ceil(y + 1 + 3 * sigma)), 0, nss);	++ss) 
+			{
+				for (size_t fs = clip(int(floor(x - 1- 3 * sigma)), 0, nfs); fs != clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs);	++fs) 
+				{
+					const size_t i = nfs * ss + fs;
+					m += pow(tmp[i] - data[i], 2u);
+					p += pow(tmp[i] + a * pixel_gauss(fs - x, ss - y, sigma) - data[i], 2u);
+				}
+			}
+
+			//ToDo: compare with v2.0
+			return p < m;
+		}
+
+		double photon_target(const float a, const float x, const float y, const float sigma, const size_t nfs, const size_t nss, const float* data, const float* tmp)
+		{
+			double p = 0;
+			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss); ss != clip(int(ceil(y + 1 + 3 * sigma)), 0, nss); ++ss) 
+			{
+				for (size_t fs = clip(int(floor(x - 1 - 3 * sigma)), 0, nfs); fs != clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs);	++fs) 
+				{
+					const size_t i = nfs * ss + fs;
+					p += pow(tmp[i] + a * pixel_gauss(fs - x, ss - y, sigma) - data[i], 2u);
+				}
+			}
+			return p;
+		}
+
+
+		void photonize(const float sigma, const size_t nfs, const size_t nss, const float* data, float* ret)
+		{
+			std::vector<std::array<float, 2UL>> photons;
+			float* tmp = new float[nfs * nss]();
+
+			// seed
+			for (size_t ss = 0; ss != nss; ++ss) 
+			{
+				for (size_t fs = 0; fs != nfs; ++fs) 
+				{
+					while (test_photon(1.0, fs + 0.5f, ss + 0.5f, sigma, nfs, nss, data, tmp)) 
+					{
+						photons.push_back({ fs + 0.5f,ss + 0.5f });
+						render_photon(1.0, fs + 0.5f, ss + 0.5f, sigma, nfs, nss, tmp);
+					}
+				}
+			}
+
+			const size_t N = photons.size();
+			double eps = 1;
+			double t0 = 0;
+			for (size_t i = 0; i != nfs * nss; ++i) t0 += pow(tmp[i] - data[i], 2);
+
+			//optimisaion steps (´max  hier 64)
+			for (size_t i = 0; i != 64; ++i)
+			{
+				double max_step = 0;
+				for (size_t i = 0; i != nfs * nss; ++i) tmp[i] = 0;
+				for (size_t i = 0; i != photons.size(); ++i) {
+					const auto& [x, y] = photons[i];
+					render_photon(1.0, x, y, sigma, nfs, nss, tmp);
+				}
+
+				//Loop über photonen
+				for (size_t j = 0; j != photons.size(); ++j)
+				{
+					//ableitung
+					auto& [x, y] = photons[j];
+					double dx = 0;
+					double dy = 0;
+					for (size_t ss = clip(int(floor(y - 2 - 3 * sigma)), 0, nss); //Nachbarschaft
+						ss != clip(int(ceil(y + 2 + 3 * sigma)), 0, nss);
+						++ss)
+					{
+						for (size_t fs = clip(int(floor(x - 2 - 3 * sigma)), 0, nfs);
+							fs != clip(int(ceil(x + 2 + 3 * sigma)), 0, nfs);
+							++fs)
+						{
+							const size_t i = nfs * ss + fs;
+							const double p = pixel_gauss(fs - x, ss - y, sigma);
+							dx += 2 * (data[i] - tmp[i]) * pixel_gauss_dfs(fs - x, ss - y, sigma);
+							dy += 2 * (data[i] - tmp[i]) * pixel_gauss_dss(fs - x, ss - y, sigma);
+						}
+					}
+					// \ abl
+					double norm = sqrt(pow(dx, 2u) + pow(dy, 2u));
+					dx /= norm;
+					dy /= norm;
+					double eps = sigma;
+					render_photon(-1.0, x, y, sigma, nfs, nss, tmp);
+					const double before = photon_target(1.0f, x, y, sigma, nfs, nss, data, tmp);
+					while (eps < sqrt(pow(nfs, 2u) + pow(nss, 2u))) {
+						if (photon_target(1.0f, x - eps * dx, y - eps * dy, sigma, nfs, nss, data, tmp) < before) 
+						{
+							eps *= 2;
+						}
+						else 
+						{
+							eps /= 2;
+							break;
+						}
+					}
+					if (eps < sigma) {
+						while (eps > 1e-10) 
+						{
+							if (photon_target(1.0f, x - eps * dx, y - eps * dy, sigma, nfs, nss, data, tmp) < before)
+								break;
+							eps *= 0.5;
+						}
+					}
+					x -= eps * dx;
+					y -= eps * dy;
+					if (max_step < eps) max_step = eps;
+					render_photon(1.0, x, y, sigma, nfs, nss, tmp);
+				}
+
+
+				if (max_step < 1e-8) break;
+				std::vector<std::array<float, 2UL>> _photons;
+				for (const auto& [x, y] : photons) 
+				{
+					if ((x > -sigma) && (x < nfs + sigma)) 
+					{
+						if ((y > -sigma) && (y < nss + sigma)) 
+						{
+							if (!test_photon(-1.0f, x, y, sigma, nfs, nss, data, tmp)) 
+							{
+								_photons.push_back({ x,y });
+								continue;
+							}
+						}
+					}
+					render_photon(-1.0, x, y, sigma, nfs, nss, tmp);
+				}
+				for (size_t ss = 0; ss != nss; ++ss) 
+				{
+					for (size_t fs = 0; fs != nfs; ++fs) 
+					{
+						while (test_photon(1.0f, fs + 0.5f, ss + 0.5f, sigma, nfs, nss, data, tmp)) 
+						{
+							_photons.push_back({ fs + 0.5f,ss + 0.5f });
+							render_photon(1.0f, fs + 0.5f, ss + 0.5f, sigma, nfs, nss, tmp);
+						}
+					}
+				}
+				photons = _photons;
+			}
+
+			//photons need to be binned to pixels again
+			ArrayOperators::MultiplyScalar(ret, 0.0f, nfs* nss);
+			for (size_t j = 0; j < photons.size(); j++)
+			{
+				ret[(size_t)floor(photons[j][0]), (size_t)floor(photons[j][0])] += 1;
+			}
+
+
+			delete[] tmp;
+		}
+
+		
+
+	}
+
+	void PhotonFinder_GaussFit(float* Intensity, const unsigned int FullDetSize, const Create_GaussPhotonizeSettings GaussPhotonizeSettings)
+	{
+
+		//iterate over panels
+		for (unsigned int i_pan = 0; i_pan < GaussPhotonizeSettings.DetectorPanels.size(); i_pan++)
+		{
+			int fs = GaussPhotonizeSettings.DetectorPanels[i_pan].Scans[0];
+			int ss = GaussPhotonizeSettings.DetectorPanels[i_pan].Scans[1];
+			int DetSize = fs * ss;
+
+			size_t t_ind = 0;
+			float* temp = new float[DetSize];
+			for (unsigned int ind = GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd; ind < (GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd + DetSize); ind++)
+			{
+				temp[t_ind] = Intensity[ind]/GaussPhotonizeSettings.ADU_perPhoton; //copy data of panel into temp and normalize such that 1 photon should be 1.0f.
+				t_ind++;
+			}
+
+			float* ret = new float[DetSize];
+			photonize(GaussPhotonizeSettings.ChargeSharingSigma, fs, ss, temp, ret);//retrive photons by GaussFitting
+
+			//copy retrived photons back to intensity
+			t_ind = 0;
+			for (unsigned int ind = GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd; ind < (GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd + DetSize); ind++)
+			{
+				Intensity[ind] = ret[t_ind] * GaussPhotonizeSettings.ADU_perPhoton; //copy data of panel into temp and normalize such that 1 photon should be 1.0f.
+				t_ind++;
+			}
+
+			delete[] ret;
+			delete[] temp;
+		}
+
+
+	}
+
 	void ProcessData_PF_LAP(std::string XML_In, std::string XML_Out, std::string H5_Out,std::string Dataset, std::vector<DetectorPanel> DetectorPanels,Detector &Det, int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold)
 	{
 		Create_LAPSettings LAPSettings;
@@ -119,7 +375,6 @@ namespace PPP
 		float SeedThershold = LAPSettings.SeedThershold;
 		float CombinedThershold = LAPSettings.CombinedThershold;
 
-		if (true)
 		{
 			if (GainOnly)
 			{
@@ -238,6 +493,141 @@ namespace PPP
 		OptionsOut.SafeHitEventListToFile(XML_Out);
 		std::cout << "New H5-File saved as \"" << LAPSettings.Output_Path << "\" with dataset \"" << LAPSettings.Output_Dataset << "\"\n";
 		std::cout << "New XML-EventList saved as \"" << XML_Out << "\"" << std::endl;
+	}
+
+	void ProcessData_GaussFit(Detector& RefDet, Create_GaussPhotonizeSettings GaussPhotonizeSettings, std::string XML_In)
+	{
+
+		//Load Hits
+		Settings OptionsIn;
+		OptionsIn.LoadHitEventListFromFile(XML_In);
+
+		size_t NumOfEvents = 0;
+		size_t FirstEvent = 0;
+		size_t LastEvent = 0;
+		if (GaussPhotonizeSettings.RestrictToLimits)
+		{
+			if (GaussPhotonizeSettings.UpperLimit > OptionsIn.HitEvents.size())
+			{
+				std::cout << "WARNING: requested upper limit of Event-List exceeds number of Events loaded. Upper limit is set to number of events." << std::endl;
+				LastEvent = OptionsIn.HitEvents.size();
+			}
+			else
+			{
+				LastEvent = GaussPhotonizeSettings.UpperLimit;
+			}
+
+			if (GaussPhotonizeSettings.LowLimit <= LastEvent)
+			{
+				FirstEvent = GaussPhotonizeSettings.LowLimit;
+			}
+			else
+			{
+				std::cout << "WARNING: requested lower limit of Event-List exceeds or is equal upper limit. Lower limit is set to zero" << std::endl;
+				FirstEvent = 0;
+			}
+		}
+		else
+		{
+			FirstEvent = 0;
+			LastEvent = OptionsIn.HitEvents.size();
+		}
+		NumOfEvents = LastEvent - FirstEvent;
+
+		Settings OptionsOut(OptionsIn);
+		OptionsOut.HitEvents.clear();
+		OptionsOut.HitEvents.reserve(NumOfEvents);
+
+
+		// Hdf5 Stuff
+		H5::H5File file(GaussPhotonizeSettings.Output_Path, H5F_ACC_TRUNC);
+
+		hsize_t dims[3];
+		dims[0] = NumOfEvents;
+		dims[1] = RefDet.DetectorSize[0];
+		dims[2] = RefDet.DetectorSize[1];
+		H5::DataSpace dataspace(3, dims);
+
+		hsize_t start[3] = { 0, 0, 0 };  // Start of hyperslab, offset
+		hsize_t stride[3] = { 1, 1, 1 }; // Stride of hyperslab
+		hsize_t count[3] = { 1, 1, 1 };  // Block count
+		hsize_t block[3] = { 1, dims[1], dims[2] }; // Block sizes
+
+		H5::DSetCreatPropList plist = H5::DSetCreatPropList();
+		plist.setChunk(3, block);
+		plist.setDeflate(6); //compression
+
+		H5::DataSet dataset = file.createDataSet(GaussPhotonizeSettings.Output_Dataset, H5::PredType::NATIVE_FLOAT, dataspace, plist);
+
+		H5::DataSpace mspace(3, block);
+
+		// \ HDF5
+
+		float CounterStep = ((float)NumOfEvents) / 100.0f;
+		float Counter = 0;
+
+		ProfileTime Profiler;
+		
+		Profiler.Tic();
+		#pragma omp parallel for
+		for (size_t i = FirstEvent; i < LastEvent; i++)
+		{
+			Detector Det = Detector(RefDet,true);
+
+			#pragma omp critical
+			{
+				RefDet.LoadIntensityData(&OptionsIn.HitEvents[i]);//Load Intensity
+			}
+			RefDet.ApplyPixelMask();//Apply Pxelmask
+
+			//Run LAP
+
+			// ToDo: Photonize
+			//PhotonFinder_LargestAdjacentPixel(Det.Intensity, DetectorPanels, FullDetSize, ADU_perPhoton, SeedThershold, CombinedThershold);
+			
+			//Create new Event 
+			Settings::HitEvent t_Event;
+
+			t_Event.PhotonCount = ArrayOperators::Sum(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+			t_Event.MeanIntensity = (float)t_Event.PhotonCount / (Det.DetectorSize[0] * Det.DetectorSize[1]);
+
+			t_Event.Dataset = GaussPhotonizeSettings.Output_Dataset;
+			t_Event.Event = i;
+			t_Event.Filename = GaussPhotonizeSettings.Output_Path;
+			t_Event.SerialNumber = i;
+			for (int j = 0; j < 9; j++)
+				t_Event.RotMatrix[j] = OptionsIn.HitEvents[i].RotMatrix[j];
+			t_Event.PhotonCount = (int)ArrayOperators::Sum(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+			t_Event.MeanIntensity = (float)t_Event.PhotonCount / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1]));
+
+
+			//write stuff
+			#pragma omp critical
+			{
+				OptionsOut.HitEvents.push_back(t_Event);
+				//Write new Intensity to H5
+				start[0] = i;
+				dataspace.selectHyperslab(H5S_SELECT_SET, count, start, stride, block);
+				dataset.write(Det.Intensity, H5::PredType::NATIVE_FLOAT, mspace, dataspace);
+
+				//Count for status update
+				if ((float)i >= Counter)
+				{
+					std::cout << i-FirstEvent << "/" << NumOfEvents << "  ^= " << Counter / CounterStep << "%\n";
+					Counter += CounterStep;
+				}
+
+			}
+
+		}
+
+		mspace.close();
+		dataspace.close();
+		dataset.close();
+		file.close();
+
+		std::cout << "Done in ";
+		Profiler.Toc(true, true);
 	}
 
 	void GainCorrection(Detector & Det, std::string GainCorr_Path, std::string Dataset_Offset, std::string Dataset_Gain, Settings & Options, bool AllowNegativeValues)

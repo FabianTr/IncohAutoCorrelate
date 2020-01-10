@@ -36,6 +36,7 @@ void DePhStSi_Settings::LoadDetectorDePhStSi_Settings(std::string File, std::str
 	//file stuff
 	OutputPath = parser.GetValue<std::string>("OutputPath","SimulationOutput.h5");
 	OutputDataset = parser.GetValue<std::string>("OutputDataset", "data");
+	GroundTruthDataset = parser.GetValue<std::string>("GroundTruthDataset", "GroundTruth");
 
 	//statistics
 	MeanIntensity = parser.GetValue<float>("MeanIntensity",1.0f);
@@ -59,6 +60,7 @@ void DePhStSi_Settings::SafeExampleDePhStSi_Settings(std::string File)
 	//file stuff
 	parser.SetValue<std::string>("OutputPath", "SimulationOutput.h5");
 	parser.SetValue<std::string>("OutputDataset", "data");
+	parser.SetValue<std::string>("GroundTruthDataset", "GroundTruth");
 
 	//statistics
 	parser.SetValue<float>("MeanIntensity", 1.0f);

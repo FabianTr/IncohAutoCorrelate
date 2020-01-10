@@ -732,6 +732,21 @@ int main(int argc, char** argv)
 			return MainRunModes::FastDarkCalibration(Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Options);
 		}
 	}
+	else if (Arg1 == "photongaussfit" || Arg1 == "-photongaussfit" || Arg1 == "pgf" || Arg1 == "-pgf")
+	{
+	std::cout << "run photon-gauss-fit algo\n";
+	if (argc < 3)
+	{
+		std::cerr << "-PhotonGaussFit requires one additional argument (\"Settings.info\")\n";
+		std::cerr << "Additional Info: -PhotonGaussFit uses the \"root.PatternPreProcessing.PhotonGaussFit. (...)\" part.\n ";
+		return -1;
+	}
+	else
+	{
+		std::string Arg2 = argv[2];
+		return MainRunModes::PhotonGaussFit(Arg2, Options);
+	}
+	}
 	else if (Arg1 == "sortbyintensity" || Arg1 == "-sortbyintensity" || Arg1 == "si" || Arg1 == "-si")
 	{
 		if (argc < 4)

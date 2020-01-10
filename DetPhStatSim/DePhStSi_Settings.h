@@ -19,6 +19,7 @@ public:
 	//file stuff
 	std::string OutputPath = "SimulationOutput.h5";
 	std::string OutputDataset = "data";
+	std::string GroundTruthDataset = "GroundTruth";
 
 	//statistics
 	float MeanIntensity = 1.0f;

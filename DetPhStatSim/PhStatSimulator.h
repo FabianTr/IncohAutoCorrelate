@@ -7,7 +7,7 @@
 class PhStatSimulator
 {
 private:
-	static void SimulatePart(std::vector<std::vector<float>> & DetImage, DePhStSi_Settings& Options,unsigned int Loops, int ThreadNum, std::atomic<int> & counter);
+	static void SimulatePart(std::vector<std::vector<float>> & DetImage, std::vector<std::vector<float>>& GroundTruth, DePhStSi_Settings& Options,unsigned int Loops, int ThreadNum, std::atomic<int> & counter);
 
 public:
 	DePhStSi_Settings Options;

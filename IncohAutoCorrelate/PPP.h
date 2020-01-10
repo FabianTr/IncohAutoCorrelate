@@ -37,6 +37,25 @@ namespace PPP
 		std::string DatasetGain = "gain";
 	};
 
+	struct Create_GaussPhotonizeSettings 
+	{
+		unsigned int DetPanels_Num = 1;
+		std::vector<DetectorPanel> DetectorPanels;
+
+
+		float ADU_perPhoton = 1.0f;
+		float ChargeSharingSigma = 0.05;
+
+		std::string Output_Path = "";
+		std::string Output_Dataset = "";
+		std::string Output_NewXML = "";
+
+		//from eval Settings
+		bool RestrictToLimits = false;
+		size_t LowLimit=0;
+		size_t UpperLimit=0;
+	};
+
 	class Create_DarcCalSettings
 	{
 	public:
@@ -69,9 +88,14 @@ namespace PPP
 	
 	//Find Photons by considering the adjacent Pixels.
 	void PhotonFinder_LargestAdjacentPixel(float * Intensity, std::vector<DetectorPanel> DetectorPanels, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);
+	void PhotonFinder_GaussFit(float* Intensity, const unsigned int FullDetSize, const Create_GaussPhotonizeSettings GaussPhotonizeSettings);
+
 
 	void ProcessData_PF_LAP(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector &Det, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);
 	void ProcessData_PF_LAP(Detector &Det, Create_LAPSettings LAPSettings, std::string XML_In, bool GainOnly = false);
+
+	void ProcessData_GaussFit(Detector& Det, Create_GaussPhotonizeSettings GaussPhotonizeSettings, std::string XML_In);
+
 
 	void GainCorrection(Detector & Det, std::string GainCorr_Path, std::string Dataset_Offset, std::string Dataset_Gain, Settings & Options, bool AllowNegativeValues = false);
 	

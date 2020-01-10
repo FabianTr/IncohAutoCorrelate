@@ -81,6 +81,15 @@ namespace ArrayOperators
 		}
 	}
 
+	template <typename T>
+	inline void MultiplyScalar(T* Array, T Factor, size_t Size)
+	{
+		for (int i = 0; i < Size; i++)
+		{
+			Array[i] *= Factor;
+		}
+	}
+
 	inline void ParMultiplyScalar(float* Array, float Factor, int Size)
 	{
 		#pragma omp parallel for
@@ -105,6 +114,8 @@ namespace ArrayOperators
 			Array[i] = Array[i] * Factor[i];
 		}
 	}
+
+
 	inline void ParMultiplyElementwise(float* Array, int* Factor, unsigned int Size)
 	{
 		#pragma omp parallel for
@@ -114,19 +125,12 @@ namespace ArrayOperators
 		}
 	}
 
-
-	inline void MultiplyElementwise(float* Array, float* Factor, unsigned int Size)
+	template <typename T0, typename T1>
+	inline void MultiplyElementwise(T0* Array, T1* Factor, size_t Size)
 	{
 		for (unsigned int i = 0; i < Size; i++)
 		{
-			Array[i] = Array[i] * Factor[i];
-		}
-	}
-	inline void MultiplyElementwise(float* Array, int* Factor, unsigned int Size)
-	{
-		for (unsigned int i = 0; i < Size; i++)
-		{
-			Array[i] = Array[i] * (float)Factor[i];
+			Array[i] = Array[i] * (T0)Factor[i];
 		}
 	}
 

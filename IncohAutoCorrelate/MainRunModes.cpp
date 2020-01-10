@@ -201,6 +201,46 @@ PPP::CreateDarkSettings MainRunModes::LoadPPPDarkSettings(std::string Filename, 
 	return Dark;
 }
 
+PPP::Create_GaussPhotonizeSettings MainRunModes::LoadGaussPhotonizeSettings(std::string Filename, Settings& Options)
+{
+	PPP::Create_GaussPhotonizeSettings Gauss;
+
+	using boost::property_tree::ptree;
+	ptree pt;
+
+	Settings::LoadPropertyTree(pt, Filename);
+
+	{
+		Gauss.ADU_perPhoton = pt.get<float>("root.PatternPreProcessing.PhotonGaussFit.ADU_perPhoton", 1.0);
+		Gauss.ChargeSharingSigma = pt.get<float>("root.PatternPreProcessing.PhotonGaussFit.ChargeSharingSigma", 0.025);
+
+		Gauss.Output_Path = pt.get<std::string>("root.PatternPreProcessing.PhotonGaussFit.Output_Path", "NewGaussFittetOutput.h5");
+		Gauss.Output_Dataset = pt.get<std::string>("root.PatternPreProcessing.PhotonGaussFit.Output_Dataset", "data");
+		Gauss.Output_NewXML = pt.get<std::string>("root.PatternPreProcessing.PhotonGaussFit.Output_NewEventList", "NewGaussFittetEvents.info");
+
+		Gauss.RestrictToLimits = pt.get<bool>("root.PatternPreProcessing.PhotonGaussFit.RestrictToLimits",false);
+		Gauss.LowLimit = pt.get<size_t>("root.PatternPreProcessing.PhotonGaussFit.LowLimit",0);
+		Gauss.UpperLimit = pt.get<size_t>("root.PatternPreProcessing.PhotonGaussFit.UpperLimit",0);
+		
+
+		size_t PanelNum = pt.get<size_t>("root.PatternPreProcessing.PhotonGaussFit.DetPanels_Num",1);
+		//Load detector panels
+		for (unsigned int i = 0; i < PanelNum; i++)
+		{
+			PPP::DetectorPanel currPan;
+			std::string XMLKey = "root.PatternPreProcessing.PhotonGaussFit.DetPanels.N" + std::to_string(i);
+			currPan.FirstInd = pt.get<unsigned int>(XMLKey + ".FirstInd", 0);
+			currPan.Scans[0] = pt.get<unsigned int>(XMLKey + ".FastScan", 0);
+			currPan.Scans[1] = pt.get<unsigned int>(XMLKey + ".SlowScan", 0);
+
+			Gauss.DetectorPanels.push_back(currPan);
+		}
+
+	}
+
+	return Gauss;
+}
+
 
 MainRunModes::AllSimSettings MainRunModes::LoadSimulationSettings(std::string Filename, Settings & Options)
 {
@@ -333,6 +373,7 @@ int MainRunModes::Create_Example_Config_File(std::string Filename, Settings & Op
 	pt = Example_Statistics_Config_PT(pt, Options);
 	pt = Example_PatternPreProcessing_LAP(pt, Options);
 	pt = Example_PatternPreProcessing_Dark(pt, Options);
+	pt = Example_PatternPreProcessing_GaussFit(pt, Options);
 	pt = Example_Simulation_Config_PT(pt, Options);
 	//save to File
 	Settings::SavePropertyTree(pt, Filename);
@@ -732,7 +773,7 @@ boost::property_tree::ptree MainRunModes::Example_PatternPreProcessing_Dark(boos
 		Dark.Output_Path = "Output.h5";
 		Dark.Output_Dataset = "data/data";
 		
-		Dark.Output_NewXML = "NewHitList.xml";
+		Dark.Output_NewXML = "NewHitList.info";
 
 		Dark.RestrictToDataSource = false;
 		Dark.DataSource_Path = "Source.h5";
@@ -750,6 +791,51 @@ boost::property_tree::ptree MainRunModes::Example_PatternPreProcessing_Dark(boos
 		pt.put("root.PatternPreProcessing.DarkFieldCorrection.RestrictToDataSource", Dark.RestrictToDataSource);
 		pt.put("root.PatternPreProcessing.DarkFieldCorrection.DataSourcePath", Dark.DataSource_Path);
 	}
+	return pt;
+}
+
+boost::property_tree::ptree MainRunModes::Example_PatternPreProcessing_GaussFit(boost::property_tree::ptree pt, Settings& Options)
+{
+	PPP::Create_GaussPhotonizeSettings GaussSettings;
+	PPP::DetectorPanel SamplePanel;
+	{
+
+		GaussSettings.ChargeSharingSigma = 0.025f;
+		GaussSettings.ADU_perPhoton = 1.0f;
+
+		GaussSettings.Output_Path= "NewH5.h5";
+		GaussSettings.Output_Dataset = "data";
+		GaussSettings.Output_NewXML = "NewEventList.info";
+
+		GaussSettings.RestrictToLimits = false;
+		GaussSettings.LowLimit = 0;
+		GaussSettings.UpperLimit = 100;
+
+
+		SamplePanel.FirstInd = 0;
+		SamplePanel.Scans[0] = 100;
+		SamplePanel.Scans[1] = 100;
+	}
+	//Store Statistic Settings in PT
+	{
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.ADU_perPhoton", GaussSettings.ADU_perPhoton);
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.ChargeSharingSigma", GaussSettings.ChargeSharingSigma);
+
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.Output_Path", GaussSettings.Output_Path);
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.Output_Dataset", GaussSettings.Output_Dataset);
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.Output_NewEventList", GaussSettings.Output_NewXML);
+
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.RestrictToLimits", GaussSettings.RestrictToLimits);
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.LowLimit", GaussSettings.LowLimit);
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.UpperLimit", GaussSettings.UpperLimit);
+
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.DetPanels_Num", 1);
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.DetPanels.N0.FirstInd", SamplePanel.FirstInd);
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.DetPanels.N0.FastScan", SamplePanel.Scans[0]);
+		pt.put("root.PatternPreProcessing.PhotonGaussFit.DetPanels.N0.SlowScan", SamplePanel.Scans[1]);
+	}
+
+
 	return pt;
 }
 
@@ -942,6 +1028,18 @@ int MainRunModes::FastDarkCalibration(std::string Arg1, std::string Arg2, std::s
 
 	PPP::ProcessData_DarkFieldCorrection(Det, DarkSettings, Arg1, Options);
 	std::cout << "DONE in " << Profiler.Toc(false) << "\n";
+
+	return 0;
+}
+
+int MainRunModes::PhotonGaussFit(std::string Arg1, Settings& Options)
+{
+	AllSettings AS = LoadSettings(Arg1, Options);
+	Detector Det;
+	Det.LoadPixelMap(AS.EvaluationSettings.PixelMap_Path, AS.EvaluationSettings.PixelMap_DataSet);
+	Det.LoadPixelMask(AS.EvaluationSettings.PixelMask_Path, AS.EvaluationSettings.PixelMask_Dataset);
+
+	PPP::ProcessData_GaussFit(Det, AS.GaussPhotonizeSettings, AS.EvaluationSettings.XML_Path);
 
 	return 0;
 }

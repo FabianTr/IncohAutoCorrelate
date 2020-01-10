@@ -139,9 +139,12 @@ int main(int argc, char** argv)
 	if (argc < 2)
 	{
 		std::cout << "Need 1 argument \"config.ini\"\n";
-		std::cout << "To generate an example config file please enter filename: (empty for exit only)" << std::endl;
+		std::cout << "To generate an example config file please enter filename: (space for exit only)" << std::endl;
 		std::string PathOut;
 		std::cin >> PathOut;
+		if (PathOut == " ")
+			return 0;
+
 		Options.SafeExampleDePhStSi_Settings(PathOut);
 		std::cout << "Example DePhStSi_Settings as \"" << PathOut << "\"" << std::endl;
 		return 0;

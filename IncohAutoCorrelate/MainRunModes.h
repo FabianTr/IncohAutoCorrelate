@@ -49,6 +49,8 @@ namespace MainRunModes
 		PPP::Create_LAPSettings PPPLAPSettings;
 		//PPP.Dark
 		PPP::CreateDarkSettings PPPDarkSettings;
+		//PPP.GaussFit
+		PPP::Create_GaussPhotonizeSettings GaussPhotonizeSettings;
 
 		std::string XMLSetting_Path = "";
 	};
@@ -67,6 +69,8 @@ namespace MainRunModes
 	Statistics::StatisticsSettings LoadStatisticSettings(std::string Filename, Settings &Options);
 	PPP::Create_LAPSettings LoadPPPLAPSettings(std::string Filename, Settings &Options);
 	PPP::CreateDarkSettings LoadPPPDarkSettings(std::string Filename, Settings &Options);
+	PPP::Create_GaussPhotonizeSettings LoadGaussPhotonizeSettings(std::string Filename, Settings& Options);
+	
 	AllSimSettings LoadSimulationSettings(std::string Filename, Settings &Options);
 	//combined
 	MainRunModes::AllSettings LoadSettings(std::string Filename, Settings &Options);
@@ -80,6 +84,7 @@ namespace MainRunModes
 	boost::property_tree::ptree Example_PatternPreProcessing_LAP(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
 	boost::property_tree::ptree Example_Simulation_Config_PT(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
 	boost::property_tree::ptree Example_PatternPreProcessing_Dark(boost::property_tree::ptree pt, Settings &Options); //requires Evaluation Config!
+	boost::property_tree::ptree Example_PatternPreProcessing_GaussFit(boost::property_tree::ptree pt, Settings& Options); //requires Evaluation Config!
 
 	//->Data Evaluation
 	int AverageIntensity(std::string EvaluationConfigFile, Settings &Options, bool UpdateEventXML = false);
@@ -92,6 +97,8 @@ namespace MainRunModes
 
 	int DarkCalibration(std::string Arg1, Settings &Options);
 	int FastDarkCalibration(std::string Arg1, std::string Arg2, std::string Arg3, std::string Arg4, std::string Arg5, std::string Arg6, Settings &Options);
+
+	int PhotonGaussFit(std::string Arg1, Settings& Options);
 	//->Statistics
 	int CreateAllPixelHistograms(std::string ConfigFile, Settings &Options);
 	int GenerateSpeckleContrastStatistics(std::string ConfigFile, Settings &Options);

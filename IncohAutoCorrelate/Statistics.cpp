@@ -162,7 +162,7 @@ namespace Statistics
 
 		//Loop through patterns --- can be parallized therefore clone det, ...
 		unsigned int counter = 0.0;
-		const unsigned int modulo = (UpperBound - LowerBound )/100;
+		const unsigned int modulo = (UpperBound - LowerBound +50)/100;
 		ProfileTime profiler;
 		profiler.Tic();
 		#pragma omp parallel for
