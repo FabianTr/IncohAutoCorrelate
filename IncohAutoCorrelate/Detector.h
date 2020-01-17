@@ -55,6 +55,7 @@ public:
 	void CreateEmptyPixelMap(int FsSize, int SsSize);
 
 	void LoadPixelMap(H5std_string Path, H5std_string DataSet);
+	void LoadPixelMap(unsigned int fs, unsigned int ss);//If no PixelMap is required but the detector size
 
 	void LoadPixelMask(std::string Path = "", std::string DataSet = "");//can be provided as binary or HDF5, If Binary, DataSet must be ""
 	void GenerateFlatOnesPixelMask();

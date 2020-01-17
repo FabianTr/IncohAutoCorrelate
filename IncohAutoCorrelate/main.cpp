@@ -906,6 +906,21 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
+	else if (Arg1 == "filterfor2photonevents" || Arg1 == "-filterfor2photonevents" )
+	{
+	std::cout << "Run ICA to filter Event-List for two photon events" << std::endl;
+	if (argc < 4)
+	{
+		std::cerr << "-FilterFor2PhotonEvents requires two additional arguments (\"EventlistInput.info\", \"EventlistOutput.info\")\n";
+		return -1;
+	}
+
+	Statistics::HitListFilterCondition Condition;
+	Condition.TwoPhotonEvent = true;
+	Statistics::FilterHitList(argv[2], argv[3], Condition);
+
+	return 0;
+	}
 
 
 	else

@@ -93,7 +93,6 @@ namespace Statistics
 	void CreateAndSaveAllPixelHistograms(Create_PixelHistogramSettings HistSettings, Detector &RefDet, Settings & Options);
 	
 
- 
 	struct SpeckleContrastStatistics
 	{
 		struct SCC_Pattern
@@ -183,5 +182,13 @@ namespace Statistics
 		
 
 	}
+
+	struct HitListFilterCondition 
+	{
+		bool TwoPhotonEvent = false;
+	};
+
+	void FilterHitList(std::string HitListPath_Input, std::string HitListPath_Output, HitListFilterCondition Condition);
+
 }
 #endif

@@ -88,7 +88,7 @@ namespace PPP
 	
 	//Find Photons by considering the adjacent Pixels.
 	void PhotonFinder_LargestAdjacentPixel(float * Intensity, std::vector<DetectorPanel> DetectorPanels, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);
-	void PhotonFinder_GaussFit(float* Intensity, const unsigned int FullDetSize, const Create_GaussPhotonizeSettings GaussPhotonizeSettings);
+	void PhotonFinder_GaussFit(float* Intensity, const size_t FullDetSize, const Create_GaussPhotonizeSettings GaussPhotonizeSettings);
 
 
 	void ProcessData_PF_LAP(std::string XML_In, std::string XML_Out, std::string H5_Out, std::string Dataset, std::vector<DetectorPanel> DetectorPanels, Detector &Det, int FullDetSize, float ADU_perPhoton = 1.0f, float SeedThershold = 0.5f, float CombinedThershold = 0.9f);

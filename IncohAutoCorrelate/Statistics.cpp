@@ -539,6 +539,62 @@ namespace Statistics
 		delete [] DataOut;
 	}
 
+	bool CheckEventFilter(Detector & Det, HitListFilterCondition Condition)
+	{
+		bool ret = true;
+		if (Condition.TwoPhotonEvent)
+		{
+			bool TwoPhoton= false;
+			for (size_t ind = 0; ind < Det.DetectorSize[0] * Det.DetectorSize[1]; ind++)
+			{
+				if (Det.Intensity[ind] > 1.9999f)
+				{
+					TwoPhoton = true;
+					break;
+				}
+			}
+			ret = ret * TwoPhoton;
+		}
+
+		return ret;
+	}
+
+	void FilterHitList(std::string HitListPath_Input, std::string HitListPath_Output, HitListFilterCondition Condition)
+	{
+		//std::cout << "Filter Event-List for 2-photon events. So only pattern with at least one two photon event will be transfered to new Event-List.\n" << std::endl;
+
+		Settings OptionsIn;
+		Settings OptionsOut;
+
+		OptionsIn.LoadHitEventListFromFile(HitListPath_Input);
+		if (OptionsIn.HitEvents.size() < 1)
+		{
+			std::cout << "No Events found in \"" << HitListPath_Input << "\"" << std::endl;
+			return;
+		}
+		//get detector size from first event
+		ArrayOperators::H5Infos H5Info = ArrayOperators::GetH5FileInformation(OptionsIn.HitEvents[0].Filename, OptionsIn.HitEvents[0].Dataset);
+
+		std::cout << "Detector Size: " << H5Info.Dimensions[0] << " x " << H5Info.Dimensions[1] << std::endl;
+		Detector Det;
+		Det.CreateEmptyPixelMap(H5Info.Dimensions[0], H5Info.Dimensions[1]);
+
+		size_t counter = 0;
+		for (size_t j = 0; j < OptionsIn.HitEvents.size(); j++)
+		{
+			Det.LoadIntensityData(&OptionsIn.HitEvents[j]);
+			if (CheckEventFilter(Det, Condition))
+			{
+				OptionsOut.HitEvents.push_back(OptionsIn.HitEvents[j]);
+				counter++;
+			}
+		}
+		OptionsOut.SafeHitEventListToFile(HitListPath_Output);
+
+		std::cout << counter << " Events found matichng the conditions.\n" << "New Event-List saved as \"" << HitListPath_Output << "\"" << std::endl;
+
+	}
+
 
 	// ***************************
 	Histogram::Histogram(unsigned int size, double binSize, double firstBin)
@@ -599,6 +655,7 @@ namespace Statistics
 
 		delete[] Hist;
 	}
+
 
 }
 

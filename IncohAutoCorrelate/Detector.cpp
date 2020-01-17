@@ -494,6 +494,27 @@ void Detector::LoadPixelMap(H5std_string Path, H5std_string DataSet)
 	}
 }
 
+void Detector::LoadPixelMap(unsigned int fs, unsigned int ss)//[n_y][n_x][3]
+{
+	DetectorSize[0] = ss;//ss   y'
+	DetectorSize[1] = fs;//fs   x'
+
+	delete[] PixelMap;
+	PixelMap = new float[3 * fs * ss]();
+
+	for (unsigned int i_x = 0; i_x < DetectorSize[0]; i_x++)
+	{
+		for (unsigned int i_y = 0; i_y < DetectorSize[1]; i_y++)
+		{
+			PixelMap[0 + 3 * i_y + 3 * DetectorSize[1] * i_x] = (float) i_x - 0.5f * (DetectorSize[0]) + 0.5f; //x
+			PixelMap[1 + 3 * i_y + 3 * DetectorSize[1] * i_x] = (float) i_y - 0.5f * (DetectorSize[1]) + 0.5f; //y
+			PixelMap[2 + 3 * i_y + 3 * DetectorSize[1] * i_x] = 0; //z
+		}
+	}
+
+	Checklist.PixelMap = true;
+}
+
 void Detector::LoadPixelMask(std::string Path, std::string DataSet )
 {
 	delete[] PixelMask;

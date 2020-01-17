@@ -98,7 +98,7 @@ namespace PPP
 
 	namespace
 	{
-		const float pi = 3.141592653589793;
+		const double pi = 3.141592653589793;
 
 		template<typename T0, typename T1, typename T2>
 		constexpr T0 clip(const T0& n, const T1& l, const T2& h) 
@@ -107,22 +107,24 @@ namespace PPP
 		}
 
 		//gradient of gaussion in fs direction
-		const double inline pixel_gauss_dfs(const float& fs, const float& ss,	const float& s	)
+		template<typename T>
+		const double inline pixel_gauss_dfs(const T& fs, const T& ss, const T& s	)
 		{
-			const float a = erf((fs + 1) / sqrt(2 * s * s));
-			const float b = erf((fs) / sqrt(2 * s * s));
-			const float c = erf((ss + 1) / sqrt(2 * s * s));
-			const float d = erf((ss) / sqrt(2 * s * s));
+			const T a = erf((fs + 1) / sqrt(2 * s * s));
+			const T b = erf((fs) / sqrt(2 * s * s));
+			const T c = erf((ss + 1) / sqrt(2 * s * s));
+			const T d = erf((ss) / sqrt(2 * s * s));
 			return 0.5 * (c - d) * (exp(-0.5 * (fs + 1) * (fs + 1) / (s * s)) - exp(-0.5 * (fs) * (fs) / (s * s))) / sqrt(2 * pi * s * s);
 		}
 
 		//gradient of gaussion in ss direction
-		const double inline pixel_gauss_dss(const float& fs, const float& ss,	const float& s)
+		template<typename T>
+		const double inline pixel_gauss_dss(const T& fs, const T& ss, const T& s)
 		{
-			const float a = erf((fs + 1) / sqrt(2 * s * s));
-			const float b = erf((fs) / sqrt(2 * s * s));
-			const float c = erf((ss + 1) / sqrt(2 * s * s));
-			const float d = erf((ss) / sqrt(2 * s * s));
+			const T a = erf((fs + 1) / sqrt(2 * s * s));
+			const T b = erf((fs) / sqrt(2 * s * s));
+			const T c = erf((ss + 1) / sqrt(2 * s * s));
+			const T d = erf((ss) / sqrt(2 * s * s));
 			return 0.5 * (a - b) * (exp(-0.5 * (ss + 1) * (ss + 1) / (s * s)) - exp(-0.5 * (ss) * (ss) / (s * s))) / sqrt(2 * pi * s * s);
 		}
 
@@ -137,11 +139,11 @@ namespace PPP
 		}
 
 		// a = [-1, 1] 
-		void inline render_photon(const float a, const float x, const float y, const float sigma, const size_t nfs, const size_t nss, float* data)
+		void inline render_photon(const double a, const double x, const double y, const double sigma, const size_t nfs, const size_t nss, double* data)
 		{
-			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss); ss != clip(int(ceil(y + 1 + 3 * sigma)), 0, nss); ++ss) 
+			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss); ss < clip(int(ceil(y + 1 + 3 * sigma)), 0, nss); ss++) 
 			{
-				for (size_t fs = clip(int(floor(x - 1 - 3 * sigma)), 0, nfs); fs != clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs);	++fs) 
+				for (size_t fs = clip(int(floor(x - 1 - 3 * sigma)), 0, nfs); fs < clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs);	fs++) 
 				{
 					data[nfs * ss + fs] += a * pixel_gauss(fs - x, ss - y, sigma);
 				}
@@ -149,12 +151,12 @@ namespace PPP
 		}
 		
 		//Fitness function
-		float photon_target(const float a,const float x,const float y,const float sigma,const size_t nfs,const size_t nss,	const float* data,	const float* tmp,	const float noise_sigma = 0.044322f	)
+		float photon_target(const double a,const double x,const double y,const double sigma,const size_t nfs,const size_t nss,	const float* data,	const double* tmp,	const double noise_sigma = 0.044322f	)
 		{
 			float p = 0;
-			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss);ss != clip(int(ceil(y + 1 + 3 * sigma)), 0, nss);	++ss) 
+			for (size_t ss = clip(int(floor(y - 1 - 3 * sigma)), 0, nss); ss < clip(int(ceil(y + 1 + 3 * sigma)), 0, nss); ss++) 
 			{
-				for (size_t fs = clip(int(floor(x - 1 - 3 * sigma)), 0, nfs);fs != clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs);++fs) 
+				for (size_t fs = clip(int(floor(x - 1 - 3 * sigma)), 0, nfs); fs < clip(int(ceil(x + 1 + 3 * sigma)), 0, nfs); fs++) 
 				{
 					const size_t i = nfs * ss + fs;
 					p += pow(tmp[i] + a * pixel_gauss(fs - x, ss - y, sigma) - data[i], 2u)	- pow(tmp[i] - data[i], 2);
@@ -163,19 +165,19 @@ namespace PPP
 			return p / pow(noise_sigma, 2);
 		}
 
-		float optimize_photon(const float a,float& x,float& y,const float charge_sigma,const size_t nfs,const size_t nss,	const float* data,	const float* tmp,const float noise_sigma = 1.0)
+		float optimize_photon(const double a, double& x, double& y,const double charge_sigma,const size_t nfs,const size_t nss,	const float* data,	const double* tmp,const double noise_sigma = 1.0)
 		{
-			float eps = charge_sigma; //movement of photon center (guess for "wrongness" of origin)
+			double eps = charge_sigma; //movement of photon center (guess for "wrongness" of origin)
 
-			float t0 = photon_target(a, x, y, charge_sigma, nfs, nss, data, tmp, noise_sigma);
-			for (size_t i = 0; i != 16; ++i) 
+			double t0 = photon_target(a, x, y, charge_sigma, nfs, nss, data, tmp, noise_sigma);
+			for (size_t i = 0; i < 16; i++) // i<16
 			{
 				//calculate derivation
-				float dx = 0;
-				float dy = 0;
+				double dx = 0;
+				double dy = 0;
 				for (size_t ss = clip(int(floor(y - 1 - 3 * charge_sigma)), 0, nss);ss != clip(int(ceil(y + 1 + 3 * charge_sigma)), 0, nss); ++ss)
 				{	
-					for (size_t fs = clip(int(floor(x - 1 - 3 * charge_sigma)), 0, nfs);fs != clip(int(ceil(x + 1 + 3 * charge_sigma)), 0, nfs);++fs) 
+					for (size_t fs = clip(int(floor(x - 1 - 3 * charge_sigma)), 0, nfs);fs != clip(int(ceil(x + 1 + 3 * charge_sigma)), 0, nfs); ++fs) 
 					{
 						const size_t i = nfs * ss + fs;
 						const float p = a * pixel_gauss(fs - x, ss - y, charge_sigma);
@@ -187,12 +189,13 @@ namespace PPP
 				dy *= a / pow(noise_sigma, 2);
 				// \ deriv.
 
-				float norm = sqrt(pow(dx, 2u) + pow(dy, 2u)); //normalize deriv.
-				if (norm < 1e-30) break;
+				double norm = sqrt(pow(dx, 2u) + pow(dy, 2u)); //normalize deriv.
+				if (norm < 1e-60) 
+					break;
 				dx /= norm;
 				dy /= norm;
 				bool dir = true; //direction false if step is getting increased true for decrease
-				float t;
+				double t;
 				while (eps < sqrt(pow(nfs, 2u) + pow(nss, 2u))) 
 				{
 					t = photon_target(a, x - eps * dx, y - eps * dy, charge_sigma, nfs, nss, data, tmp, noise_sigma);
@@ -209,7 +212,7 @@ namespace PPP
 				}
 				if (dir) 
 				{
-					while (eps > 1e-10) 
+					while (eps > 1e-20) 
 					{
 						t = photon_target(a, x - eps * dx, y - eps * dy, charge_sigma, nfs, nss, data, tmp, noise_sigma);
 						if (t < t0)
@@ -226,23 +229,25 @@ namespace PPP
 			return t0;
 		}
 
-		void seed_photons(std::vector<std::array<float, 2>>& photons,const float a,const float sigma,const size_t nfs,const size_t nss,	const float* data,float* tmp,const float noise_sigma = 0,const float min_reduction = 16.0f	)//min_reduction = 16.0f:: ^= 4sigma 
+		void seed_photons(std::vector<std::array<double, 2>>& photons,const double a,const double sigma,const size_t nfs,const size_t nss,	const float* data, double* tmp,const double noise_sigma = 0,const double min_reduction = 8.0)//min_reduction = 16.0f:: ^= 4sigma 
 		{
-			for (size_t ss = 0; ss != nss; ++ss) {
-				for (size_t fs = 0; fs != nfs; ++fs) 
+			for (size_t ss = 0; ss < nss; ss++) 
+			{
+				for (size_t fs = 0; fs < nfs; fs++) 
 				{
 					if (tmp[fs + ss * nfs] > data[fs + ss * nfs])
 						continue;
-					float min_x;
-					float min_y;
-					float min_t = -min_reduction;
-					for (size_t j = 0; j != 2; ++j) 
+
+					double min_x;
+					double min_y;
+					double min_t = -min_reduction;
+					for (size_t j = 0; j < 2; j++) 
 					{
-						for (size_t i = 0; i != 2; ++i) 
+						for (size_t i = 0; i < 2; i++) 
 						{
-							float x = fs + i / 2.0;
-							float y = ss + j / 2.0;
-							const float t =	optimize_photon(a, x, y, sigma, nfs, nss, data, tmp, noise_sigma);
+							double x = fs + i / 2.0;
+							double y = ss + j / 2.0;
+							const double t = optimize_photon(a, x, y, sigma, nfs, nss, data, tmp, noise_sigma);
 							if (t < min_t) 
 							{
 								min_t = t;
@@ -261,28 +266,32 @@ namespace PPP
 			}
 		}
 
-		void photonize(const float sigma, const size_t nfs, const size_t nss, const float* data, float* ret,float noise_sigma = 0.04432)
+		void photonize(const double sigma, const size_t nfs, const size_t nss, const float* data, float* ret, double noise_sigma = 0.05)
 		{
-			const float a = 1.0f;
-			std::vector<std::array<float, 2UL>> photons;
-			float* tmp = new float[nfs * nss]();
+
+			const double a = 1.0f;
+			std::vector<std::array<double, 2UL>> photons;
+			double* tmp = new double[nfs * nss]();
 
 			// seed
-			const float min_reduction = 4.0f; //sqrt(min_reduction) = sigma photon needs to get better
-			seed_photons(photons, 1.0f, sigma, nfs, nss, data, tmp, noise_sigma, min_reduction);
+			const double min_reduction = 2.0; //sqrt(min_reduction) = sigma photon needs to get better
+			seed_photons(photons, 1.0, sigma, nfs, nss, data, tmp, noise_sigma, min_reduction);
 
 			//optimisaion steps (´max  hier 64)
-			for (size_t i = 0; i != 8; ++i)
+			for (size_t i = 0; i < 8; i++)
 			{
-				double max_step = 0;
-				for (size_t i = 0; i != nfs * nss; ++i) tmp[i] = 0;
-				for (size_t i = 0; i != photons.size(); ++i) {
+				for (size_t i = 0; i < nfs * nss; i++)
+				{
+					tmp[i] = 0;
+				}
+				for (size_t i = 0; i < photons.size(); i++) 
+				{
 					const auto& [x, y] = photons[i];
 					render_photon(1.0, x, y, sigma, nfs, nss, tmp);
 				}
 
 				//Loop über photonen
-				for (size_t j = 0; j != photons.size(); ++j)
+				for (size_t j = 0; j < photons.size(); j++)
 				{
 					auto& [x, y] = photons[j]; // x = photons[j][0];  x = photons[j][1]; 
 					render_photon(-a, x, y, sigma, nfs, nss, tmp); //adds the photon (at x,y) to tmp (if a = -1 subtracts)
@@ -290,14 +299,14 @@ namespace PPP
 					render_photon(a, x, y, sigma, nfs, nss, tmp);
 				}
 
-				std::vector<std::array<float, 2UL>> _photons;
-				for (size_t j = 0; j != photons.size(); ++j) //checks if all photons are necessary
+				std::vector<std::array<double, 2UL>> _photons;
+				for (size_t j = 0; j < photons.size(); j++) //checks if all photons are necessary
 				{
 					auto& [x, y] = photons[j];
 					render_photon(-a, x, y, sigma, nfs, nss, tmp);
 					if (photon_target(a, x, y, sigma, nfs, nss, data, tmp, noise_sigma)	< -min_reduction) 
 					{
-						_photons.push_back({ x,y });
+						_photons.push_back({x, y});
 						render_photon(a, x, y, sigma, nfs, nss, tmp);
 						continue;
 					}
@@ -311,17 +320,17 @@ namespace PPP
 			ArrayOperators::MultiplyScalar(ret, 0.0f, nfs* nss);
 			for (size_t j = 0; j < photons.size(); j++)
 			{
-				ret[(size_t)floor(photons[j][1]) * nfs + (size_t)floor(photons[j][0])] += 1.0;
+				ret[(size_t)clip(photons[j][1],0,nss) * nfs + (size_t)clip(photons[j][0],0,nfs)] += 1.0f;
 			}
 
-			delete[] tmp;
-		}
+			delete[] tmp; 
+		}//end of function
 
 		
 
 	}
 
-	void PhotonFinder_GaussFit(float* Intensity, const unsigned int FullDetSize, const Create_GaussPhotonizeSettings GaussPhotonizeSettings)
+	void PhotonFinder_GaussFit(float* Intensity, const size_t FullDetSize, const Create_GaussPhotonizeSettings GaussPhotonizeSettings)
 	{
 
 		//std::cout <<"Panels: "<< GaussPhotonizeSettings.DetectorPanels[0].FirstInd << " :: " << GaussPhotonizeSettings.DetectorPanels[0].Scans[0] << " :: " << GaussPhotonizeSettings.DetectorPanels[0].Scans[1] << std::endl;
@@ -335,10 +344,10 @@ namespace PPP
 
 			
 			size_t t_ind = 0;
-			float* temp = new float[DetSize];
+			float* temp = new float[DetSize]();
 			for (unsigned int ind = GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd; ind < (GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd + DetSize); ind++)
 			{
-				temp[t_ind] = Intensity[ind]/GaussPhotonizeSettings.ADU_perPhoton; //copy data of panel into temp and normalize such that 1 photon should be 1.0f.
+				temp[t_ind] = Intensity[ind] / GaussPhotonizeSettings.ADU_perPhoton; //copy data of panel into temp and normalize such that 1 photon should be 1.0f.
 				t_ind++;
 			}
 
@@ -350,7 +359,7 @@ namespace PPP
 			t_ind = 0;
 			for (unsigned int ind = GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd; ind < (GaussPhotonizeSettings.DetectorPanels[i_pan].FirstInd + DetSize); ind++)
 			{
-				Intensity[ind] = ret[t_ind] * GaussPhotonizeSettings.ADU_perPhoton; //copy data of panel into temp and normalize such that 1 photon should be 1.0f.
+				Intensity[ind] = ret[t_ind] *GaussPhotonizeSettings.ADU_perPhoton; //copy data of panel into temp and normalize such that 1 photon should be 1.0f.
 				t_ind++;
 			}
 
@@ -579,7 +588,10 @@ namespace PPP
 
 		ProfileTime Profiler;
 		
-		std::cout << "Pattern to be analyzed: " << NumOfEvents << std::endl;
+		std::cout << "Parameter:\n";
+		std::cout << "Guessed charge-sharing sigma: " << GaussPhotonizeSettings.ChargeSharingSigma << "\n";
+
+		std::cout << "\nPattern to be analyzed: " << NumOfEvents << std::endl;
 		std::cout << "Start photonization ..." << std::endl;
 		Profiler.Tic();
 		#pragma omp parallel for
@@ -626,7 +638,7 @@ namespace PPP
 				//Count for status update
 				if ((float)i >= Counter)
 				{
-					std::cout << i-FirstEvent << "/" << NumOfEvents << "  ^= " << Counter / CounterStep << "%\n";
+					std::cout << i-FirstEvent << "/" << NumOfEvents << "  ^= " << Counter / CounterStep << "%" << std::endl;
 					Counter += CounterStep;
 				}
 
@@ -639,8 +651,12 @@ namespace PPP
 		dataset.close();
 		file.close();
 
+
 		std::cout << "Done in ";
 		Profiler.Toc(true, true);
+
+		OptionsOut.SafeHitEventListToFile(GaussPhotonizeSettings.Output_NewXML);
+		std::cout << "New Event-list saved as \"" << GaussPhotonizeSettings.Output_NewXML << "\"" << std::endl;
 	}
 
 	void GainCorrection(Detector & Det, std::string GainCorr_Path, std::string Dataset_Offset, std::string Dataset_Gain, Settings & Options, bool AllowNegativeValues)

@@ -1,9 +1,15 @@
-﻿  Validating sources
+﻿  Cleaning remote project directory
+  Validating sources
   Copying sources remotely to 'max-cfelg001'
   Validating architecture
   Validating architecture
   Starting remote build
   Compiling sources:
+  ArrayMaths.cpp
+  hdf5Handle.cpp
+  main.cpp
   PhStatSimulator.cpp
+  ProfileTime.cpp
+  DePhStSi_Settings.cpp
   Linking objects
   DetPhStatSim.vcxproj -> C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\bin\x64\Debug\DetPhStatSim.out
