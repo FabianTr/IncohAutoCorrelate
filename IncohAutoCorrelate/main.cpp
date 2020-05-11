@@ -446,9 +446,9 @@ void QDSpeckleContr(Settings & Options)
 		myfile << SCS.SCC_Statistics[i].MeanPhotonDensity << "; ";
 		for (unsigned int j = 0; j < SCS.Nmax; j++)
 		{
-			if (SCS.SCC_Statistics[i].Probability.size() > j)
+			if (SCS.SCC_Statistics[i].Photons.size() > j)
 			{
-				myfile << SCS.SCC_Statistics[i].Probability[j];
+				myfile << (double)SCS.SCC_Statistics[i].Photons[j]/(double)SCS.NumberOfUnmaskedPixels;
 			}
 			else
 			{

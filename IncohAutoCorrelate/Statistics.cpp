@@ -162,7 +162,7 @@ namespace Statistics
 
 		//Loop through patterns --- can be parallized therefore clone det, ...
 		unsigned int counter = 0.0;
-		const unsigned int modulo = (UpperBound - LowerBound +50)/100;
+		const unsigned int modulo = (UpperBound - LowerBound + 50)/100;
 		ProfileTime profiler;
 		profiler.Tic();
 		#pragma omp parallel for
@@ -176,23 +176,25 @@ namespace Statistics
 			Det.ApplyPixelMask();
 			//Loop through Pixel
 			ArrayOperators::DiscretizeToPhotons(Det.Intensity, Offset, Step, Det.DetectorSize[0] * Det.DetectorSize[1]);
+			long t_TotalPhotons = 0;
 			for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
 			{
-				unsigned int Photons = Det.Intensity[j];
-				if (Photons == 0)
+				int Photons = (int)Det.Intensity[j];
+				if (Photons < 1)
 					continue;
 				//Check if propability-vector is large enought and expand if needed
-				while (Photons > SCS.SCC_Statistics[i].Probability.size())
+				while (Photons > SCS.SCC_Statistics[i].Photons.size())
 				{
-					SCS.SCC_Statistics[i].Probability.push_back(0);
+					SCS.SCC_Statistics[i].Photons.push_back(0);
 					if (Photons > SCS.Nmax)
 						SCS.Nmax = Photons; // store maximum of photons found per pixel
 				}
 				//Adds entry to photon-count histogram
-				SCS.SCC_Statistics[i].Probability[Photons - 1] += 1.0/((double)SCS.NumberOfUnmaskedPixels);
+				SCS.SCC_Statistics[i].Photons[Photons - 1] += 1;
 				//updates mean number of photons
-				SCS.SCC_Statistics[i].MeanPhotonDensity += (double)Photons / ((double)SCS.NumberOfUnmaskedPixels);
+				t_TotalPhotons += Photons;
 			}
+			SCS.SCC_Statistics[i].MeanPhotonDensity = ((double)t_TotalPhotons/(double)SCS.NumberOfUnmaskedPixels);
 			//Calculate Variance
 			double Var = 0.0;
 			for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)

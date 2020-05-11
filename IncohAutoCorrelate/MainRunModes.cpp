@@ -949,10 +949,10 @@ int MainRunModes::FastGainCorrection(std::string Arg1, std::string Arg2, std::st
 	//get Detector size from dark:
 	ArrayOperators::H5Infos H5Info = ArrayOperators::GetH5FileInformation(Arg2, Arg3);
 
-	std::cout << H5Info.Dimensions[0] << " x " << H5Info.Dimensions[0] << std::endl;
+	std::cout << H5Info.Dimensions[0] << " x " << H5Info.Dimensions[1] << std::endl;
 
 	Detector Det;
-	Det.CreateEmptyPixelMap(H5Info.Dimensions[0], H5Info.Dimensions[1]);
+	Det.CreateEmptyPixelMap(H5Info.Dimensions[1], H5Info.Dimensions[0]);
 	Det.LoadPixelMask();
 
 	PPP::Create_LAPSettings GCSettings;
@@ -1113,16 +1113,18 @@ int MainRunModes::GenerateSpeckleContrastStatistics(std::string ConfigFile, Sett
 	{
 		File << ", P" << i;
 	}
+	File << ", number of unmasked pixel = " << SCS.NumberOfUnmaskedPixels;
 	File << std::endl;
 
-	for (unsigned int i = 0; i < (unsigned int)SCS.SCC_Statistics.size(); i++)
+	for (size_t i = 0; i < SCS.SCC_Statistics.size(); i++)
 	{
 		File << SCS.SCC_Statistics[i].MeanPhotonDensity << ", " << SCS.SCC_Statistics[i].VariancePhotonDensity;
 		for (unsigned int  j = 0; j < SCS.Nmax; j++)
 		{
-			if (j < SCS.SCC_Statistics[i].Probability.size())
+			if (j < SCS.SCC_Statistics[i].Photons.size())
 			{
-				File << ", " << SCS.SCC_Statistics[i].Probability[j];
+				//File << ", " << (double)SCS.SCC_Statistics[i].Photons[j] / (double)SCS.NumberOfUnmaskedPixels;
+				File << ", " << SCS.SCC_Statistics[i].Photons[j];
 			}
 			else
 			{

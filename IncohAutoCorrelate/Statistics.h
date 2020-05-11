@@ -97,7 +97,7 @@ namespace Statistics
 	{
 		struct SCC_Pattern
 		{
-			std::vector<double> Probability;
+			std::vector<size_t> Photons;
 			double MeanPhotonDensity = 0.0;
 			double VariancePhotonDensity = 0.0;
 		};
