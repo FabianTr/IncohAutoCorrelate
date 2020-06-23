@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-pgf Settings_GaussFitTest.info</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-fdc /gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/ePix/XMLs/RAWs/ePix_run_73.info /gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/ePix/DarksFromHistos/dark_73.h5 dark /gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/ePix/calib/DC/ePix_run_73_DC.h5 data /gpfs/cfel/cxi/scratch/user/trostfab/LR17/data/ePix/XMLs/DC/ePix_run_73_DC.info</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

@@ -590,7 +590,6 @@ namespace PPP
 		
 		std::cout << "Parameter:\n";
 		std::cout << "Guessed charge-sharing sigma: " << GaussPhotonizeSettings.ChargeSharingSigma << "\n";
-
 		std::cout << "\nPattern to be analyzed: " << NumOfEvents << std::endl;
 		std::cout << "Start photonization ..." << std::endl;
 		Profiler.Tic();

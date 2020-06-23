@@ -622,6 +622,7 @@ int main(int argc, char** argv)
 		if (argc < 3)
 		{
 			std::cerr << "-GainAndLAPCorrection requires one additional argument (\"Settings.xml\")\n";
+			//Set GainMapPath "" for LAP only
 			std::cerr << "Additional Info: -pixelwisehistograms uses the \"root.StatisticsSettings.PixelHistograms. (...)\" part.\n ";
 			return -1;
 		}

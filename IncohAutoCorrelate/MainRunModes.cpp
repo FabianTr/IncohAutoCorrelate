@@ -1010,7 +1010,7 @@ int MainRunModes::FastDarkCalibration(std::string Arg1, std::string Arg2, std::s
 	//get Detector size from dark:
 	ArrayOperators::H5Infos H5Info = ArrayOperators::GetH5FileInformation(Arg2, Arg3);
 	Detector Det;
-	Det.CreateEmptyPixelMap(H5Info.Dimensions[0], H5Info.Dimensions[1]);
+	Det.CreateEmptyPixelMap(H5Info.Dimensions[1], H5Info.Dimensions[0]);
 	Det.LoadPixelMask();
 
 	PPP::CreateDarkSettings DarkSettings;
