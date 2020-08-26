@@ -543,9 +543,17 @@ int main(int argc, char** argv)
 		}
 		else 
 		{
+			std::string SuppInfo = "";
+			if (argc > 4)
+			{
+				SuppInfo = argv[4]; //SupplementInfo
+				if (Options.echo)
+					std::cout << "SupplementInfo: \"" << SuppInfo << "\"" << std::endl;
+			}
+
 			std::string Arg2 = argv[2];
 			std::string Arg3 = argv[3];
-			return MainRunModes::Create_XMLHitlist_from_H5Stack_script(Arg2, Arg3, Options);
+			return MainRunModes::Create_XMLHitlist_from_H5Stack_script(Arg2, Arg3, Options, SuppInfo);
 		}
 	}
 	else if (Arg1 == "evaluate" || Arg1 == "-evaluate" || Arg1 == "e" || Arg1 == "-e")

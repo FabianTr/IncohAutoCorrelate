@@ -585,6 +585,7 @@ namespace PPP
 
 		float CounterStep = ((float)NumOfEvents) / 100.0f;
 		float Counter = 0;
+		long LoopCounter = 0;
 
 		ProfileTime Profiler;
 		
@@ -635,14 +636,15 @@ namespace PPP
 				dataset.write(Det.Intensity, H5::PredType::NATIVE_FLOAT, mspace, dataspace);
 
 				//Count for status update
-				if ((float)i >= Counter)
+				if ((float)LoopCounter >= Counter)
 				{
-					std::cout << i-FirstEvent << "/" << NumOfEvents << "  ^= " << Counter / CounterStep << "%" << std::endl;
+					std::cout << LoopCounter << "/" << NumOfEvents << "  ^= " << Counter / CounterStep << "% in ";
+					Profiler.Toc(true, true);
 					Counter += CounterStep;
 				}
-
+				LoopCounter ++; 
 			}
-
+			
 		}
 
 		mspace.close();

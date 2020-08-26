@@ -138,7 +138,7 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	H5::H5File file(Path, H5F_ACC_RDONLY);
 	H5::DataSet dataset = file.openDataSet(DataSet);
 
-	if (dataset.getTypeClass() != H5T_FLOAT)
+	if (dataset.getTypeClass() != H5T_FLOAT && dataset.getTypeClass() != H5T_INTEGER)
 	{
 		std::cerr << "ERROR: Intensity data is not stored as floating point numbers.\n";
 		std::cerr << "     -> in Detector::GetSliceOutOfHDFCuboid()\n";
@@ -195,8 +195,25 @@ void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_stri
 	H5::DataSpace mspace(3, dimsm, NULL);
 	DS.selectHyperslab(H5S_SELECT_SET, count, offset, stride, block);
 
-	H5::PredType type = H5::PredType::NATIVE_FLOAT;
-	dataset.read(data, type, mspace, DS);
+	if (dataset.getTypeClass() == H5T_FLOAT)
+	{
+		H5::PredType type = H5::PredType::NATIVE_FLOAT;
+		dataset.read(data, type, mspace, DS);
+	}
+	else if (dataset.getTypeClass() == H5T_INTEGER)
+	{
+		int* t_data = new int[DetectorSize[0] * DetectorSize[1]];
+
+		H5::PredType type = H5::PredType::NATIVE_INT;
+		dataset.read(t_data, type, mspace, DS);
+
+		for (size_t i = 0; i < DetectorSize[0] * DetectorSize[1]; i++)
+		{
+			data[i] = (float)t_data[i];
+		}
+
+		delete[] t_data;
+	}
 
 
 	//DetectorEvent->SerialNumber
@@ -689,6 +706,9 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 		if (PhotonSamplingStep > 0)
 			IntensityPhotonDiscr = new long[DetectorSize[1] * DetectorSize[0]]();
 
+		ProfileTime profiler;
+
+		profiler.Tic();
 		//std::cout << " \n ";
 		int t_prog = -1; //for progress indicator only
 		for (int i = LowerBound; i < UpperBound; i++)//get  slides
@@ -697,7 +717,8 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 			{
 				if ((((i - LowerBound) * 100) / (UpperBound - LowerBound - 1)) > t_prog)
 				{
-					std::cout << "Load and Average: " << ((i - LowerBound) * 100) / (UpperBound - LowerBound - 1) << "%" << std::endl;
+					std::cout << "Load and Average: " << ((i - LowerBound) * 100) / (UpperBound - LowerBound - 1) << "%   in " ;
+					profiler.Toc(true, true);
 					t_prog++;
 				}
 			}

@@ -892,6 +892,9 @@ int MainRunModes::AverageIntensity(std::string EvaluationConfigFile, Settings &O
 
 	//Load and average Intensities, update XML, if wanted.
 	
+	if (EvalSettings.PhotonStep == 0) //if no photonization :=> allow negative values
+		EvalSettings.PhotonStep = std::numeric_limits<float>::min();
+
 	RunIAC::Load_and_average_Intensities(Options, Det, EvalSettings.PhotonOffset, EvalSettings.PhotonStep, EvalSettings.XML_Path, EvalSettings.Out_AvIntensity_Path, UpdateEventXML);
 	return 0;
 }
@@ -1167,7 +1170,7 @@ int MainRunModes::IsolatedPhotonChargeSharingFit(std::string ConfigFile, Setting
 
 
 //Create XML Event Lists
-int MainRunModes::Create_XMLHitlist_from_H5Stack_script(std::string Arg1, std::string Arg2, Settings &Options)
+int MainRunModes::Create_XMLHitlist_from_H5Stack_script(std::string Arg1, std::string Arg2, Settings &Options, std::string SupplementInfo)
 {
 	std::vector<std::string> Dublett = CSV_Splitter(Arg1, ";");
 	if (Dublett.size() != 2)
@@ -1185,12 +1188,27 @@ int MainRunModes::Create_XMLHitlist_from_H5Stack_script(std::string Arg1, std::s
 		std::cerr << "Unequal amont of hdf5-paths and datasets. \n";
 		return -1;
 	}
-	return Create_XMLHitlist_from_H5Stack(H5_Paths, H5_Datasets, Arg2, Options);
+	std::vector<std::string> SupplInfo;
+	for (size_t i = 0; i < H5_Datasets.size(); i++)
+	{
+		SupplInfo.push_back(SupplementInfo);
+	}
+
+	return Create_XMLHitlist_from_H5Stack(H5_Paths, H5_Datasets, Arg2, Options, SupplInfo);
 }
-int MainRunModes::Create_XMLHitlist_from_H5Stack(std::vector<std::string> H5_Paths, std::vector<std::string> H5_Datasets, std::string XML_Output_Path, Settings &Options)
+int MainRunModes::Create_XMLHitlist_from_H5Stack(std::vector<std::string> H5_Paths, std::vector<std::string> H5_Datasets, std::string XML_Output_Path, Settings &Options, std::vector<std::string> SupplementInfo)
 {
+	if (SupplementInfo.size() == 0)
+	{
+		for (size_t i = 0; i < H5_Datasets.size(); i++)
+		{
+			SupplementInfo.push_back("");
+		}
+	}
+
 	std::array<unsigned int, 2 > DetSize;
-	DetSize = Options.ScanH5Files(H5_Paths, H5_Datasets);
+	DetSize = Options.ScanH5Files(H5_Paths, H5_Datasets,false, SupplementInfo);
+
 	Options.SafeHitEventListToFile(XML_Output_Path);
 
 
@@ -1343,7 +1361,7 @@ int MainRunModes::MergeXMLHitLits(std::string Arg1, std::string Arg2, std::strin
 		if (SupplInfoList.size() != XML_in.size())
 		{
 			std::cerr << "ERROR: XML input path list must have the same length as supplementary information list.\n";
-			std::cerr << "Note: \"supplementary information list\" is optional, but if set the size needs to match"<< std::endl;
+			std::cerr << "Note: \"supplementary information list\" is optional, but if set, the size needs to match"<< std::endl;
 			return -1;
 		}
 	}

@@ -58,8 +58,8 @@ namespace MainRunModes
 
 	//Functions
 	//-> Data handling
-	int Create_XMLHitlist_from_H5Stack_script(std::string Arg1, std::string Arg2, Settings &Options);
-	int Create_XMLHitlist_from_H5Stack(std::vector<std::string> H5_Paths, std::vector<std::string> H5_Datasets, std::string XML_Output_Path, Settings &Options);
+	int Create_XMLHitlist_from_H5Stack_script(std::string Arg1, std::string Arg2, Settings &Options, std::string SupplementInfo = "");
+	int Create_XMLHitlist_from_H5Stack(std::vector<std::string> H5_Paths, std::vector<std::string> H5_Datasets, std::string XML_Output_Path, Settings &Options, std::vector<std::string> SupplementInfo = std::vector<std::string>());
 
 
 	//->Settings-Files Handle

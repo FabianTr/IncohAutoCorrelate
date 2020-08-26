@@ -176,13 +176,22 @@ void Settings::LoadStreamFile(std::string Filename, std::string DatasetFIntensit
 
 
 
-std::array<unsigned int, 2> Settings::ScanH5Files(std::vector<std::string> Filenames, std::vector<std::string> Datasets, bool ResumeOnError)
+std::array<unsigned int, 2> Settings::ScanH5Files(std::vector<std::string> Filenames, std::vector<std::string> Datasets, bool ResumeOnError, std::vector<std::string> SupplementInfo)
 {
 	if (Filenames.size() != Datasets.size())
 	{
 		std::cerr << "ERROR: Filenames and Datasets must have the same amount of Entries\n";
 		std::cerr << "     -> in Settings::ScanH5Files()\n";
 		throw;
+	}
+
+	if (SupplementInfo.size() < Filenames.size())
+	{
+		size_t t = SupplementInfo.size();
+		for (size_t i = t; i < Filenames.size(); i++)
+		{
+			SupplementInfo.push_back("");
+		}
 	}
 
 	std::vector<HitEvent> tmpHitEvents;
@@ -196,12 +205,21 @@ std::array<unsigned int, 2> Settings::ScanH5Files(std::vector<std::string> Filen
 		H5::DataSet dataset = file.openDataSet(Datasets[i]);
 
 		//Check plausibility
-		if (dataset.getTypeClass() != H5T_FLOAT)
+		if (dataset.getTypeClass() != H5T_FLOAT && dataset.getTypeClass() != H5T_INTEGER)
 		{
-			std::cerr << "ERROR: Intensity data is not stored as floating point numbers.\n";
+			std::cerr << "ERROR: Intensity data is neither stored as floating point numbers nor as integers.  ::> "<< dataset.getTypeClass() <<"\n";
 			std::cerr << "     -> in Settings::ScanH5Files()\n";
 			throw;
 		}
+		if (dataset.getTypeClass() == H5T_INTEGER)
+		{
+			std::cout << "Data stored as integers." << std::endl;
+		}
+		if (dataset.getTypeClass() == H5T_FLOAT)
+		{
+			std::cout << "Data stored as floats." << std::endl;
+		}
+
 		H5::DataSpace DS = dataset.getSpace();
 		if (DS.getSimpleExtentNdims() != 3) //check if shape is [nE][nx][ny] ( or [ny][nx][nE] ) nE =^ Number of Slices(Events) // here only [nE][nx][ny] will be accepted
 		{
@@ -247,7 +265,9 @@ std::array<unsigned int, 2> Settings::ScanH5Files(std::vector<std::string> Filen
 			newEvent.Dataset = Datasets[i];
 
 			newEvent.Event = j;
-			newEvent.SerialNumber = j;
+			newEvent.SerialNumber = (int)EventCount;
+
+			newEvent.SupplementInfo = SupplementInfo[i];
 
 			newEvent.RotMatrix[0] = 1.0f;
 			newEvent.RotMatrix[1] = 0.0f;
