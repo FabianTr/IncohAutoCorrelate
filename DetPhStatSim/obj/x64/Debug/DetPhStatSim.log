@@ -1,15 +1,20 @@
-﻿  Cleaning remote project directory
-  Validating sources
+﻿  Validating sources
   Copying sources remotely to 'max-cfelg001'
   Validating architecture
   Validating architecture
   Starting remote build
   Compiling sources:
-  ArrayMaths.cpp
-  hdf5Handle.cpp
-  main.cpp
   PhStatSimulator.cpp
-  ProfileTime.cpp
-  DePhStSi_Settings.cpp
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(62,37): warning : conversion from 'size_t' {aka 'long unsigned int'} to 'int' may change value [-Wconversion]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(62,49): warning : conversion from 'size_t' {aka 'long unsigned int'} to 'int' may change value [-Wconversion]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(191,53): warning : comparison of integer expressions of different signedness: 'int' and 'unsigned int' [-Wsign-compare]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(191,53): warning :   if (Options.MaxThreads != -1 && Options.MaxThreads < NumOfThreads)
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(191,53): warning :                                   ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(261,36): warning : conversion from '__gnu_cxx::__alloc_traits<std::allocator<double>, double>::value_type' {aka 'double'} to 'float' may change value [-Wfloat-conversion]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(261,36): warning :      Result[ind] = DetImages[i][j][k];
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(261,36): warning :                                     ^
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(262,52): warning : conversion from '__gnu_cxx::__alloc_traits<std::allocator<double>, double>::value_type' {aka 'double'} to 'float' may change value [-Wfloat-conversion]
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(262,52): warning :      GroundTruth[ind] = GroundTruthDetImages[i][j][k];
+C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\PhStatSimulator.cpp(262,52): warning :                                                     ^
   Linking objects
   DetPhStatSim.vcxproj -> C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\DetPhStatSim\bin\x64\Debug\DetPhStatSim.out

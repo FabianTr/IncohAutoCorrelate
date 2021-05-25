@@ -32,6 +32,7 @@ namespace Statistics
 	struct Create_SpeckleContrastSettings 
 	{
 		std::string CSVOutputPath = "";
+		bool AddSupplInfo = false;
 	};
 
 	struct Create_ChargeSharingSettings
@@ -100,6 +101,7 @@ namespace Statistics
 			std::vector<size_t> Photons;
 			double MeanPhotonDensity = 0.0;
 			double VariancePhotonDensity = 0.0;
+			std::string SupplInfo = "";
 		};
 		std::vector<SCC_Pattern> SCC_Statistics;
 		unsigned int Nmax = 1;

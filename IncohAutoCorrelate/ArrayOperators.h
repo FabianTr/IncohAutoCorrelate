@@ -224,21 +224,6 @@ namespace ArrayOperators
 		}
 	}
 
-	//serialfunctions
-	inline void MultiplyScalar(float* Array, float Factor, int Size)
-	{
-		for (int i = 0; i < Size; i++)
-		{
-			Array[i] *= Factor;
-		}
-	}
-	inline void MultiplyScalar(double* Array, double Factor, int Size)
-	{
-		for (int i = 0; i < Size; i++)
-		{
-			Array[i] *= Factor;
-		}
-	}
 	inline void Rotate(float* Vector, float RotationMatrix[9])
 	{
 		//V = M * q_local = { { V[0] * M[0] + V[1] * M[1] + V[2] * M[2] },{ V[0] * M[3] + V[1] * M[4] +... },{V[0] * M[6] ... } }
@@ -269,33 +254,38 @@ namespace ArrayOperators
 		for (unsigned int i = 0; i < 9; i++)
 			Matrix[i] = m[i];
 	}//
-	inline int Sum(int* Array, int Size)
+
+	template<typename T>
+	inline T Sum(T* Array, size_t Size)
 	{//Annotation: parallelisation dosn't bring any measurable effect
-		int sum = 0;
-		for (int i = 0; i <Size; i++)
+		T sum = (T)0.0;
+		for (size_t i = 0; i <Size; i++)
 		{
 			sum += Array[i];
 		}
 		return sum;
 	}
-	inline float Sum(float* Array, int Size)
+
+	template<typename T>
+	inline double Mean(T* Array, size_t Size)
 	{
-		double sum = 0.0;
-		for (int i = 0; i <Size; i++)
-		{
-			sum += Array[i];
-		}
-		return (float)sum;
+		T sum = Sum(Array, Size);
+		return (double(sum) / (double)Size);
 	}
-	inline double Sum(double* Array, int Size)
+
+	template<typename T>
+	inline double MaskedMean(T* Array,int* Mask , size_t Size)
 	{
-		double sum = 0;
-		for (int i = 0; i <Size; i++)
+		T sum = 0;
+		int maskSum = 0;
+		for (size_t i = 0; i < Size; i++)
 		{
-			sum += Array[i];
+			sum += Array[i] * Mask[i];
+			maskSum += Mask[i];
 		}
-		return sum;
+		return (double(sum) / (double)maskSum);
 	}
+
 
 	template <typename T>
 	void KabschRotationMatrixRetrieval3x3(T * Input, T * Reference, T * RotationMatrix) 

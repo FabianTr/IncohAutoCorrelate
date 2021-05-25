@@ -113,7 +113,8 @@ Statistics::StatisticsSettings MainRunModes::LoadStatisticSettings(std::string F
 
 		//Speckle Contrast
 		StatSet.SpeckleContrastSettings.CSVOutputPath = pt.get<std::string>("root.StatisticsSettings.SpeckleContrastStatistics.CSVOutputPath", "SpeckleContrast.csv");
-	
+		StatSet.SpeckleContrastSettings.AddSupplInfo = pt.get<bool>("root.StatisticsSettings.SpeckleContrastStatistics.AddSupplementInfo", false);
+
 		//IsolatedPhotonChargeSharing
 		StatSet.ChargeSharingSettings.Seed = pt.get<double>("root.StatisticsSettings.IsoPhotonChargeSharingFit.ADUSeed", 0.5);//ADU seed for one photon hit
 		StatSet.ChargeSharingSettings.MaxADU = pt.get<double>("root.StatisticsSettings.IsoPhotonChargeSharingFit.MaxADUSum", 1.5);//maximum ADU sum to prevent two photon hits
@@ -536,7 +537,7 @@ boost::property_tree::ptree MainRunModes::Example_Statistics_Config_PT(boost::pr
 
 		//Speckle Contrast
 		pt.put("root.StatisticsSettings.SpeckleContrastStatistics.CSVOutputPath", SCSS.CSVOutputPath);
-
+		pt.put("root.StatisticsSettings.SpeckleContrastStatistics.AddSupplementInfo", SCSS.AddSupplInfo);
 		//Charge sharing (isolated photon hit)
 		pt.put("root.StatisticsSettings.IsoPhotonChargeSharingFit.InfoText", "For isolated photon charge sharing radius fit. Also requires Panel Settings from Evaluation (XML, PixelMap, PixelMask, Boundaries) and PatternPreProcessing.LargestAdjugatPixel.");
 
@@ -892,8 +893,6 @@ int MainRunModes::AverageIntensity(std::string EvaluationConfigFile, Settings &O
 
 	//Load and average Intensities, update XML, if wanted.
 	
-	if (EvalSettings.PhotonStep == 0) //if no photonization :=> allow negative values
-		EvalSettings.PhotonStep = std::numeric_limits<float>::min();
 
 	RunIAC::Load_and_average_Intensities(Options, Det, EvalSettings.PhotonOffset, EvalSettings.PhotonStep, EvalSettings.XML_Path, EvalSettings.Out_AvIntensity_Path, UpdateEventXML);
 	return 0;
@@ -1134,6 +1133,11 @@ int MainRunModes::GenerateSpeckleContrastStatistics(std::string ConfigFile, Sett
 				File << ", 0.0";
 			}
 		}
+		if (AllSet.StatisticsSettings.SpeckleContrastSettings.AddSupplInfo)
+		{
+			File << "; " << SCS.SCC_Statistics[i].SupplInfo;
+		}
+
 		File << std::endl;
 	}
 
@@ -1397,9 +1401,9 @@ int MainRunModes::GetHitListFromCSVFile(std::string Arg1, std::string Arg2, Sett
 	{
 		std::vector<std::string> LineFrag;
 		LineFrag = CSV_Splitter(line, ";");
-		if (LineFrag.size() != 6)
+		if (LineFrag.size() != 6 && LineFrag.size() != 7)
 		{
-			std::cerr << "ERROR: CSV-HitList need to be in the format \"H5-Filename; H5-Dataset; Event; MeanInt; PhotonCount; RotationMatrix (x1,y1,z1,x2,...)\"" << std::endl;
+			std::cerr << "ERROR: CSV-HitList need to be in the format \"H5-Filename; H5-Dataset; Event; MeanInt; PhotonCount; RotationMatrix (x1,y1,z1,x2,...); (SupplementInfo) \"" << std::endl;
 			std::cerr << "    -> in MainRunModes::GetHitListFromCSVFile()" << std::endl;
 			throw;
 		}
@@ -1420,8 +1424,17 @@ int MainRunModes::GetHitListFromCSVFile(std::string Arg1, std::string Arg2, Sett
 		for (int i = 0; i < 9; i++)
 			currEvent.RotMatrix[i] = RM[i];
 
+		if (LineFrag.size() == 7)
+		{
+			currEvent.SupplementInfo = LineFrag[6];
+			boost::trim(currEvent.SupplementInfo);
+		}
+		else
+			currEvent.SupplementInfo = "";
+
 		OptOut.HitEvents.push_back(currEvent);
 	}
+
 	OptOut.SafeHitEventListToFile(Arg2);
 	std::cout << "New XML-HitList saved as \"" << Arg2 <<"\""<< std::endl;
 	return 0;

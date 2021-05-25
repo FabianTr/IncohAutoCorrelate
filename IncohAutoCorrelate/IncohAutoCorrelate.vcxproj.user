@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-avi '/home/trostfab/scratch/MID2543/scripts/Settings_AvI_RAW.info'</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-pgf '/home/trostfab/scratch/Simulation/DetectorSimulations/scripts/Photonization/Settings_LAP_GF015_mu001000_css005.info'</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

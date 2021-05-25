@@ -10,79 +10,8 @@
 #include "IniParser.h"
 #include "DePhStSi_Settings.h"
 #include "PhStatSimulator.h"
+#include <fftw3.h>
 
-
-
-//void Test()
-//{
-//	ProfileTime profiler;
-//
-//	profiler.Tic();
-//
-//	float * M = new float[1024*1024*16*16]();
-//	profiler.Toc(true);
-//	
-//	ArrayMaths::GetNegativeBinomialArray(M, 1024 * 1024 * 16 * 16, (0.01f / (16.0f*16.0f)), (1.0f / (16.0f*16.0f)));
-//
-//	profiler.Toc(true);
-//
-//	float * Kernel = new float[31 * 31];
-//
-//	ArrayMaths::CreateGaussKernel(Kernel, 31 , 0.22f * 16, true);
-//
-//	ArrayMaths::Convolve2D(M, { 1024 * 16 , 1024 * 16 }, Kernel, { 31,31 });
-//
-//	profiler.Toc(true);
-//
-//	float * PixM = new float[1024 * 1024]();
-//	ArrayMaths::Pixelize2DArray(M, { 1024 * 16, 1024 * 16 }, PixM, { 16,16 });
-//
-//	profiler.Toc(true);
-//
-//	//std::vector<hsize_t> Shape;
-//	//Shape.push_back(9);
-//	//Shape.push_back(9);
-//
-//
-//	//for (size_t i = 0; i < 25; i++)
-//	//{
-//	//	for (size_t j = 0; j < 25; j++)
-//	//	{
-//	//		std::cout << PixM[j + 25 * i] << "\t";
-//	//	}
-//	//	std::cout << std::endl;
-//	//}
-//
-//	hdf5Handle::H5Quicksave(Kernel, { 31,31 }, "/home/trostfab/kernel.h5", "data");
-//	hdf5Handle::H5Quicksave(M, {1024*16,1024*16}, "/home/trostfab/M.h5", "data");
-//	hdf5Handle::H5Quicksave(PixM, { 1024,1024}, "/home/trostfab/PixM.h5", "data");
-//
-//	return;
-//	while (true)
-//	{
-//
-//		float * M = new float[100];
-//
-//
-//		float Modes = 0;
-//
-//		std::cin >> Modes;
-//
-//		ArrayMaths::GetNegativeBinomialArray(M, 100, 1, Modes);
-//
-//
-//		for (int i = 0; i < 10; i++)
-//		{
-//			for (int j = 0; j < 10; j++)
-//			{
-//				std::cout << M[j + 10 * i] << "\t";
-//			}
-//			std::cout << std::endl;
-//		}
-//		std::cout << "\n"<< std::endl;
-//
-//	}
-//}
 
 void TestINIParse()
 {
@@ -110,7 +39,7 @@ void TestArrayMath_Convolve()
 {
 	float* Kernel = new float[21 * 21];
 	ArrayMaths::CreateGaussKernel(Kernel, 21, 5, true);
-	hdf5Handle::H5Quicksave(Kernel, { 21,21 }, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/kernel.h5", "data");
+	//hdf5Handle::H5Quicksave(Kernel, { 21,21 }, "/home/trostfab/scratch/Simulation/DetSimProfiler//kernel.h5", "data");
 
 	float* M = new float[250 * 250]();
 	M[250 * 125 + 25] = 1;
@@ -118,18 +47,89 @@ void TestArrayMath_Convolve()
 	M[250 * 25 + 125] = 1;
 	M[250 * 100 + 125] = 1;
 
-	hdf5Handle::H5Quicksave(M, { 250,250 }, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/M.h5", "data");
+	//hdf5Handle::H5Quicksave(M, { 250,250 }, "/home/trostfab/scratch/Simulation/DetSimProfiler//M.h5", "data");
 
 	ArrayMaths::Convolve2D(M, { 250,250 }, Kernel, { 21,21 });
 
-	hdf5Handle::H5Quicksave(M, { 250,250 }, "/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/Conv.h5", "data");
+	hdf5Handle::H5Quicksave(M, { 250,250 }, "/home/trostfab/scratch/Simulation/DetSimProfiler/slowConv.h5", "data");
 
 	delete[] Kernel;
 	delete[] M;
 }
 
+void TestArrayMath_FastConvolve()
+{
+	//float* Kernel = new float[250 * 250];
+	//ArrayMaths::CreateGaussKernel(Kernel, 250, 5, true);
+
+	//fftw_complex* FtKernel;
+	//FtKernel = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (250 * 250));
+	//ArrayMaths::fft2(Kernel, FtKernel, 250, 250);
+	//
+	//float* M = new float[250 * 250]();
+	//M[250 * 125 + 25] = 1;
+	//M[250 * 125 + 100] = 1;
+	//M[250 * 25 + 125] = 1;
+	//M[250 * 100 + 125] = 1;
+	//hdf5Handle::H5Quicksave(M, { 250,250 }, "/home/trostfab/scratch/Simulation/DetSimProfiler/M.h5", "data");
+
+	//ArrayMaths::Convolve2DFast(M, { 250,250 }, FtKernel);
+
+	//hdf5Handle::H5Quicksave(Kernel, { 250,250 }, "/home/trostfab/scratch/Simulation/DetSimProfiler/kernel.h5", "data");
+	//
+	//hdf5Handle::H5Quicksave(M, { 250,250 }, "/home/trostfab/scratch/Simulation/DetSimProfiler/fastConv.h5", "data");
+
+	//delete[] Kernel;
+	//delete[] M;
+	//fftw_free(FtKernel);
+}
+
+void TestFFT()
+{
+	//float* Kernel = new float[1024 * 1024];
+	//ArrayMaths::CreateGaussKernel(Kernel, 1024, 4.0, true);
+
+	//hdf5Handle::H5Quicksave(Kernel, { 1024,1024 }, "/home/trostfab/scratch/Simulation/DetSimProfiler/Kernel.h5", "data");
+
+	//fftw_complex* FT_Kernel;
+	//FT_Kernel = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (1024 * 1024));
+
+	//ArrayMaths::fft2(Kernel, FT_Kernel, 1024, 1024);
+	//float* FTA_Kernel = new float[1024 * 1024];
+	//for (size_t i = 0; i < (1024*1024); i++)
+	//{
+	//	FTA_Kernel[i] = std::sqrt(FT_Kernel[i][0]* FT_Kernel[i][0] + FT_Kernel[i][1] * FT_Kernel[i][1]);
+	//}
+	//hdf5Handle::H5Quicksave(FTA_Kernel, { 1024,1024 }, "/home/trostfab/scratch/Simulation/DetSimProfiler/FT_Kernel.h5", "data");
+
+	////Inverse FFT
+	//fftw_complex* iFtFT_Kernel;
+	//iFtFT_Kernel = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (1024 * 1024));
+	//ArrayMaths::ifft2(FT_Kernel, iFtFT_Kernel, 1024, 1024);
+	//float* iFtFTA_Kernel = new float[1024 * 1024];
+	//for (size_t i = 0; i < (1024 * 1024); i++)
+	//{
+	//	iFtFTA_Kernel[i] = std::sqrt(iFtFT_Kernel[i][0] * iFtFT_Kernel[i][0] + iFtFT_Kernel[i][1] * iFtFT_Kernel[i][1]);
+	//}
+	//hdf5Handle::H5Quicksave(iFtFTA_Kernel, { 1024,1024 }, "/home/trostfab/scratch/Simulation/DetSimProfiler/iFtFT_Kernel.h5", "data");
+
+
+	//fftw_free(FT_Kernel);
+	//fftw_free(iFtFT_Kernel);
+	//delete[] FTA_Kernel;
+	//delete[] iFtFTA_Kernel;
+	//delete[] Kernel;
+	//std::cout << "done." << std::endl;
+}
+
 int main(int argc, char** argv)
 {
+	//std::cout << "Test fft" << std::endl;
+	//TestArrayMath_Convolve();
+	//TestArrayMath_FastConvolve();
+	////
+	//std::cout << "done." << std::endl;
+	//return 0;
 	std::cout << "Detector Photon Statistics Simulation\n";
 	std::cout << "*************************************\n" << std::endl;
 

@@ -172,7 +172,7 @@ namespace Statistics
 			Detector Det(RefDet, true);
 
 			Det.LoadIntensityData(&Options.HitEvents[i + LowerBound]);
-			
+			SCS.SCC_Statistics[i].SupplInfo = Options.HitEvents[i + LowerBound].SupplementInfo;
 			Det.ApplyPixelMask();
 			//Loop through Pixel
 			ArrayOperators::DiscretizeToPhotons(Det.Intensity, Offset, Step, Det.DetectorSize[0] * Det.DetectorSize[1]);
@@ -199,7 +199,10 @@ namespace Statistics
 			double Var = 0.0;
 			for (unsigned int j = 0; j < Det.DetectorSize[0] * Det.DetectorSize[1]; j++)
 			{
-				Var += ((double)Det.Intensity[j] - SCS.SCC_Statistics[i].MeanPhotonDensity)*((double)Det.Intensity[j] - SCS.SCC_Statistics[i].MeanPhotonDensity);		
+				if (Det.PixelMask[j] == 1)
+				{
+					Var += ((double)Det.Intensity[j] - SCS.SCC_Statistics[i].MeanPhotonDensity) * ((double)Det.Intensity[j] - SCS.SCC_Statistics[i].MeanPhotonDensity);
+				}
 			}
 			SCS.SCC_Statistics[i].VariancePhotonDensity = Var / ((double)SCS.NumberOfUnmaskedPixels);
 

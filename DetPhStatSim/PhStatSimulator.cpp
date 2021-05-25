@@ -25,30 +25,43 @@ PhStatSimulator::PhStatSimulator(std::string DePhStSi_SettingsPath)
 	Options.LoadDetectorDePhStSi_Settings(DePhStSi_SettingsPath);
 }
 
-
+ProfileTime profiler;
+std::mutex fft_mutex;
 std::mutex g_echo_mutex_Sim;
-void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage, std::vector<std::vector<float>>& GroundTruth,DePhStSi_Settings & Options, unsigned int Loops, int ThreadNum, std::atomic<int>& counter)
+void PhStatSimulator::SimulatePart(std::vector<std::vector<double>> & DetImage, std::vector<std::vector<double>>& GroundTruth,DePhStSi_Settings & Options, unsigned int Loops, int ThreadNum, std::atomic<int>& counter)
 {
 	const auto seed = std::random_device{}() * (ThreadNum+1);
 	//std::cout << seed << std::endl;;
 	std::mt19937_64 mt(seed); //random device
 
-	size_t KernelSize = ((size_t)(Options.SuSa * 4.5 * Options.ChargeSharingSigma) );
+	int FullSize = Options.DetSize * Options.DetSize * Options.SuSa * Options.SuSa;
+	double* M = new double[FullSize]();
+
+	//size_t KernelSize = ((size_t)(Options.SuSa * 4.5 * Options.ChargeSharingSigma) );
+	size_t KernelSize = ((size_t)(Options.DetSize * Options.SuSa));
 	bool ChargeSharing = true;
-	if (KernelSize < 1) // no charge sharing
-	{
-		ChargeSharing = false;
-		KernelSize = 1;
-	}
-	if (KernelSize % 2 == 0)
-		KernelSize++;
-	float* Kernel = new float[KernelSize * KernelSize];
-	if (ChargeSharing)
-		ArrayMaths::CreateGaussKernel(Kernel, KernelSize, Options.ChargeSharingSigma * (float)Options.SuSa, true); //create kernel for charge-sharing
 
+	double* Kernel = new double[KernelSize * KernelSize]();
+	ArrayMaths::CreateGaussKernel(Kernel, KernelSize, Options.ChargeSharingSigma * (float)Options.SuSa, true); //create kernel for charge-sharing
+	
+	fft_mutex.lock();
+	fftw_complex* FtKernel;
+	FtKernel = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (KernelSize * KernelSize));
+	fftw_complex* Array;
+	Array = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (KernelSize * KernelSize));
+	fftw_complex* Buffer;
+	Buffer = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (KernelSize * KernelSize));
 
-	unsigned int FullSize = Options.DetSize * Options.DetSize * Options.SuSa * Options.SuSa;
-	float* M = new float[FullSize]();
+	fftw_plan P_fft2;
+	P_fft2 = fftw_plan_dft_2d((int)KernelSize, (int)KernelSize, Array, Buffer, FFTW_FORWARD, FFTW_MEASURE); //FFTW_MEASURE
+
+	fftw_plan P_ifft2;
+	P_ifft2 = fftw_plan_dft_2d((int)KernelSize, (int)KernelSize, Array, Buffer, FFTW_BACKWARD, FFTW_MEASURE); //FFTW_ESTIMATE
+	fft_mutex.unlock();
+
+	ArrayMaths::fft2(Kernel, FtKernel, KernelSize, KernelSize, fft_mutex);
+	delete[] Kernel;
+	
 	for (unsigned int i = 0; i < Loops; i++)
 	{
 		if (Options.Dark || Options.MeanIntensity == 0)
@@ -64,21 +77,40 @@ void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage, s
 			//Get negative binomial distribution
 			ArrayMaths::GetNegativeBinomialArray(M, FullSize, Options.MeanIntensity / ((float)(Options.SuSa * Options.SuSa)), Options.Modes / ((float)(Options.SuSa * Options.SuSa)), mt); //Negative Binomial distribution (oversampled)
 			
-
+//			profiler.Tic();
 			//bin (sub-pixel) to pixel for ground truth
 			ArrayMaths::Pixelize2DArray(M, { (size_t)(Options.DetSize * Options.SuSa) , (size_t)(Options.DetSize * Options.SuSa) }, GroundTruth[i].data(), { (size_t)Options.SuSa,  (size_t)Options.SuSa });
+//			time_1 += profiler.Toc(false, false);
 
+//			profiler.Tic();
 			if (ChargeSharing)//Charge Sharing
-				ArrayMaths::Convolve2D(M, { (size_t)(Options.DetSize * Options.SuSa), (size_t)(Options.DetSize * Options.SuSa) }, Kernel, { KernelSize,KernelSize }); //simulate charge sharing
+			{
+				for (size_t k = 0; k < KernelSize* KernelSize; k++)
+				{
+					Array[k][0] = M[k]; //real
+					Array[k][1] = 0.0;  //imag
+				}
 
+				//ArrayMaths::Convolve2D(M, { (size_t)(Options.DetSize * Options.SuSa), (size_t)(Options.DetSize * Options.SuSa) }, Kernel, { KernelSize,KernelSize }); //simulate charge sharing
+				
+				//ArrayMaths::Convolve2DFast(M, { (size_t)(Options.DetSize * Options.SuSa), (size_t)(Options.DetSize * Options.SuSa) }, FtKernel, fft_mutex);
+				
+				ArrayMaths::Convolve2DFast(Array, Buffer, M, { KernelSize,KernelSize }, FtKernel, P_fft2, P_ifft2);
+			}
+//			time_2 += profiler.Toc(false, false);
+
+//			profiler.Tic();
 			//bin (sub-pixel) to pixel
 			ArrayMaths::Pixelize2DArray(M, { (size_t)(Options.DetSize * Options.SuSa) , (size_t)(Options.DetSize * Options.SuSa) }, DetImage[i].data(), { (size_t)Options.SuSa,  (size_t)Options.SuSa });
+//			time_3 += profiler.Toc(false, false);
 		}
 
 
 		if (Options.DarkNoise > 0.0) //add Noise
 		{
-			ArrayMaths::AddGaussianNoise<float>(DetImage[i].data(), Options.DetSize * Options.DetSize, Options.DarkNoise, mt);
+//			profiler.Tic();
+			ArrayMaths::AddGaussianNoise<double>(DetImage[i].data(), Options.DetSize * Options.DetSize, Options.DarkNoise, mt);
+//			time_4 += profiler.Toc(false, false);
 		}
 		
 		counter++;
@@ -88,20 +120,40 @@ void PhStatSimulator::SimulatePart(std::vector<std::vector<float>> & DetImage, s
 			if ((counter) % (Options.Pattern / 100) == 0)
 			{
 				g_echo_mutex_Sim.lock();
-				std::cout << counter << " / " << Options.Pattern << " ^= " << round(counter * 100 / Options.Pattern) << "\%" << std::endl;
+				std::cout << counter << " / " << Options.Pattern << " ^= " << round(counter * 100 / Options.Pattern) << "\% in ";
+				profiler.Toc(true, true);
 				g_echo_mutex_Sim.unlock();
 			}
 		}
 		else
 		{
 			g_echo_mutex_Sim.lock();
-			std::cout << counter << " / " << Options.Pattern << " ^= " << round(counter * 100 / Options.Pattern) << "\%" << std::endl;
+			std::cout << counter << " / " << Options.Pattern << " ^= " << round(counter * 100 / Options.Pattern) << "\% in ";
+			profiler.Toc(true, true);
 			g_echo_mutex_Sim.unlock();
 		}
 
 	}
 	delete[] M;
-	delete[] Kernel;
+
+	fft_mutex.lock();
+	fftw_free(FtKernel);
+	fftw_free(Array);
+	fftw_free(Buffer);
+	fft_mutex.unlock();
+
+	//std::cout << "Time consumed by getting random numbers:\n";
+	//ProfileTime::PrintTime(time_1);
+
+	//std::cout << "\nTime consumed by convolution with CS-kernel:\n";
+	//ProfileTime::PrintTime(time_2);
+
+	//std::cout << "\nTime consumed by Pixel chunking:\n";
+	//ProfileTime::PrintTime(time_3);
+
+	//std::cout << "\nTime consumed by Noise simulation:\n";
+	//ProfileTime::PrintTime(time_4);
+
 }
 
 
@@ -124,15 +176,22 @@ void PhStatSimulator::Simulate()
 		<< "SuSa     : " << Options.SuSa << "\n"
 		<< "CS-Sigma : " << Options.ChargeSharingSigma << "\n"
 		<< "DarkNoise: " << Options.DarkNoise << "\n" 
-		<< "OutputFile: " << Options.OutputPath << "; Dataset: " << Options.OutputDataset <<"; GroundTruth Dataset: " << Options.GroundTruthDataset << "\n" << std::endl;
+		<< "OutputFile: " << Options.OutputPath << "; Dataset: " << Options.OutputDataset <<"; GroundTruth Dataset: " << Options.GroundTruthDataset << "\n" 
+		<< "H5Compression: " << Options.compression
+		<< std::endl;
 
-	ProfileTime profiler;
-
+	
 	profiler.Tic();
 
+	
 	unsigned int NumOfThreads = std::thread::hardware_concurrency();
 	if (NumOfThreads < 1)
 		NumOfThreads = 1;
+
+	if (Options.MaxThreads != -1 && Options.MaxThreads < NumOfThreads)
+		NumOfThreads = Options.MaxThreads;
+
+	//NumOfThreads = 3; //For profiling purpose
 
 	unsigned int MainThreadLoops = Options.Pattern / NumOfThreads;
 	unsigned int LastThreadLoops = Options.Pattern % NumOfThreads;
@@ -159,8 +218,8 @@ void PhStatSimulator::Simulate()
 	   
 	unsigned int DetSize = Options.DetSize * Options.DetSize;
 
-	std::vector<std::vector<std::vector<float>>> DetImages(NumOfThreads);//space for results
-	std::vector<std::vector<std::vector<float>>> GroundTruthDetImages(NumOfThreads);//space for results (ground Truth
+	std::vector<std::vector<std::vector<double>>> DetImages(NumOfThreads);//space for results
+	std::vector<std::vector<std::vector<double>>> GroundTruthDetImages(NumOfThreads);//space for results (ground Truth
 	std::vector<std::thread> Threads;
 	std::atomic<int>  counter = 0;
 
@@ -173,7 +232,6 @@ void PhStatSimulator::Simulate()
 		{
 			DetImages[i][j].resize(DetSize);
 			GroundTruthDetImages[i][j].resize(DetSize);
-			//std::cout << DetImages.size() << " :: " << DetImages[i].size() << " :: " << DetImages[i][j].size() << std::endl;
 		}
 
 		Threads.push_back(std::thread(SimulatePart, std::ref(DetImages[i]), std::ref(GroundTruthDetImages[i]), std::ref(Options), Loops[i], (int)i, std::ref(counter)));
@@ -186,9 +244,10 @@ void PhStatSimulator::Simulate()
 		Threads[i].join();
 	}
 
+	fftw_cleanup();
 
 	//Reduce
-	float* Result = new float[(size_t)Options.DetSize * (size_t)Options.DetSize * (size_t)Options.Pattern]();
+	float* Result      = new float[(size_t)Options.DetSize * (size_t)Options.DetSize * (size_t)Options.Pattern]();
 	float* GroundTruth = new float[(size_t)Options.DetSize * (size_t)Options.DetSize * (size_t)Options.Pattern]();
 	
 	//Fill result and groundtruth in arrays
@@ -208,13 +267,14 @@ void PhStatSimulator::Simulate()
 
 
 	//Save Results
-	hdf5Handle::H5Quicksave(Result, { (hsize_t)Options.Pattern,(hsize_t)Options.DetSize, (hsize_t)Options.DetSize }, Options.OutputPath, Options.OutputDataset);
-	hdf5Handle::H5Quicksave(GroundTruth, { (hsize_t)Options.Pattern,(hsize_t)Options.DetSize, (hsize_t)Options.DetSize }, Options.OutputPath, Options.GroundTruthDataset);
+	hdf5Handle::H5Quicksave(Result, { (hsize_t)Options.Pattern,(hsize_t)Options.DetSize, (hsize_t)Options.DetSize }, Options.OutputPath, Options.OutputDataset,Options.compression);
+	hdf5Handle::H5Quicksave(GroundTruth, { (hsize_t)Options.Pattern,(hsize_t)Options.DetSize, (hsize_t)Options.DetSize }, Options.OutputPath, Options.GroundTruthDataset, Options.compression);
 
 
 
 	std::cout << "\nResults saved as \"" << Options.OutputPath << "\" in H5-Dataset \"" << Options.OutputDataset << "\"\ndone within ";
 	profiler.Toc(true);
+	std::cout << " ^= " << Options.Pattern / profiler.Toc(false) << "Hz";
 	std::cout << std::endl;
 
 	delete[] Result;

@@ -4,7 +4,7 @@
     <ShowAllFiles>false</ShowAllFiles>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <RemoteDebuggerCommandArguments>/gpfs/cfel/cxi/scratch/user/trostfab/LR17/PhotonStatistics/ChargeSharingFit/SimTests/TestStack/Config.ini MeanIntensity=0.1 CsSigma=0.0 OutputPath=SimOut_Mu01_SC000.h5 </RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>/home/trostfab/scratch/Simulation/DetSimProfiler/Settings.ini</RemoteDebuggerCommandArguments>
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

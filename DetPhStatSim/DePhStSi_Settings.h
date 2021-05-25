@@ -21,6 +21,7 @@ public:
 	std::string OutputDataset = "data";
 	std::string GroundTruthDataset = "GroundTruth";
 
+	int compression = 6;
 	//statistics
 	float MeanIntensity = 1.0f;
 	float Modes = 1.0f;
@@ -33,6 +34,8 @@ public:
 	void LoadDetectorDePhStSi_Settings(std::string File, std::string ArgStream = "");
 
 	void SafeExampleDePhStSi_Settings(std::string File);
+
+	int MaxThreads = -1;
 
 
 

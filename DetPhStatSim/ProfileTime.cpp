@@ -1,8 +1,5 @@
 #include "ProfileTime.h"
 #include <chrono>
-#include <iostream>
-#include <cmath>
-#include <iomanip>
 
 using namespace std;
 

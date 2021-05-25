@@ -1044,7 +1044,7 @@ namespace RunIAC
 				PrgSettings.HitEvents[i].PhotonCount = (int)(ArrayOperators::Sum(t_Int.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]));
 				PrgSettings.HitEvents[i].MeanIntensity = (((float)PrgSettings.HitEvents[i].PhotonCount) / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1])));
 			}
-			ArrayOperators::MultiplyScalar(Det.Intensity, (1.0 / ((float)StackSize)), Det.DetectorSize[0] * Det.DetectorSize[1]);
+			ArrayOperators::MultiplyScalar(Det.Intensity, (1.0f / ((float)StackSize)), Det.DetectorSize[0] * Det.DetectorSize[1]);
 			Profiler.Toc(true);
 		}
 

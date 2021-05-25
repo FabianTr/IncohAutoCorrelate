@@ -133,7 +133,7 @@ void Detector::Calc_PixelMapExtremeValues()
 	}
 }
 
-void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_string DataSet, int SlicePosition)
+void Detector::GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_string DataSet, unsigned int SlicePosition)
 {
 	H5::H5File file(Path, H5F_ACC_RDONLY);
 	H5::DataSet dataset = file.openDataSet(DataSet);
@@ -732,10 +732,24 @@ void Detector::LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, 
 				ArrayOperators::ParMultiplyElementwise(tmpIntensity, PixelMask, DetectorSize[0] * DetectorSize[1]);
 			}
 
-			if (PhotonSamplingStep <= 0)// No Photon discretising
+			if (PhotonSamplingStep <= 0 && Threshold <= 0)// No Photon discretising
 			{
 				ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //add with threshold
 
+				//update Event
+				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float)(DetectorSize[1] * DetectorSize[0]));
+
+			}
+			else if (PhotonSamplingStep <= 0 && Threshold > 0)// Threshold only
+			{
+				for (size_t j = 0; j < DetectorSize[1] * DetectorSize[0]; j++)
+				{
+					if (tmpIntensity[j] < Threshold)
+					{
+						tmpIntensity[j] = 0.0;
+					}
+				}
+				ArrayOperators::ParAdd(Intensity, tmpIntensity, DetectorSize[1] * DetectorSize[0], Threshold); //add with threshold
 				//update Event
 				Events[i].MeanIntensity = ArrayOperators::Sum(tmpIntensity, DetectorSize[1] * DetectorSize[0]) / ((float)(DetectorSize[1] * DetectorSize[0]));
 

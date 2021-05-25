@@ -15,7 +15,6 @@ namespace PPP
 	//	SM = SingleMolecule  (here Nanostar)
 	//	PF = Photon Finder
 
-
 	void PhotonFinder_LargestAdjacentPixel(float * Intensity, std::vector<DetectorPanel> DetectorPanels,int FullDetSize, float ADU_perPhoton, float SeedThershold, float CombinedThershold )
 	{
 		//This method combines two pixel for the photon detection.
@@ -95,8 +94,7 @@ namespace PPP
 		delete[] FragmentedPhotons;
 	}
 
-
-	namespace
+	namespace //Gauss Fit engine
 	{
 		const double pi = 3.141592653589793;
 
@@ -108,7 +106,7 @@ namespace PPP
 
 		//gradient of gaussion in fs direction
 		template<typename T>
-		const double inline pixel_gauss_dfs(const T& fs, const T& ss, const T& s	)
+		const double inline pixel_gauss_dfs(const T& fs, const T& ss, const T& s)
 		{
 			const T a = erf((fs + 1) / sqrt(2 * s * s));
 			const T b = erf((fs) / sqrt(2 * s * s));
@@ -129,12 +127,12 @@ namespace PPP
 		}
 
 		//renders gaussian with x0 = y0 = 0 with sigma s
-		const double inline pixel_gauss(const float& fs, const float& ss, const float& s	)
+		const double inline pixel_gauss(const float& fs, const float& ss, const float& sigma	)
 		{
-			const float a = erf((fs + 1) / sqrt(2 * s * s));
-			const float b = erf((fs) / sqrt(2 * s * s));
-			const float c = erf((ss + 1) / sqrt(2 * s * s));
-			const float d = erf((ss) / sqrt(2 * s * s));
+			const float a = erf((fs + 1) / sqrt(2 * sigma * sigma));
+			const float b = erf((fs) / sqrt(2 * sigma * sigma));
+			const float c = erf((ss + 1) / sqrt(2 * sigma * sigma));
+			const float d = erf((ss) / sqrt(2 * sigma * sigma));
 			return 0.25 * (a - b) * (c - d);
 		}
 
@@ -269,7 +267,7 @@ namespace PPP
 		void photonize(const double sigma, const size_t nfs, const size_t nss, const float* data, float* ret, double noise_sigma = 0.05)
 		{
 
-			const double a = 1.0f;
+			const double a = 1.0;
 			std::vector<std::array<double, 2UL>> photons;
 			double* tmp = new double[nfs * nss]();
 
@@ -287,7 +285,7 @@ namespace PPP
 				for (size_t i = 0; i < photons.size(); i++) 
 				{
 					const auto& [x, y] = photons[i];
-					render_photon(1.0, x, y, sigma, nfs, nss, tmp);
+					render_photon(a, x, y, sigma, nfs, nss, tmp);
 				}
 
 				//Loop über photonen
@@ -320,7 +318,8 @@ namespace PPP
 			ArrayOperators::MultiplyScalar(ret, 0.0f, nfs* nss);
 			for (size_t j = 0; j < photons.size(); j++)
 			{
-				ret[(size_t)clip(photons[j][1],0,nss) * nfs + (size_t)clip(photons[j][0],0,nfs)] += 1.0f;
+				//ret[(size_t)clip(photons[j][1], 0, nss) * nfs + (size_t)clip(photons[j][0], 0, nfs)] += 1.0f;
+				ret[(size_t)clip(photons[j][1],0,nss-1) * nfs + (size_t)clip(photons[j][0],0,nfs-1)] += 1.0f;
 			}
 
 			delete[] tmp; 
@@ -457,9 +456,14 @@ namespace PPP
 
 		H5::DataSpace mspace(3, block);
 
+		
 		float CounterStep = ((float)OptionsIn.HitEvents.size()) / 100.0f;
 		float Counter = 0;
+		
+		int unmaskedPixelNum = ArrayOperators::Sum(Det.PixelMask, Det.DetectorSize[0] * Det.DetectorSize[1]);
 
+		ProfileTime Profiler;
+		Profiler.Tic();
 		for (unsigned int i = 0; i < OptionsIn.HitEvents.size(); i++)
 		{
 			Det.LoadIntensityData(&OptionsIn.HitEvents[i]);//Load Intensity
@@ -474,30 +478,34 @@ namespace PPP
 				PhotonFinder_LargestAdjacentPixel(Det.Intensity, DetectorPanels, FullDetSize, ADU_perPhoton, SeedThershold, CombinedThershold);
 			}
 			//Create Event 
-			Settings::HitEvent t_Event;
+			Settings::HitEvent t_Event(OptionsIn.HitEvents[i]);
+
+			t_Event.Event = i; //Maybe new position in File!
 
 			t_Event.PhotonCount = ArrayOperators::Sum(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
-			t_Event.MeanIntensity = (float)t_Event.PhotonCount / (Det.DetectorSize[0] * Det.DetectorSize[1]);
-
+			t_Event.MeanIntensity = (float)t_Event.PhotonCount / (float)unmaskedPixelNum;
 			t_Event.Dataset = Dataset;
-			t_Event.Event = i;
 			t_Event.Filename = H5_Out;
-			t_Event.SerialNumber = i;
 			for (int j = 0; j < 9; j++)
 				t_Event.RotMatrix[j] = OptionsIn.HitEvents[i].RotMatrix[j];
 			t_Event.PhotonCount = (int)ArrayOperators::Sum(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
 			t_Event.MeanIntensity = (float)t_Event.PhotonCount / ((float)(Det.DetectorSize[0] * Det.DetectorSize[1]));
 
-			OptionsOut.HitEvents.push_back(t_Event);
+			
 			//Write new Intensity to H5
-			start[0] = i;
+			start[0] = t_Event.Event; 
 			dataspace.selectHyperslab(H5S_SELECT_SET, count, start, stride, block);
 			dataset.write(Det.Intensity, H5::PredType::NATIVE_FLOAT, mspace, dataspace);
+
+			//Save Event
+			OptionsOut.HitEvents.push_back(t_Event);
+
 
 			//Count for status update
 			if ((float)i >= Counter)
 			{
-				std::cout << i << "/" << OptionsIn.HitEvents.size() << "  ^= " << Counter / CounterStep << "%\n";
+				std::cout << i << "/" << OptionsIn.HitEvents.size() << "  ^= " << Counter / CounterStep << "% in ";
+				Profiler.Toc(true, true);
 				Counter += CounterStep;
 			}
 
@@ -556,8 +564,7 @@ namespace PPP
 
 		Settings OptionsOut(OptionsIn);
 		OptionsOut.HitEvents.clear();
-		OptionsOut.HitEvents.reserve(NumOfEvents);
-
+		OptionsOut.HitEvents.resize(NumOfEvents);
 
 		// Hdf5 Stuff
 		H5::H5File file(GaussPhotonizeSettings.Output_Path, H5F_ACC_TRUNC);
@@ -587,6 +594,8 @@ namespace PPP
 		float Counter = 0;
 		long LoopCounter = 0;
 
+		int UnmaskedPixelNum = ArrayOperators::Sum(RefDet.PixelMask, RefDet.DetectorSize[0] * RefDet.DetectorSize[1]);
+
 		ProfileTime Profiler;
 		
 		std::cout << "Parameter:\n";
@@ -595,12 +604,12 @@ namespace PPP
 		std::cout << "Start photonization ..." << std::endl;
 		Profiler.Tic();
 		#pragma omp parallel for
-		for (size_t i = FirstEvent; i < LastEvent; i++)
+		for (size_t i = 0; i < (LastEvent - FirstEvent); i++)
 		{
 			Detector Det = Detector(RefDet, true);
 
 
-			Det.LoadIntensityData(&OptionsIn.HitEvents[i]);//Load Intensity
+			Det.LoadIntensityData(&OptionsIn.HitEvents[i + FirstEvent]);//Load Intensity
 			Det.ApplyPixelMask();//Apply Pxelmask
 
 			//Run Gauss fit
@@ -611,15 +620,15 @@ namespace PPP
 			// \ 
 			
 			//Create new Event 
-			Settings::HitEvent t_Event;
+			Settings::HitEvent t_Event(OptionsIn.HitEvents[i + FirstEvent]);
+
+			t_Event.Event = i; //New position in new H5 file...
 
 			t_Event.PhotonCount = ArrayOperators::Sum(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
-			t_Event.MeanIntensity = (float)t_Event.PhotonCount / (Det.DetectorSize[0] * Det.DetectorSize[1]);
+			t_Event.MeanIntensity = (float)t_Event.PhotonCount / (float)UnmaskedPixelNum;
 
 			t_Event.Dataset = GaussPhotonizeSettings.Output_Dataset;
-			t_Event.Event = i;
 			t_Event.Filename = GaussPhotonizeSettings.Output_Path;
-			t_Event.SerialNumber = i;
 			for (int j = 0; j < 9; j++)
 				t_Event.RotMatrix[j] = OptionsIn.HitEvents[i].RotMatrix[j];
 			t_Event.PhotonCount = (int)ArrayOperators::Sum(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
@@ -629,9 +638,9 @@ namespace PPP
 			//write stuff
 			#pragma omp critical
 			{
-				OptionsOut.HitEvents.push_back(t_Event);
+				OptionsOut.HitEvents[i] = t_Event;
 				//Write new Intensity to H5
-				start[0] = i;
+				start[0] = t_Event.Event; //Save it at the same position in H5-File as it was before
 				dataspace.selectHyperslab(H5S_SELECT_SET, count, start, stride, block);
 				dataset.write(Det.Intensity, H5::PredType::NATIVE_FLOAT, mspace, dataspace);
 
@@ -771,7 +780,7 @@ namespace PPP
 
 		//Gain and Offset should be loaded by now -> start correcting
 
-		ArrayOperators::MultiplyScalar(GM_Offset, -1.0, Det.DetectorSize[0] * Det.DetectorSize[1]); //Negate Offset
+		ArrayOperators::MultiplyScalar(GM_Offset, -1.0f, Det.DetectorSize[0] * Det.DetectorSize[1]); //Negate Offset
 		ArrayOperators::ParAdd(Det.Intensity, GM_Offset, Det.DetectorSize[0] * Det.DetectorSize[1]); //subtract offset from Intensity
 		
 		//Devide by Gain
@@ -800,7 +809,7 @@ namespace PPP
 
 	void ProcessData_DarkFieldCorrection(Detector & Det, CreateDarkSettings DarkSettings, std::string XML_In, Settings & Options)
 	{
-
+		
 		Settings Set_In;
 		Settings Set_Out;
 		Options.Echo("Load event-list");
@@ -879,6 +888,8 @@ namespace PPP
 			mspace.close();
 		}
 
+		
+
 		//invert Dark
 		ArrayOperators::MultiplyScalar(Dark, -1.0f, Det.DetectorSize[0] * Det.DetectorSize[1]); //invert Darkfield
 
@@ -912,19 +923,6 @@ namespace PPP
 		dims[2] = Det.DetectorSize[1];
 		H5::DataSpace dataspace(3, dims);
 
-		H5::DataSet dataset;
-		try
-		{
-			H5::Exception::dontPrint();
-			dataset = file.createDataSet(DarkSettings.Output_Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
-		}
-		catch (H5::FileIException e)
-		{
-			std::cerr << "HDF5 is retarded and does not allow '/' in dataset names sometimes. changed dataset to 'data' and continue ..." << std::endl;
-			DarkSettings.Output_Dataset = "data";
-			dataset = file.createDataSet(DarkSettings.Output_Dataset, H5::PredType::NATIVE_FLOAT, dataspace);
-		}
-
 		hsize_t start[3] = { 0, 0, 0 };  // Start of hyperslab, offset
 		hsize_t stride[3] = { 1, 1, 1 }; // Stride of hyperslab
 		hsize_t count[3] = { 1, 1, 1 };  // Block count
@@ -932,13 +930,39 @@ namespace PPP
 
 		H5::DataSpace mspace(3, block);
 
+		H5::DataSet dataset;
+		try
+		{
+			H5::DSetCreatPropList plist = H5::DSetCreatPropList();
+			plist.setChunk(3, block);
+			plist.setDeflate(6); //compression
+
+			H5::Exception::dontPrint();
+			dataset = file.createDataSet(DarkSettings.Output_Dataset, H5::PredType::NATIVE_FLOAT, dataspace, plist);
+		}
+		catch (H5::FileIException e)
+		{
+			std::cerr << "HDF5 is retarded and does not allow '/' in dataset names sometimes. changed dataset to 'data' and continue ..." << std::endl;
+			DarkSettings.Output_Dataset = "data";
+
+			H5::DSetCreatPropList plist = H5::DSetCreatPropList();
+			plist.setChunk(3, block);
+			plist.setDeflate(6); //compression
+
+			dataset = file.createDataSet(DarkSettings.Output_Dataset, H5::PredType::NATIVE_FLOAT, dataspace, plist);
+		}
+
+
+
 		float CounterStep = ((float)RelStackSize) / 100.0f;
 		float Counter = 0;
+		ProfileTime profiler;
+		profiler.Tic();
 
 		//iterate over Events
 		unsigned int EventCounter = 0;
 		Set_Out.HitEvents.clear();
-		for (unsigned int i = 0; i < Set_In.HitEvents.size(); i++)
+		for (unsigned int i = 0; i < RelStackSize; i++)
 		{
 			//Check (if restrict to one data-source), datasource path and if it doesn't match, continue
 			if (DarkSettings.RestrictToDataSource && (DarkSettings.DataSource_Path != Set_In.HitEvents[i].Filename))
@@ -949,32 +973,31 @@ namespace PPP
 			//Subtract Dark field (already inverted, therefore add)
 			ArrayOperators::ParAdd(Det.Intensity, Dark, Det.DetectorSize[0] * Det.DetectorSize[1]);
 			
+
+			Settings::HitEvent t_Event(Set_In.HitEvents[i]);
+
+			t_Event.Event = i; //New position in new H5File!
+
+			t_Event.Dataset = DarkSettings.Output_Dataset;
+			t_Event.Filename = DarkSettings.Output_Path;
+			t_Event.HitsPixelRatio = Set_In.HitEvents[i].HitsPixelRatio;
+			t_Event.MeanIntensity = (float)ArrayOperators::Mean(Det.Intensity, Det.DetectorSize[0] * Det.DetectorSize[1]);
+
+
+			for (int r = 0; r < 9; r++)
+				t_Event.RotMatrix[r] = Set_In.HitEvents[i].RotMatrix[r];
+
+			Set_Out.HitEvents.push_back(t_Event);
+
 			//store in H5 File
-			start[0] = EventCounter;
+			start[0] = t_Event.Event; 
 			dataspace.selectHyperslab(H5S_SELECT_SET, count, start, stride, block);
 			dataset.write(Det.Intensity, H5::PredType::NATIVE_FLOAT, mspace, dataspace);
 
-			//Create Event
-			{
-				Settings::HitEvent t_Event;
-				t_Event = Set_In.HitEvents[i];
-
-				t_Event.Dataset = DarkSettings.Output_Dataset;
-				t_Event.Event = EventCounter;
-				t_Event.Filename = DarkSettings.Output_Path;
-				t_Event.HitsPixelRatio = Set_In.HitEvents[i].HitsPixelRatio;
-				t_Event.MeanIntensity = Set_In.HitEvents[i].MeanIntensity;
-				t_Event.PhotonCount = Set_In.HitEvents[i].PhotonCount;
-				t_Event.SerialNumber = Set_In.HitEvents[i].SerialNumber;
-
-				for (int r = 0; r < 9; r++)
-					t_Event.RotMatrix[r] = Set_In.HitEvents[i].RotMatrix[r];
-
-				Set_Out.HitEvents.push_back(t_Event);
-			}
 			if ((float)EventCounter >= Counter)
 			{
-				std::cout << EventCounter << "/" << RelStackSize << "  ^= " << Counter / CounterStep << "%\n";
+				std::cout << EventCounter << "/" << RelStackSize << "  ^= " << Counter / CounterStep << "% in ";
+				profiler.Toc(true, true);
 				Counter += CounterStep;
 			}
 			EventCounter++;
@@ -990,6 +1013,5 @@ namespace PPP
 		//CleanUp Memory
 		delete[] Dark;
 	}
-
 
 }

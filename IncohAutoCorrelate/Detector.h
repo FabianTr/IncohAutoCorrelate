@@ -64,7 +64,7 @@ public:
 	void LoadIntensityData(Settings::HitEvent* Event);
 	void LoadIntensityData();
 	void LoadIntensityData_PSANA_StyleJungfr(H5std_string Path, H5std_string DataSet, unsigned int Index);
-	void GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_string DataSet, int SlicePosition); // Load intensity directly out of hdf5 file
+	void GetSliceOutOfHDFCuboid(float* data, H5std_string Path, H5std_string DataSet, unsigned int SlicePosition); // Load intensity directly out of hdf5 file
 	void LoadIntensityData_EPIX(float* data, H5std_string Path, H5std_string DataSet, int SlicePosition);
 
 	void LoadAndAverageIntensity(std::vector<Settings::HitEvent>& Events, float Threshold);

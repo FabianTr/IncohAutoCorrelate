@@ -1,0 +1,1 @@
+g++ -o "/home/trostfab/projects/IdiAnalysisPipeline/bin/x64/Debug/IdiAnalysisPipeline.out" -Wl,--no-undefined -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack /home/trostfab/projects/IdiAnalysisPipeline/obj/x64/Debug/DataContainer.o /home/trostfab/projects/IdiAnalysisPipeline/obj/x64/Debug/main.o

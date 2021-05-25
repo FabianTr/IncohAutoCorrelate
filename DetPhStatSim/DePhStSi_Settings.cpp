@@ -37,6 +37,7 @@ void DePhStSi_Settings::LoadDetectorDePhStSi_Settings(std::string File, std::str
 	OutputPath = parser.GetValue<std::string>("OutputPath","SimulationOutput.h5");
 	OutputDataset = parser.GetValue<std::string>("OutputDataset", "data");
 	GroundTruthDataset = parser.GetValue<std::string>("GroundTruthDataset", "GroundTruth");
+	compression = parser.GetValue<int>("H5Compression", 6);
 
 	//statistics
 	MeanIntensity = parser.GetValue<float>("MeanIntensity",1.0f);
@@ -45,6 +46,8 @@ void DePhStSi_Settings::LoadDetectorDePhStSi_Settings(std::string File, std::str
 
 	//run Parameter
 	Dark = parser.GetValue<bool>("Dark", false);
+	MaxThreads = parser.GetValue<int>("MaxThreads", -1);
+
 }
 
 void DePhStSi_Settings::SafeExampleDePhStSi_Settings(std::string File)
@@ -61,6 +64,7 @@ void DePhStSi_Settings::SafeExampleDePhStSi_Settings(std::string File)
 	parser.SetValue<std::string>("OutputPath", "SimulationOutput.h5");
 	parser.SetValue<std::string>("OutputDataset", "data");
 	parser.SetValue<std::string>("GroundTruthDataset", "GroundTruth");
+	parser.SetValue<int>("H5Compression", 6);
 
 	//statistics
 	parser.SetValue<float>("MeanIntensity", 1.0f);

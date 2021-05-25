@@ -1,0 +1,10 @@
+﻿  Validating sources
+  Copying sources remotely to 'max-cfelg001'
+  Validating architecture
+  Validating architecture
+  Starting remote build
+  Compiling sources:
+  DataContainer.cpp
+  main.cpp
+  Linking objects
+  IdiAnalysisPipeline.vcxproj -> C:\Users\trostfab\source\repos\FabianTr\IncohAutoCorrelate\IdiAnalysisPipeline\bin\x64\Debug\IdiAnalysisPipeline.out
