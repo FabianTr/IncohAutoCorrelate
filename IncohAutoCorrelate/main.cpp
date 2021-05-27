@@ -488,6 +488,7 @@ int main(int argc, char** argv)
 	std::cout << "\n\n\n======================================\n     IncohAutoCorrelate (IAC)\n======================================\n     Version "<< Settings::GetVersion() <<"\n" << std::endl;
 	Settings Options;
 
+
 	//Parse Arg for Run-Mode-Fork
 	std::string Arg1= "h";
 	if (argc > 1)
@@ -850,7 +851,7 @@ int main(int argc, char** argv)
 	}
 	else if (Arg1 == "simulate" || Arg1 == "-simulate" || Arg1 == "s" || Arg1 == "-s")
 	{
-		std::cout << "Run ICA in simulation mode - autocorrelation" << std::endl;;
+		std::cout << "Run ICA in simulation mode" << std::endl;;
 		if (argc < 3)
 		{
 			std::cerr << "-Simulate requires one additional argument (\"Settings.xml\")\n";
@@ -861,6 +862,20 @@ int main(int argc, char** argv)
 			std::string Arg2 = argv[2];
 			return MainRunModes::Simulate(Arg2, Options);
 		}
+	}
+	else if (Arg1 == "simulatemask" || Arg1 == "-simulatemask" || Arg1 == "sm" || Arg1 == "-sm")
+	{
+	std::cout << "Run ICA in mask sample simulation mode" << std::endl;;
+	if (argc < 3)
+	{
+		std::cerr << "-SimulateMask requires one additional argument (\"Settings.xml\")\n";
+		return -1;
+	}
+	else
+	{
+		std::string Arg2 = argv[2];
+		return MainRunModes::SimulateMaskSample(Arg2, Options);
+	}
 	}
 	else if (Arg1 == "generatepixelmap" || Arg1 == "-generatepixelmap" || Arg1 == "gpm" || Arg1 == "-gpm")
 	{

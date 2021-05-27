@@ -37,9 +37,9 @@ class Settings
 private:
 	
 public:
-	const static int XML_HITLIST_VERSION = 8; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
-	const static int INTERNAL_VERSION = 11; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
-	const static int INTERNAL_VERSION_Revision = 9; //rr
+	const static int XML_HITLIST_VERSION = 9; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
+	const static int INTERNAL_VERSION = 12; //Mmm (1.00 -> 100; 1.01 -> 101; 0.1 -> 10)
+	const static int INTERNAL_VERSION_Revision = 2; //rr
 
 	static void SavePropertyTree(boost::property_tree::ptree &pt, std::string Filename)
 	{

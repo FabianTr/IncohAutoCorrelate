@@ -28,6 +28,7 @@ namespace MainRunModes
 	{
 		Simulator::SimulationSettings SimSettings;
 		Simulator::GeneratePMSettings GPMSettings;
+		Simulator::MaskSimulationSettings MaskSimSettings;
 
 		std::vector<std::array<double, 3>> UnitCell;
 
@@ -125,6 +126,8 @@ namespace MainRunModes
 
 	//Simulation
 	int Simulate(std::string ConfigFile, Settings &Options);
+
+	int SimulateMaskSample(std::string ConfigFile, Settings& Options);
 
 	int GeneratePixelMap(std::string Arg1, Settings &Options);
 }

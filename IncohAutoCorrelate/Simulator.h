@@ -55,6 +55,19 @@ public:
 		float CrystalSize[3] = { 0,0,0 };
 	};
 
+	struct MaskSimulationSettings
+	{
+		unsigned int NumberOfEmitter = 1000;
+		double SizeX;
+		double SizeY;
+
+		std::string Filename_DensityMap = "";
+		std::string Dataset_DensityMap = "";
+
+		unsigned int internal_DensDim_X = 0;
+		unsigned int internal_DensDim_Y = 0;
+	};
+
 	struct SimulationOutput 
 	{
 		//must not contain pointers
@@ -81,13 +94,17 @@ public:
 
 	void SaveSimulationOutput(SimulationOutput &Output, std::string HDF5_Path, std::string XML_Path, SimulationSettings SimSettings);
 
+	void SimulateMaskSample(Detector& Det, SimulationSettings SimSettings, MaskSimulationSettings MaskSimSettings, SimulationOutput& Output, Settings& Options);
+
 	void GeneratePixelMap(GeneratePMSettings GPMSettings);
 	void GeneratePixelMap(std::string Filename, std::string Dataset,int SizeA, int SizeB, float PixelSize, std::array<float,3> Center, std::array<float, 3> VecA, std::array<float, 3> VecB);
 
 	void DisturbePixelMap(Detector &Det, double Translation, double Roatation); //Rotation in Degree [0, 360)
 
 private: 
-	static void SimulatePart(Crystal  EmitterCrystal, Detector & Det, SimulationSettings  SimSettings, SimulationOutput & Output, Settings & Options, int ThreadNum);
+	static void SimulatePart(Crystal  EmitterCrystal, Detector & RefDet, SimulationSettings  SimSettings, SimulationOutput & Output, Settings & Options, int ThreadNum);
 	void PrintSimInfos(const SimulationSettings & SimSettings);
+
+	static void SimulateMaskPart(float *DensityMap, Detector& Det, SimulationSettings  SimSettings, MaskSimulationSettings MaskSimSettings, SimulationOutput& Output, Settings& Options, int ThreadNum);
 };
 

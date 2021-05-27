@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
     <RemoteDebugTarget>-695385563;max-cfelg002 (username=, port=22, authentication=Password)</RemoteDebugTarget>
-    <RemoteDebuggerCommandArguments>-pgf '/home/trostfab/scratch/Simulation/DetectorSimulations/scripts/Photonization/Settings_LAP_GF015_mu001000_css005.info'</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>-sm '/home/trostfab/scratch/Simulation/MaskSim/Settings_DoubleSlit2.info'</RemoteDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

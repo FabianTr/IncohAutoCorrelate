@@ -312,6 +312,15 @@ MainRunModes::AllSimSettings MainRunModes::LoadSimulationSettings(std::string Fi
 		Settings::SplitString(pt.get<std::string >("root.GeneratePixelMap.Center", "0.0; 0.0; 0.0"), SimS.GPMSettings.Center.data(), 3, delimiter);
 		Settings::SplitString(pt.get<std::string >("root.GeneratePixelMap.VecA", "1.0; 0.0; 0.0"), SimS.GPMSettings.VecA.data(), 3, delimiter);
 		Settings::SplitString(pt.get<std::string >("root.GeneratePixelMap.VecB", "0.0; 1.0; 0.0"), SimS.GPMSettings.VecB.data(), 3, delimiter);
+
+
+		//MaskSimSettings
+		SimS.MaskSimSettings.Filename_DensityMap = pt.get<std::string>("root.Simulation.MaskSim.Filename_DensityMap", "");
+		SimS.MaskSimSettings.Dataset_DensityMap = pt.get<std::string>("root.Simulation.MaskSim.Dataset_DensityMap", "");
+
+		SimS.MaskSimSettings.NumberOfEmitter = pt.get<unsigned int>("root.Simulation.MaskSim.NumberOfEmitters", 0);
+		SimS.MaskSimSettings.SizeX = pt.get<unsigned int>("root.Simulation.MaskSim.SizeX", 100);
+		SimS.MaskSimSettings.SizeY = pt.get<unsigned int>("root.Simulation.MaskSim.SizeY", 100);
 	}
 
 
@@ -692,6 +701,13 @@ boost::property_tree::ptree MainRunModes::Example_Simulation_Config_PT(boost::pr
 	GPMS.VecB[1] = 1.0f;
 	GPMS.VecB[2] = 0.0f;
 
+	//MaskSim
+	Simulator::MaskSimulationSettings MSS;
+	MSS.Filename_DensityMap = "DensityMap.h5";
+	MSS.Dataset_DensityMap = "data";
+	MSS.NumberOfEmitter = 1000;
+	MSS.SizeX = 5; // ^= 5µm  
+	MSS.SizeY = 5; // ^= 5µm  
 
 	{
 		pt.put("root.Simulation.InfoText", GPMS_InfoText);
@@ -758,6 +774,12 @@ boost::property_tree::ptree MainRunModes::Example_Simulation_Config_PT(boost::pr
 		pt.put("root.GeneratePixelMap.VecA", std::to_string(GPMS.VecA[0]) + "; " + std::to_string(GPMS.VecA[1]) + "; " + std::to_string(GPMS.VecA[2]));
 		pt.put("root.GeneratePixelMap.VecB", std::to_string(GPMS.VecB[0]) + "; " + std::to_string(GPMS.VecB[1]) + "; " + std::to_string(GPMS.VecB[2]));
 
+		//MaskSim
+		pt.put("root.Simulation.MaskSim.Filename_DensityMap", MSS.Filename_DensityMap);
+		pt.put("root.Simulation.MaskSim.Dataset_DensityMap", MSS.Dataset_DensityMap);
+		pt.put("root.Simulation.MaskSim.NumberOfEmitters", MSS.NumberOfEmitter);
+		pt.put("root.Simulation.MaskSim.SizeX", MSS.SizeX);
+		pt.put("root.Simulation.MaskSim.SizeY", MSS.SizeY);
 	}
 
 	return pt;
@@ -1464,11 +1486,10 @@ int MainRunModes::Simulate(std::string ConfigFile, Settings & Options)
 	{
 		if (SIS.AllSimulationSettings.UnitCell.size() == 0)
 		{
-			std::cerr << "ERROR: No amtoms within unit cell" << std::endl;
+			std::cerr << "ERROR: No atoms within unit cell" << std::endl;
 			std::cerr << "    -> in MainRunModes::Simulate()" << std::endl;
 			throw;
 		}
-	
 	}
 
 	ProfileTime Profiler;
@@ -1492,6 +1513,49 @@ int MainRunModes::Simulate(std::string ConfigFile, Settings & Options)
 	Sim.ParSimulate(Cryst, Sim_Det, SIS.AllSimulationSettings.SimSettings, Sim_Output, Options);
 
 	std::cout << "Simulation performed within " << Profiler.Toc() / 3600 << "h" << std::endl;
+
+	return 0;
+}
+
+int MainRunModes::SimulateMaskSample(std::string ConfigFile, Settings& Options)
+{
+	//Setup Open CL Stuff
+	Options.SetUp_OpenCL();
+
+	MainRunModes::AllSettings SIS = LoadSettings(ConfigFile, Options);
+	//Check Stuff
+	{
+		if (SIS.AllSimulationSettings.MaskSimSettings.NumberOfEmitter == 0)
+		{
+			std::cerr << "ERROR: Emitter count is zero => simulation therefore useless" << std::endl;
+			std::cerr << "    -> in MainRunModes::SimulateMaskSample()" << std::endl;
+			return -1;
+		}
+		if (SIS.AllSimulationSettings.MaskSimSettings.SizeX == 0 || SIS.AllSimulationSettings.MaskSimSettings.SizeY == 0)
+		{
+			std::cerr << "ERROR: Size of Emitter mask is zero" << std::endl;
+			std::cerr << "    -> in MainRunModes::SimulateMaskSample()" << std::endl;
+			return -1;
+		}
+	}
+
+	ProfileTime Profiler;
+	Profiler.Tic();
+
+
+	//Set up detector
+	Detector Sim_Det;
+	Sim_Det.LoadPixelMap(SIS.EvaluationSettings.PixelMap_Path, SIS.EvaluationSettings.PixelMap_DataSet);
+	Sim_Det.Calc_kMap();
+
+	Simulator Sim;
+	Simulator::SimulationOutput Sim_Output;
+	
+	Sim.SimulateMaskSample(Sim_Det, SIS.AllSimulationSettings.SimSettings, SIS.AllSimulationSettings.MaskSimSettings, Sim_Output, Options);
+	
+	std::cout << "Mask sample simulation performed within ";
+	Profiler.Toc(true, true);
+	std::cout << std::endl;
 
 	return 0;
 }
